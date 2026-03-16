@@ -1,0 +1,12 @@
+# Cloudflare Pages Redirects
+# See: https://developers.cloudflare.com/pages/configuration/redirects/
+
+# Redirect trailing slashes (optional - improves SEO)
+# /dashboard/  /dashboard  301
+# /log-viewer/  /log-viewer.html  301
+
+# Example: Redirect www to non-www (when using custom domain)
+# https://www.secondbrain.app/*  https://secondbrain.app/:splat  301
+
+# Example: Redirect old paths to new
+# /app/*  /dashboard.html  302

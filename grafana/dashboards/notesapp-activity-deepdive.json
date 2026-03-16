@@ -1,0 +1,347 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) as value FROM user_activities WHERE action IN ('chat_query', 'search_notes', 'vector_search', 'hybrid_search', 'instant_search', 'rag_search', 'upload_file', 'upload_screenshot', 'create_quick_note')",
+          "refId": "A"
+        }
+      ],
+      "title": "Activities Total",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) as value FROM user_activities WHERE action IN ('chat_query', 'search_notes', 'vector_search', 'hybrid_search', 'instant_search', 'rag_search', 'upload_file', 'upload_screenshot', 'create_quick_note') AND created_at >= NOW() - INTERVAL '24 hours'",
+          "refId": "A"
+        }
+      ],
+      "title": "Activities (Last 24 Hours)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { 
+            "mode": "absolute", 
+            "steps": [
+              { "color": "green", "value": null }, 
+              { "color": "yellow", "value": 2000 }, 
+              { "color": "red", "value": 5000 }
+            ] 
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT ROUND(AVG(duration_ms)::numeric, 0) as value FROM user_activities WHERE action IN ('chat_query', 'search_notes', 'vector_search', 'hybrid_search', 'instant_search', 'rag_search', 'upload_file', 'upload_screenshot', 'create_quick_note') AND created_at >= NOW() - INTERVAL '7 days' AND duration_ms IS NOT NULL",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Latency",
+      "description": "Average request latency including authentication.",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "displayLabels": ["name", "percent"],
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT action as client_source, COUNT(*) as count FROM user_activities WHERE action IN ('chat_query', 'search_notes', 'vector_search', 'hybrid_search', 'instant_search', 'rag_search', 'upload_file', 'upload_screenshot', 'create_quick_note') AND created_at >= NOW() - INTERVAL '7 days' GROUP BY action ORDER BY count DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Activity Distribution",
+      "description": "Distribution of activities by action type including searches and uploads.",
+      "type": "piechart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 },
+      "id": 5,
+      "panels": [],
+      "title": "Activity Details - Click correlation_id for HTML Logs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "created_at" },
+            "properties": [
+              { "id": "custom.width", "value": 180 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "user_id" },
+            "properties": [
+              { "id": "custom.width", "value": 280 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "query_preview" },
+            "properties": [
+              { "id": "custom.width", "value": 300 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "client_source" },
+            "properties": [
+              { "id": "custom.width", "value": 140 },
+              { "id": "mappings", "value": [
+                { "options": { 
+                    "chat_query": { "color": "purple", "index": 0, "text": "💬 Chat" }, 
+                    "search_notes": { "color": "blue", "index": 1, "text": "🔍 Search" }, 
+                    "instant_search": { "color": "green", "index": 2, "text": "⚡ Instant" },
+                    "hybrid_search": { "color": "orange", "index": 3, "text": "🔀 Hybrid" },
+                    "vector_search": { "color": "cyan", "index": 4, "text": "📊 Vector" },
+                    "rag_search": { "color": "yellow", "index": 5, "text": "🤖 RAG" },
+                    "upload_file": { "color": "semi-dark-blue", "index": 6, "text": "📁 File Upload" },
+                    "upload_screenshot": { "color": "semi-dark-purple", "index": 7, "text": "📸 Screenshot" },
+                    "create_quick_note": { "color": "semi-dark-green", "index": 8, "text": "📝 Quick Note" }
+                  }, "type": "value" }
+              ] }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              { "id": "custom.width", "value": 100 },
+              { "id": "mappings", "value": [
+                { "options": { 
+                    "error": { "color": "red", "index": 1, "text": "❌ Error" }, 
+                    "success": { "color": "green", "index": 0, "text": "✓ Success" } 
+                  }, "type": "value" }
+              ] }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "duration_ms" },
+            "properties": [
+              { "id": "custom.width", "value": 120 },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { 
+                  "mode": "absolute", 
+                  "steps": [
+                    { "color": "green", "value": null }, 
+                    { "color": "yellow", "value": 2000 }, 
+                    { "color": "red", "value": 5000 }
+                  ] 
+                } 
+              },
+              { "id": "max", "value": 8000 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "correlation_id" },
+            "properties": [
+              { "id": "custom.width", "value": 320 },
+              { "id": "links", "value": [
+                {
+                  "title": "📋 View Detailed Logs (HTML Viewer)",
+                  "url": "https://notesapp-search.fly.dev/logs?correlation_id=${__value.text}",
+                  "targetBlank": true
+                }
+              ] }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 9 },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "created_at" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT TO_CHAR(ua.created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at, ua.user_id, SUBSTRING(COALESCE(ua.metadata->>'query', ua.metadata->>'message', ua.metadata->>'filename', ua.metadata->>'title', '(no details)') FROM 1 FOR 80) as query_preview, ua.action as client_source, ua.status, ua.duration_ms, ua.correlation_id::text as correlation_id FROM user_activities ua WHERE ua.action IN ('chat_query', 'search_notes', 'vector_search', 'hybrid_search', 'instant_search', 'rag_search', 'upload_file', 'upload_screenshot', 'create_quick_note') AND ('$user_id' = 'All' OR '$user_id' = '$__all' OR ua.user_id = '$user_id') ORDER BY ua.created_at DESC LIMIT 200",
+          "refId": "A"
+        }
+      ],
+      "title": "Activity Details",
+      "description": "Click on the correlation_id to view detailed logs for any activity (search or upload), including timing breakdowns.",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "id": 7,
+      "panels": [],
+      "title": "How to View Detailed Timing",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "datasource", "uid": "-- Dashboard --" },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 26 },
+      "id": 8,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## 📊 Detailed Timing\n\nClick the **correlation_id** link to open the HTML Log Viewer for detailed breakdowns:\n- 🔐 Authentication time\n- 🧠 Embedding generation\n- � Vector search\n- 🎯 Reranker processing\n\n**Direct URL**: `https://notesapp-search.fly.dev/logs?correlation_id=<id>`",
+        "mode": "markdown"
+      },
+      "title": "",
+      "type": "text"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["notesapp", "activity", "deepdive"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "grafana-postgresql-datasource",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": "All",
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+        "definition": "SELECT DISTINCT user_id FROM user_activities WHERE created_at >= NOW() - INTERVAL '30 days' AND user_id NOT IN ('default_user', 'unknown', 'system') ORDER BY user_id",
+        "hide": 0,
+        "includeAll": true,
+        "label": "User",
+        "multi": false,
+        "name": "user_id",
+        "options": [],
+        "query": "SELECT DISTINCT user_id FROM user_activities WHERE created_at >= NOW() - INTERVAL '30 days' AND user_id NOT IN ('default_user', 'unknown', 'system') ORDER BY user_id",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "NotesApp - Activity Deep-Dive",
+  "uid": "notesapp-activity-deepdive",
+  "version": 1,
+  "weekStart": ""
+}

@@ -1,0 +1,26 @@
+# Security headers for all pages
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+
+# Cache JavaScript files (use cache busting via query params for updates)
+/*.js
+  Cache-Control: public, max-age=2592000
+
+# Cache CSS files
+/*.css
+  Cache-Control: public, max-age=2592000
+
+# Don't cache HTML (for instant updates)
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Config file - shorter cache for easy updates
+/config.js
+  Cache-Control: public, max-age=300

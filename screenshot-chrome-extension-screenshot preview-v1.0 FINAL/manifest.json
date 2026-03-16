@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "name": "infoSnap.ai",
+  "version": "1.3.0",
+  "description": "Save Anything, find it instantly - capture screenshots, upload files, and take notes",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads",
+    "scripting",
+    "contextMenus",
+    "debugger",
+    "webNavigation",
+    "notifications",
+    "alarms",
+    "identity"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "https://notesapp-vector-search.monocle0712.workers.dev/*",
+    "https://vnpqsmiuismvwsynpmfu.supabase.co/*",
+    "https://infosnap.ai/*",
+    "*://www.google.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["src/content.js"],
+      "css": ["src/screenshot/screenshot.css"],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://notesapp-vector-search.monocle0712.workers.dev/api/v1/auth/chrome-extension/exchange*"],
+      "js": ["src/content-auth.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "infoSnap.ai",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "src/options/options.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/screenshot/screenshot.css",
+        "src/callback/callback.html",
+        "src/styles/search-notification.css"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

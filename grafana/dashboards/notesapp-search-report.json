@@ -1,0 +1,251 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "arrow-left",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "← Back to Search Deep-Dive",
+      "tooltip": "Return to main search dashboard",
+      "type": "link",
+      "url": "/d/notesapp-search-deepdive/notesapp-search-deep-dive"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "# Search Query Details\n\n**Correlation ID:** `$correlation_id` - Click the back arrow above to return to the main search dashboard.",
+        "mode": "markdown"
+      },
+      "type": "text"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "left", "cellOptions": { "type": "auto" }, "inspect": true },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "query_text" },
+            "properties": [{ "id": "custom.width", "value": 400 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "duration_ms" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1000 }, { "color": "red", "value": 3000 }] } },
+              { "id": "max", "value": 5000 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 2 },
+      "id": 2,
+      "options": {
+        "cellHeight": "md",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT correlation_id, user_id, query_text, client_source, status, duration_ms, results_count AS results, CASE WHEN is_fast_path THEN 'Yes' ELSE 'No' END AS fast_path, CASE WHEN reranker_used THEN 'Yes' ELSE 'No' END AS reranker, CASE WHEN spell_corrected THEN 'Yes' ELSE 'No' END AS spell_fix, search_type, query_type, detected_tags, total_candidates, created_at FROM v_search_query_full WHERE correlation_id = '$correlation_id' LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Query Summary",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 },
+      "id": 3,
+      "panels": [],
+      "title": "Detailed Operation Logs (like notesapp.log)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "left", "cellOptions": { "type": "auto" }, "inspect": true },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "message" },
+            "properties": [
+              { "id": "custom.width", "value": 500 },
+              { "id": "custom.cellOptions", "value": { "type": "auto" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "log_level" },
+            "properties": [
+              { "id": "custom.width", "value": 80 },
+              { "id": "mappings", "value": [
+                { "options": { "INFO": { "color": "blue", "index": 0 }, "WARNING": { "color": "yellow", "index": 1 }, "ERROR": { "color": "red", "index": 2 }, "DEBUG": { "color": "gray", "index": 3 } }, "type": "value" }
+              ] },
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "log_type" },
+            "properties": [
+              { "id": "custom.width", "value": 100 },
+              { "id": "mappings", "value": [
+                { "options": { "operation": { "color": "green", "index": 0 }, "error": { "color": "red", "index": 1 } }, "type": "value" }
+              ] }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "timestamp" },
+            "properties": [{ "id": "custom.width", "value": 180 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "component" },
+            "properties": [{ "id": "custom.width", "value": 120 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "operation" },
+            "properties": [{ "id": "custom.width", "value": 150 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "duration_ms" },
+            "properties": [
+              { "id": "custom.width", "value": 100 },
+              { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 2000 }] } },
+              { "id": "max", "value": 3000 }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 18, "w": 24, "x": 0, "y": 7 },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": true, "fields": "", "reducer": ["count"], "show": true },
+        "showHeader": true,
+        "sortBy": [{ "desc": false, "displayName": "timestamp" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp, log_type, log_level, component, operation, duration_ms, message, metadata FROM v_operation_details WHERE correlation_id = '$correlation_id' ORDER BY timestamp ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Operation Timeline (chronological)",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "id": 5,
+      "panels": [],
+      "title": "Raw Metadata (JSON)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": { "align": "left", "cellOptions": { "type": "auto" }, "inspect": true },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "metadata" },
+            "properties": [{ "id": "custom.width", "value": 800 }]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 26 },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-postgresql-datasource", "uid": "${datasource}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT timestamp, operation, metadata::text FROM v_operation_details WHERE correlation_id = '$correlation_id' AND metadata IS NOT NULL AND metadata::text != '{}' ORDER BY timestamp ASC",
+          "refId": "A"
+        }
+      ],
+      "title": "Detailed Metadata per Operation",
+      "type": "table"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["notesapp", "search", "report", "drill-down"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "grafana-postgresql-datasource",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": { "selected": false, "text": "", "value": "" },
+        "hide": 0,
+        "label": "Correlation ID",
+        "name": "correlation_id",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "NotesApp - Search Query Report",
+  "uid": "notesapp-search-report",
+  "version": 1,
+  "weekStart": ""
+}

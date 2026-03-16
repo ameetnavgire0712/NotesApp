@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 160 10% 6%;
+    --foreground: 150 15% 90%;
+
+    --card: 160 8% 10%;
+    --card-foreground: 150 15% 90%;
+
+    --popover: 160 8% 10%;
+    --popover-foreground: 150 15% 90%;
+
+    --primary: 155 70% 45%;
+    --primary-foreground: 160 10% 6%;
+
+    --secondary: 160 6% 14%;
+    --secondary-foreground: 150 12% 78%;
+
+    --muted: 160 6% 16%;
+    --muted-foreground: 155 6% 46%;
+
+    --accent: 155 70% 45%;
+    --accent-foreground: 160 10% 6%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 150 15% 98%;
+
+    --border: 160 6% 18%;
+    --input: 160 6% 18%;
+    --ring: 155 70% 45%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 160 8% 10%;
+    --sidebar-foreground: 150 12% 78%;
+    --sidebar-primary: 155 70% 45%;
+    --sidebar-primary-foreground: 160 10% 6%;
+    --sidebar-accent: 160 6% 16%;
+    --sidebar-accent-foreground: 150 12% 78%;
+    --sidebar-border: 160 6% 18%;
+    --sidebar-ring: 155 70% 45%;
+
+    /* Custom tokens */
+    --glow: 155 70% 45%;
+    --glow-muted: 155 40% 25%;
+    --surface-elevated: 160 6% 12%;
+    --gradient-primary: linear-gradient(135deg, hsl(155 70% 45%), hsl(165 60% 35%));
+    --gradient-subtle: linear-gradient(180deg, hsl(160 8% 10%), hsl(160 10% 6%));
+    --shadow-glow: 0 0 40px -10px hsl(155 70% 45% / 0.3);
+    --shadow-card: 0 8px 32px -8px hsl(160 10% 2% / 0.6);
+
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(155 70% 45%), hsl(165 55% 35%));
+  }
+
+  .glow-border {
+    box-shadow: 0 0 0 1px hsl(155 70% 45% / 0.15), var(--shadow-glow);
+  }
+
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl;
+    border: 1px solid hsl(160 6% 20% / 0.6);
+  }
+}

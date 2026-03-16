@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotesApp Auth Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover { background: #45a049; }
+        button.secondary {
+            background: #2196F3;
+        }
+        button.secondary:hover { background: #1976D2; }
+        button.danger {
+            background: #f44336;
+        }
+        button.danger:hover { background: #d32f2f; }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea { min-height: 100px; }
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success { background: #e8f5e9; color: #2e7d32; }
+        .status.error { background: #ffebee; color: #c62828; }
+        .status.info { background: #e3f2fd; color: #1565c0; }
+        .hidden { display: none; }
+        .api-key-display {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .api-key-display code {
+            background: #ffecb3;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th { background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <h1>🔐 NotesApp Authentication Test</h1>
+    
+    <!-- Config Section -->
+    <div class="card">
+        <h2>⚙️ Configuration</h2>
+        <label>API Base URL:</label>
+        <input type="text" id="apiBaseUrl" value="http://localhost:8000" />
+        <label>Supabase URL:</label>
+        <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co" />
+        <label>Supabase Anon Key:</label>
+        <input type="text" id="supabaseAnonKey" placeholder="eyJ..." />
+        <button onclick="initSupabase()">Initialize Supabase</button>
+        <button class="secondary" onclick="loadConfig()">Load from API</button>
+        <div id="configStatus"></div>
+    </div>
+
+    <!-- Auth Section (before login) -->
+    <div class="card" id="authSection">
+        <h2>🔑 Authentication</h2>
+        
+        <h3>Google OAuth</h3>
+        <button onclick="signInWithGoogle()">Sign in with Google</button>
+        
+        <h3>Email/Password</h3>
+        <input type="email" id="email" placeholder="Email" />
+        <input type="password" id="password" placeholder="Password" />
+        <button onclick="signUp()">Sign Up</button>
+        <button class="secondary" onclick="signIn()">Sign In</button>
+        
+        <h3>API Key (for testing without Supabase)</h3>
+        <input type="text" id="testApiKey" placeholder="na_..." />
+        <button onclick="testWithApiKey()">Test with API Key</button>
+        
+        <div id="authStatus"></div>
+    </div>
+
+    <!-- User Section (after login) -->
+    <div class="card hidden" id="userSection">
+        <h2>👤 Current User</h2>
+        <div id="userInfo"></div>
+        <button class="danger" onclick="signOut()">Sign Out</button>
+    </div>
+
+    <!-- API Key Management -->
+    <div class="card hidden" id="apiKeySection">
+        <h2>🔑 API Key Management</h2>
+        
+        <h3>Create New API Key</h3>
+        <input type="text" id="keyName" placeholder="Key name (e.g., 'MCP Server')" />
+        <button onclick="createApiKey()">Create API Key</button>
+        
+        <div id="newKeyDisplay" class="hidden api-key-display">
+            <strong>⚠️ Save this key now - you won't see it again!</strong><br><br>
+            <code id="newKeyValue"></code>
+        </div>
+        
+        <h3>Your API Keys</h3>
+        <button class="secondary" onclick="listApiKeys()">Refresh List</button>
+        <table id="apiKeysTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Prefix</th>
+                    <th>Created</th>
+                    <th>Last Used</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="apiKeysList"></tbody>
+        </table>
+    </div>
+
+    <!-- Test API Endpoints -->
+    <div class="card hidden" id="testSection">
+        <h2>🧪 Test API Endpoints</h2>
+        <p style="color: #666; font-size: 14px;">Edit the JSON request bodies below before clicking the buttons. GET endpoints with no body show query params.</p>
+        
+        <!-- Notes Endpoints -->
+        <h3>📝 Notes</h3>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <button onclick="testListNotes()">GET /notes/</button>
+            <button onclick="testGetTags()">GET /notes/tags/all</button>
+        </div>
+        <label>GET/DELETE /notes/{id}:</label>
+        <textarea id="notesGetParams" style="min-height: 60px;">{
+  "note_id": "paste-note-uuid-here"
+}</textarea>
+        <button onclick="testGetNote()">GET Note</button>
+        <button class="danger" onclick="testDeleteNote()">DELETE Note</button>
+        
+        <!-- Search Endpoints -->
+        <h3>🔍 Search</h3>
+        <label>POST /notes/search - Search notes by query:</label>
+        <textarea id="notesSearchBody" style="min-height: 100px;">{
+  "query": "meeting notes",
+  "tag": null,
+  "limit": 5,
+  "deep_search": false
+}</textarea>
+        <p style="color: #666; font-size: 12px; margin: 5px 0;">• query: Search text (required)<br>• tag: Filter by tag (optional)<br>• limit: Max results 1-20 (default 5)<br>• deep_search: Also search chunks (default false)</p>
+        <button onclick="testNotesSearch()">POST /notes/search</button>
+        
+        <label>POST /search - RAG search with AI response:</label>
+        <textarea id="ragSearchBody" style="min-height: 80px;">{
+  "query": "What are my notes about?",
+  "max_results": 10
+}</textarea>
+        <p style="color: #666; font-size: 12px; margin: 5px 0;">• query: Search text (required)<br>• max_results: Max documents 1-50 (default 10)</p>
+        <button onclick="testRAGSearch()">POST /search (RAG)</button>
+        
+        <label>GET /search/analyze - Analyze query intent:</label>
+        <textarea id="analyzeParams" style="min-height: 60px;">{
+  "query": "meeting notes from last week"
+}</textarea>
+        <button onclick="testAnalyzeQuery()">GET /search/analyze</button>
+        
+        <!-- Upload Endpoints -->
+        <h3>📤 Upload</h3>
+        <label>POST /upload/file - Upload a file (multipart/form-data):</label>
+        <textarea id="uploadFileParams" style="min-height: 80px;">{
+  "tag": "test",
+  "title": null
+}</textarea>
+        <p style="color: #666; font-size: 12px; margin: 5px 0;">• tag: Optional category/tag for the file<br>• title: Optional title (if null, AI will generate one)</p>
+        <input type="file" id="uploadFile" style="margin: 10px 0;" />
+        <button onclick="testUploadFile()">POST /upload/file</button>
+        
+        <label>POST /upload/quick-note - Create a quick note:</label>
+        <textarea id="quickNoteBody" style="min-height: 100px;">{
+  "content": "This is a test note created via the auth test page.",
+  "title": "Test Note",
+  "tag": "test"
+}</textarea>
+        <p style="color: #666; font-size: 12px; margin: 5px 0;">• content: Note text (required)<br>• title: Optional title<br>• tag: Optional category/tag</p>
+        <button onclick="testQuickNote()">POST /upload/quick-note</button>
+        
+        <!-- Evaluation (RAGAS) Endpoints -->
+        <h3>📊 Evaluation (RAGAS)</h3>
+        <label>POST /evaluation/run - Run RAGAS evaluation on sampled queries:</label>
+        <textarea id="evalRunBody" style="min-height: 80px;">{
+  "max_samples": 100,
+  "sample_percentage_override": null
+}</textarea>
+        <p style="color: #666; font-size: 12px; margin: 5px 0;">• max_samples: Max queries to evaluate 1-500 (default 100)<br>• sample_percentage_override: Override sample % 1-100 (optional)</p>
+        <button onclick="testRunEvaluation()">POST /evaluation/run</button>
+        
+        <label>GET /evaluation/history - Get evaluation history:</label>
+        <textarea id="evalHistoryParams" style="min-height: 60px;">{
+  "limit": 10
+}</textarea>
+        <p style="color: #666; font-size: 12px; margin: 5px 0;">• limit: Max results (default 10)</p>
+        <button onclick="testEvalHistory()">GET /evaluation/history</button>
+        
+        <div style="display: flex; gap: 10px; margin: 10px 0;">
+            <button onclick="testEvalStats()">GET /evaluation/stats</button>
+            <button onclick="testEvalConfig()">GET /evaluation/config</button>
+        </div>
+        
+        <!-- Logs Endpoints -->
+        <h3>📋 Logs</h3>
+        <label>GET /logs/search - Full-text search across logs:</label>
+        <textarea id="logsSearchParams" style="min-height: 120px;">{
+  "q": "error",
+  "user_id": null,
+  "log_types": null,
+  "start_date": null,
+  "end_date": null,
+  "limit": 50
+}</textarea>
+        <p style="color: #666; font-size: 12px; margin: 5px 0;">• q: Search text (required, min 2 chars)<br>• user_id: Filter by user (optional)<br>• log_types: "activity,operation,error" (optional)<br>• start_date/end_date: ISO format (optional)<br>• limit: Max results 1-200 (default 50)</p>
+        <button onclick="testSearchLogs()">GET /logs/search</button>
+        
+        <label>GET /logs/trace/{id} - Get logs by correlation ID:</label>
+        <textarea id="logsTraceParams" style="min-height: 60px;">{
+  "correlation_id": "paste-correlation-id-here"
+}</textarea>
+        <button onclick="testGetTrace()">GET /logs/trace/{id}</button>
+        
+        <!-- Dashboard Endpoints -->
+        <h3>📈 Dashboard</h3>
+        <label>Dashboard endpoints - Common params:</label>
+        <textarea id="dashboardParams" style="min-height: 80px;">{
+  "period": "last_24h",
+  "interval": "hour"
+}</textarea>
+        <p style="color: #666; font-size: 12px; margin: 5px 0;">• period: "last_hour", "last_24h", "last_7d", "last_30d" (default "last_24h")<br>• interval: "hour" or "day" (for activity endpoint only)</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0;">
+            <button onclick="testDashboardSummary()">GET /dashboard/summary</button>
+            <button onclick="testDashboardActivity()">GET /dashboard/activity</button>
+            <button onclick="testDashboardPerformance()">GET /dashboard/performance</button>
+            <button onclick="testDashboardHealth()">GET /dashboard/health</button>
+        </div>
+        
+        <!-- Admin Endpoints -->
+        <h3>⚙️ Admin</h3>
+        <div style="display: flex; gap: 10px; margin: 10px 0;">
+            <button onclick="testSystemInfo()">GET /admin/system-info</button>
+            <button onclick="testArchiveStats()">GET /admin/archive-stats</button>
+        </div>
+        
+        <h3>Response</h3>
+        <pre id="apiResponse">// Response will appear here</pre>
+    </div>
+
+    <script>
+        let supabaseClient = null;
+        let currentToken = null;
+        let currentApiKey = null;
+        let currentUser = null;
+
+        // Parse hash fragment to extract tokens (for OAuth callback)
+        function parseHashParams(hash) {
+            const params = {};
+            hash.substring(1).split('&').forEach(pair => {
+                const [key, value] = pair.split('=');
+                if (key) params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+            });
+            return params;
+        }
+
+        // Initialize Supabase client
+        function initSupabase() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseAnonKey').value;
+            
+            if (!url || !key) {
+                showStatus('configStatus', 'Please enter Supabase URL and Anon Key', 'error');
+                return;
+            }
+            
+            try {
+                // Create a minimal Supabase client just for OAuth redirect
+                supabaseClient = window.supabase.createClient(url, key, {
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false,
+                        detectSessionInUrl: false
+                    }
+                });
+                showStatus('configStatus', '✅ Supabase initialized (for OAuth only)', 'success');
+            } catch (e) {
+                showStatus('configStatus', 'Failed to initialize: ' + e.message, 'error');
+            }
+        }
+
+        // Load config from API
+        async function loadConfig() {
+            console.log('loadConfig called');
+            try {
+                const baseUrl = document.getElementById('apiBaseUrl').value;
+                console.log('Fetching from:', baseUrl + '/api/v1/auth/config');
+                const response = await fetch(`${baseUrl}/api/v1/auth/config`);
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Data:', data);
+                
+                if (response.ok) {
+                    document.getElementById('supabaseUrl').value = data.supabase_url;
+                    document.getElementById('supabaseAnonKey').value = data.supabase_anon_key;
+                    showStatus('configStatus', '✅ Config loaded from API', 'success');
+                } else {
+                    showStatus('configStatus', 'Failed: ' + data.detail, 'error');
+                }
+            } catch (e) {
+                console.error('loadConfig error:', e);
+                showStatus('configStatus', 'Failed to load config: ' + e.message, 'error');
+            }
+        }
+
+        // Handle auth state changes (works with session object or just token)
+        function handleAuthChange(session) {
+            if (session) {
+                currentToken = session.access_token;
+                currentUser = session.user;
+                showLoggedIn(session.user);
+            } else {
+                currentToken = null;
+                currentUser = null;
+                showLoggedOut();
+            }
+        }
+
+        // Handle direct token login (from OAuth callback)
+        async function handleTokenLogin(accessToken) {
+            currentToken = accessToken;
+            showStatus('authStatus', '✅ Logged in with OAuth token', 'success');
+            
+            // Get user info from our API
+            try {
+                const baseUrl = document.getElementById('apiBaseUrl').value;
+                const response = await fetch(`${baseUrl}/api/v1/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    currentUser = { id: userData.user_id, email: userData.email };
+                    showLoggedIn(currentUser);
+                } else {
+                    showStatus('authStatus', 'Failed to get user info', 'error');
+                }
+            } catch (e) {
+                showStatus('authStatus', 'Error: ' + e.message, 'error');
+            }
+        }
+
+        function showLoggedIn(user) {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('userSection').classList.remove('hidden');
+            document.getElementById('apiKeySection').classList.remove('hidden');
+            document.getElementById('testSection').classList.remove('hidden');
+            
+            document.getElementById('userInfo').innerHTML = `
+                <p><strong>User ID:</strong> ${user.id || user.user_id}</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Provider:</strong> ${user.app_metadata?.provider || 'OAuth'}</p>
+            `;
+            
+            listApiKeys();
+        }
+
+        function showLoggedOut() {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('userSection').classList.add('hidden');
+            document.getElementById('apiKeySection').classList.add('hidden');
+            document.getElementById('testSection').classList.add('hidden');
+        }
+
+        // Auth methods
+        async function signInWithGoogle() {
+            if (!supabaseClient) {
+                showStatus('authStatus', 'Please initialize Supabase first', 'error');
+                return;
+            }
+            
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.href
+                }
+            });
+            
+            if (error) {
+                showStatus('authStatus', 'Google sign-in failed: ' + error.message, 'error');
+            }
+        }
+
+        async function signUp() {
+            if (!supabaseClient) {
+                showStatus('authStatus', 'Please initialize Supabase first', 'error');
+                return;
+            }
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password
+            });
+            
+            if (error) {
+                showStatus('authStatus', 'Sign up failed: ' + error.message, 'error');
+            } else {
+                showStatus('authStatus', '✅ Check your email for confirmation link!', 'success');
+            }
+        }
+
+        async function signIn() {
+            if (!supabaseClient) {
+                showStatus('authStatus', 'Please initialize Supabase first', 'error');
+                return;
+            }
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password
+            });
+            
+            if (error) {
+                showStatus('authStatus', 'Sign in failed: ' + error.message, 'error');
+            }
+        }
+
+        async function signOut() {
+            if (supabaseClient) {
+                await supabaseClient.auth.signOut();
+            }
+            currentToken = null;
+            currentApiKey = null;
+            showLoggedOut();
+        }
+
+        // Test with API Key (no Supabase needed)
+        function testWithApiKey() {
+            const apiKey = document.getElementById('testApiKey').value;
+            if (!apiKey) {
+                showStatus('authStatus', 'Please enter an API key', 'error');
+                return;
+            }
+            
+            currentApiKey = apiKey;
+            currentToken = null;
+            
+            // Show test section without full login
+            document.getElementById('testSection').classList.remove('hidden');
+            document.getElementById('apiKeySection').classList.remove('hidden');
+            
+            showStatus('authStatus', '✅ Using API key for authentication', 'success');
+            testAuthMe();
+            listApiKeys();
+        }
+
+        // Get auth headers for API calls
+        function getAuthHeaders() {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (currentToken) {
+                headers['Authorization'] = `Bearer ${currentToken}`;
+            } else if (currentApiKey) {
+                headers['X-API-Key'] = currentApiKey;
+            }
+            return headers;
+        }
+
+        // API helper
+        async function apiCall(method, endpoint, body = null) {
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            const headers = getAuthHeaders();
+            
+            console.log(`API Call: ${method} ${baseUrl}${endpoint}`);
+            console.log('Headers:', headers);
+            if (body) console.log('Body:', body);
+            
+            const options = { method, headers };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+            
+            const response = await fetch(`${baseUrl}${endpoint}`, options);
+            const text = await response.text();
+            console.log('Response text:', text.substring(0, 500));
+            
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                data = { error: 'Failed to parse response', raw: text.substring(0, 500) };
+            }
+            
+            return { status: response.status, data };
+        }
+
+        // Test endpoints
+        async function testAuthMe() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/auth/me');
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/auth/me (${status})\n\n` + JSON.stringify(data, null, 2);
+                    
+                if (status === 200) {
+                    // Update user info if using API key
+                    if (currentApiKey && !currentToken) {
+                        document.getElementById('userInfo').innerHTML = `
+                            <p><strong>User ID:</strong> ${data.user_id}</p>
+                            <p><strong>Auth Method:</strong> ${data.auth_method}</p>
+                            <p><strong>Is Admin:</strong> ${data.is_admin}</p>
+                            <p><strong>Scopes:</strong> ${data.scopes.join(', ')}</p>
+                        `;
+                        document.getElementById('userSection').classList.remove('hidden');
+                    }
+                }
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testListNotes() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/notes/');
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/notes/ (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testGetNote() {
+            try {
+                const params = JSON.parse(document.getElementById('notesGetParams').value);
+                const noteId = params.note_id;
+                if (!noteId || noteId === 'paste-note-uuid-here') { alert('Enter a valid Note ID in the JSON'); return; }
+                const { status, data } = await apiCall('GET', `/api/v1/notes/${noteId}`);
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/notes/${noteId} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testDeleteNote() {
+            try {
+                const params = JSON.parse(document.getElementById('notesGetParams').value);
+                const noteId = params.note_id;
+                if (!noteId || noteId === 'paste-note-uuid-here') { alert('Enter a valid Note ID in the JSON'); return; }
+                if (!confirm('Delete this note?')) return;
+                const { status, data } = await apiCall('DELETE', `/api/v1/notes/${noteId}`);
+                document.getElementById('apiResponse').textContent = 
+                    `DELETE /api/v1/notes/${noteId} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testGetTags() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/notes/tags/all');
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/notes/tags/all (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testNotesSearch() {
+            try {
+                const body = JSON.parse(document.getElementById('notesSearchBody').value);
+                const { status, data } = await apiCall('POST', '/api/v1/notes/search', body);
+                document.getElementById('apiResponse').textContent = 
+                    `POST /api/v1/notes/search (${status})\n\nRequest:\n${JSON.stringify(body, null, 2)}\n\nResponse:\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testRAGSearch() {
+            try {
+                document.getElementById('apiResponse').textContent = 'Searching... (RAG agent is processing)';
+                const body = JSON.parse(document.getElementById('ragSearchBody').value);
+                console.log('RAG Search request:', body);
+                const { status, data } = await apiCall('POST', '/api/v1/search', body);
+                console.log('RAG Search response:', status, data);
+                document.getElementById('apiResponse').textContent = 
+                    `POST /api/v1/search (RAG) (${status})\n\nRequest:\n${JSON.stringify(body, null, 2)}\n\nResponse:\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                console.error('RAG Search error:', e);
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testAnalyzeQuery() {
+            try {
+                const params = JSON.parse(document.getElementById('analyzeParams').value);
+                const { status, data } = await apiCall('GET', `/api/v1/search/analyze?query=${encodeURIComponent(params.query)}`);
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/search/analyze?query=${params.query} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testUploadFile() {
+            try {
+                const fileInput = document.getElementById('uploadFile');
+                if (!fileInput.files[0]) { alert('Select a file first'); return; }
+                
+                const params = JSON.parse(document.getElementById('uploadFileParams').value);
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                if (params.tag) formData.append('tag', params.tag);
+                if (params.title) formData.append('title', params.title);
+                
+                const baseUrl = document.getElementById('apiBaseUrl').value;
+                const headers = getAuthHeaders();
+                delete headers['Content-Type']; // Let browser set multipart boundary
+                
+                const response = await fetch(`${baseUrl}/api/v1/upload/file`, {
+                    method: 'POST',
+                    headers,
+                    body: formData
+                });
+                const data = await response.json();
+                document.getElementById('apiResponse').textContent = 
+                    `POST /api/v1/upload/file (${response.status})\n\nFile: ${fileInput.files[0].name}\nParams: ${JSON.stringify(params, null, 2)}\n\nResponse:\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testQuickNote() {
+            try {
+                const body = JSON.parse(document.getElementById('quickNoteBody').value);
+                const { status, data } = await apiCall('POST', '/api/v1/upload/quick-note', body);
+                document.getElementById('apiResponse').textContent = 
+                    `POST /api/v1/upload/quick-note (${status})\n\nRequest:\n${JSON.stringify(body, null, 2)}\n\nResponse:\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        // Evaluation (RAGAS) endpoints
+        async function testRunEvaluation() {
+            try {
+                const body = JSON.parse(document.getElementById('evalRunBody').value);
+                document.getElementById('apiResponse').textContent = 'Running evaluation... (this may take a moment)';
+                const { status, data } = await apiCall('POST', '/api/v1/evaluation/run', body);
+                document.getElementById('apiResponse').textContent = 
+                    `POST /api/v1/evaluation/run (${status})\n\nRequest:\n${JSON.stringify(body, null, 2)}\n\nResponse:\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testEvalHistory() {
+            try {
+                const params = JSON.parse(document.getElementById('evalHistoryParams').value);
+                const queryStr = `?limit=${params.limit || 10}`;
+                const { status, data } = await apiCall('GET', `/api/v1/evaluation/history${queryStr}`);
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/evaluation/history${queryStr} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testEvalStats() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/evaluation/stats');
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/evaluation/stats (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testEvalConfig() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/evaluation/config');
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/evaluation/config (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        // Logs endpoints
+        async function testSearchLogs() {
+            try {
+                const params = JSON.parse(document.getElementById('logsSearchParams').value);
+                if (!params.q) { alert('Search text (q) is required'); return; }
+                let queryParts = [`q=${encodeURIComponent(params.q)}`];
+                if (params.user_id) queryParts.push(`user_id=${params.user_id}`);
+                if (params.log_types) queryParts.push(`log_types=${params.log_types}`);
+                if (params.start_date) queryParts.push(`start_date=${params.start_date}`);
+                if (params.end_date) queryParts.push(`end_date=${params.end_date}`);
+                if (params.limit) queryParts.push(`limit=${params.limit}`);
+                const queryStr = '?' + queryParts.join('&');
+                const { status, data } = await apiCall('GET', `/api/v1/logs/search${queryStr}`);
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/logs/search${queryStr} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testGetTrace() {
+            try {
+                const params = JSON.parse(document.getElementById('logsTraceParams').value);
+                const traceId = params.correlation_id;
+                if (!traceId || traceId === 'paste-correlation-id-here') { alert('Enter a valid Correlation ID in the JSON'); return; }
+                const { status, data } = await apiCall('GET', `/api/v1/logs/trace/${traceId}`);
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/logs/trace/${traceId} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        // Dashboard endpoints
+        async function testDashboardSummary() {
+            try {
+                const params = JSON.parse(document.getElementById('dashboardParams').value);
+                const queryStr = params.period ? `?period=${params.period}` : '';
+                const { status, data } = await apiCall('GET', `/api/v1/dashboard/summary${queryStr}`);
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/dashboard/summary${queryStr} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testDashboardActivity() {
+            try {
+                const params = JSON.parse(document.getElementById('dashboardParams').value);
+                let queryParts = [];
+                if (params.period) queryParts.push(`period=${params.period}`);
+                if (params.interval) queryParts.push(`interval=${params.interval}`);
+                const queryStr = queryParts.length > 0 ? '?' + queryParts.join('&') : '';
+                const { status, data } = await apiCall('GET', `/api/v1/dashboard/activity${queryStr}`);
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/dashboard/activity${queryStr} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testDashboardPerformance() {
+            try {
+                const params = JSON.parse(document.getElementById('dashboardParams').value);
+                const queryStr = params.period ? `?period=${params.period}` : '';
+                const { status, data } = await apiCall('GET', `/api/v1/dashboard/performance${queryStr}`);
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/dashboard/performance${queryStr} (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testDashboardHealth() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/dashboard/health');
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/dashboard/health (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        // Admin endpoints
+        async function testSystemInfo() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/admin/system-info');
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/admin/system-info (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function testArchiveStats() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/admin/archive-stats');
+                document.getElementById('apiResponse').textContent = 
+                    `GET /api/v1/admin/archive-stats (${status})\n\n` + JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('apiResponse').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        // API Key Management
+        async function createApiKey() {
+            try {
+                const name = document.getElementById('keyName').value;
+                if (!name) {
+                    alert('Please enter a key name');
+                    return;
+                }
+                
+                const { status, data } = await apiCall('POST', '/api/v1/auth/api-keys', {
+                    name,
+                    scopes: ['read', 'write']
+                });
+                
+                if (status === 200) {
+                    document.getElementById('newKeyValue').textContent = data.api_key;
+                    document.getElementById('newKeyDisplay').classList.remove('hidden');
+                    listApiKeys();
+                } else {
+                    alert('Failed to create key: ' + JSON.stringify(data));
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function listApiKeys() {
+            try {
+                const { status, data } = await apiCall('GET', '/api/v1/auth/api-keys');
+                
+                const tbody = document.getElementById('apiKeysList');
+                tbody.innerHTML = '';
+                
+                if (status === 200 && Array.isArray(data)) {
+                    data.forEach(key => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${key.name}</td>
+                            <td><code>${key.key_prefix}...</code></td>
+                            <td>${new Date(key.created_at).toLocaleDateString()}</td>
+                            <td>${key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'Never'}</td>
+                            <td>
+                                <button class="danger" onclick="deleteApiKey('${key.id}')" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to list API keys:', e);
+            }
+        }
+
+        async function deleteApiKey(keyId) {
+            if (!confirm('Are you sure you want to delete this API key?')) return;
+            
+            try {
+                const { status, data } = await apiCall('DELETE', `/api/v1/auth/api-keys/${keyId}`);
+                if (status === 200) {
+                    listApiKeys();
+                } else {
+                    alert('Failed to delete: ' + JSON.stringify(data));
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        // Utility
+        function showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'status ' + type;
+        }
+
+        // Parse hash fragment to extract tokens
+        function parseHashParams(hash) {
+            const params = {};
+            hash.substring(1).split('&').forEach(pair => {
+                const [key, value] = pair.split('=');
+                params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+            });
+            return params;
+        }
+
+        // Check for OAuth redirect and auto-initialize
+        window.onload = async function() {
+            // Check if we have hash params from OAuth redirect
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+                showStatus('authStatus', '🔄 Processing OAuth callback...', 'info');
+                
+                // Parse the tokens from URL hash
+                const hashParams = parseHashParams(window.location.hash);
+                console.log('OAuth hash params:', Object.keys(hashParams));
+                
+                // Auto-load config and use the token directly
+                try {
+                    const baseUrl = document.getElementById('apiBaseUrl').value;
+                    const response = await fetch(`${baseUrl}/api/v1/auth/config`);
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        document.getElementById('supabaseUrl').value = data.supabase_url;
+                        document.getElementById('supabaseAnonKey').value = data.supabase_anon_key;
+                        showStatus('configStatus', '✅ Config loaded', 'success');
+                        
+                        // Use the access token directly - no need for Supabase session management
+                        if (hashParams.access_token) {
+                            // Clear the hash from URL first
+                            history.replaceState(null, '', window.location.pathname);
+                            
+                            // Login with the token
+                            await handleTokenLogin(hashParams.access_token);
+                        }
+                    }
+                } catch (e) {
+                    console.error('OAuth processing error:', e);
+                    showStatus('authStatus', 'Failed to process OAuth: ' + e.message, 'error');
+                }
+            }
+        };
+    </script>
+</body>
+</html>

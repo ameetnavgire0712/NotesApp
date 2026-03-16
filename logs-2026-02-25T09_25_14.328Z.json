@@ -1,0 +1,3918 @@
+[
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] RAG search complete: 2 results, path=hybrid, total=1827ms"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:35.587Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RT13996Q170TNWT1NEE2",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] RAG search complete: 2 results, path=hybrid, total=1827ms",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] RAG search complete: 2 results, path=hybrid, total=1827ms"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] Added view URLs for 2 results"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:35.587Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RT13996Q170TNWT1NEE1",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] Added view URLs for 2 results",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] Added view URLs for 2 results"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] Dedup: 4 → 2 unique documents"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:35.377Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RSTHVKZ0GE1GNF75RYEE",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] Dedup: 4 → 2 unique documents",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] Dedup: 4 → 2 unique documents"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "error",
+      "message": "Relevance verification failed: Error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:35.377Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RSTHVKZ0GE1GNF75RYED",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "level": "error",
+      "error": "Relevance verification failed: Error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "message": "Relevance verification failed: Error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "d9ec749f1af210a7c75e030b09123215",
+      "origin": "fetch",
+      "messageTemplate": "Relevance verification failed: Error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] CONTENT_SEARCH → HYBRID PATH: 4 results"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:35.367Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RST7AADJZHHG6JW8J73X",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] CONTENT_SEARCH → HYBRID PATH: 4 results",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] CONTENT_SEARCH → HYBRID PATH: 4 results"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Reranking completed in 495ms, input=23, output=23"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:35.367Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RST7AADJZHHG6JW8J73W",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Reranking completed in 495ms, input=23, output=23",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Reranking completed in 495ms, input=23, output=23"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Keyword search: 1 matches in 369ms"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:34.853Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RSA5ZRMZHDB9TYVXA6G3",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Keyword search: 1 matches in 369ms",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Keyword search: 1 matches in 369ms"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Cached embedding for: \"elsa marketing assistant...\""
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:34.484Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RRYMTT84D8SBFGQ78PCG",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Cached embedding for: \"elsa marketing assistant...\"",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Cached embedding for: \"elsa marketing assistant...\""
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Embedding generated in 259ms, dim=768"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:34.484Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RRYMTT84D8SBFGQ78PCF",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Embedding generated in 259ms, dim=768",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Embedding generated in 259ms, dim=768"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Cache MISS for query: \"elsa marketing assistant...\""
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:34.225Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RRPHR51RGFMQP8GK0RCA",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Cache MISS for query: \"elsa marketing assistant...\"",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Cache MISS for query: \"elsa marketing assistant...\""
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] Intent: CONTENT_SEARCH (LOW) — Fallback due to error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:34.014Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RRFYKPXTKJHXV8S6Q692",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] Intent: CONTENT_SEARCH (LOW) — Fallback due to error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] Intent: CONTENT_SEARCH (LOW) — Fallback due to error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "error",
+      "message": "Intent classification failed, falling back to CONTENT_SEARCH: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:34.014Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RRFYKPXTKJHXV8S6Q691",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "level": "error",
+      "error": "Intent classification failed, falling back to CONTENT_SEARCH: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "message": "Intent classification failed, falling back to CONTENT_SEARCH: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "ae1f10b783783eaf3c66205687cbe61f",
+      "origin": "fetch",
+      "messageTemplate": "Intent classification failed, falling back to CONTENT_SEARCH: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] Tags: 15 available"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.974Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RREPTGFAG41MPD00DMWT",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] Tags: 15 available",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] Tags: 15 available"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Tags cache HIT for user 2649b4d0"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.974Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RREPTGFAG41MPD00DMWS",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Tags cache HIT for user 2649b4d0",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Tags cache HIT for user 2649b4d0"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] Spell check: DISABLED (using original query)"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.760Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RR80HZYPD21B00G13FND",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] Spell check: DISABLED (using original query)",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] Spell check: DISABLED (using original query)"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] RAG search: query=\"elsa marketing assistant...\", user=2649b4d0"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.760Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RR80HZYPD21B00G13FNC",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] RAG search: query=\"elsa marketing assistant...\", user=2649b4d0",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] RAG search: query=\"elsa marketing assistant...\", user=2649b4d0"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772011412215_0mcf9er] RAG auth: method=jwt, user=2649b4d0, auth_ms=1545, source=dashboard"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.760Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RR80HZYPD21B00G13FNB",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772011412215_0mcf9er] RAG auth: method=jwt, user=2649b4d0, auth_ms=1545, source=dashboard",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772011412215_0mcf9er] RAG auth: method=jwt, user=2649b4d0, auth_ms=1545, source=dashboard"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] JWT result: SUCCESS"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.760Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RR80HZYPD21B00G13FNA",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] JWT result: SUCCESS",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] JWT <*>: <*>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Session exists result: true"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.760Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RR80HZYPD21B00G13FN9",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Session exists result: true",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Session exists result: true"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Session check response status: 200"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.760Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RR80HZYPD21B00G13FN8",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Session check response status: 200",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Session check response status: 200"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Checking session exists via RPC..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.316Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQT4JAEVNZTSYQ675B44",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Checking session exists via RPC...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Checking session exists via RPC..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] JWT session_id: dcf1acd9-6f32-490e-bae0-ad22fbd40d1d"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.316Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQT4JAEVNZTSYQ675B43",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] JWT session_id: dcf1acd9-6f32-490e-bae0-ad22fbd40d1d",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] JWT session_id: <UUID>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Supabase API verified user: 2649b4d0 email: ameet.navgire@gmail.com"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.316Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQT4JAEVNZTSYQ675B42",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Supabase API verified user: 2649b4d0 email: ameet.navgire@gmail.com",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Supabase API verified user: 2649b4d0 email: <EMAIL>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Supabase response status: 200"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:33.316Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQT4JAEVNZTSYQ675B41",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Supabase response status: 200",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Supabase response status: 200"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:32.215Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQA9E72N2MHR8FXRRNA3",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:32.215Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQA9E72N2MHR8FXRRNA2",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Validating JWT token, length: 1376"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:32.215Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQA9E72N2MHR8FXRRNA1",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Validating JWT token, length: 1376",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Validating JWT token, length: 1376"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Headers - X-API-Key: none"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:32.215Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQA9E72N2MHR8FXRRNA0",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Headers - X-API-Key: none",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Headers - X-API-Key: none"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:32.215Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa"
+    },
+    "$metadata": {
+      "id": "01KJA1RQA9E72N2MHR8FXRRN9Z",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "info",
+      "message": "POST https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:32.215Z",
+    "$workers": {
+      "event": {
+        "request": {
+          "cf": {
+            "requestHeaderNames": {},
+            "isEUCountry": false,
+            "httpProtocol": "HTTP/3",
+            "clientAcceptEncoding": "gzip, deflate, br",
+            "requestPriority": "",
+            "colo": "HKG",
+            "asOrganization": "Bharti Airtel Limited",
+            "country": "IN",
+            "city": "Pimpri",
+            "continent": "AS",
+            "region": "Maharashtra",
+            "regionCode": "MH",
+            "timezone": "Asia/Kolkata",
+            "longitude": "73.80696",
+            "latitude": "18.62292",
+            "postalCode": "412303",
+            "tlsVersion": "TLSv1.3",
+            "tlsCipher": "AEAD-AES128-GCM-SHA256",
+            "tlsClientRandom": "2qRCfLRBL6LzjXb1ISMzGaVLDoNAgvKzF/n6Q6eoq84=",
+            "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+            "tlsClientExtensionsSha1": "gVTUK2QwtWCC10FPEAJIsPa+aK4=",
+            "tlsClientExtensionsSha1Le": "",
+            "tlsClientHelloLength": "1724",
+            "tlsClientAuth": {
+              "certPresented": "0",
+              "certVerified": "NONE",
+              "certRevoked": "0",
+              "certIssuerDN": "",
+              "certSubjectDN": "",
+              "certIssuerDNRFC2253": "",
+              "certSubjectDNRFC2253": "",
+              "certIssuerDNLegacy": "",
+              "certSubjectDNLegacy": "",
+              "certSerial": "",
+              "certIssuerSerial": "",
+              "certSKI": "",
+              "certIssuerSKI": "",
+              "certFingerprintSHA1": "",
+              "certFingerprintSHA256": "",
+              "certNotBefore": "",
+              "certNotAfter": ""
+            },
+            "verifiedBotCategory": "",
+            "edgeRequestKeepAliveStatus": 1,
+            "clientTcpRtt": 0,
+            "asn": 45609
+          },
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "headers": {
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9,mr;q=0.8",
+            "authorization": "********",
+            "cf-connecting-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d3624fe5b6884fa",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "connection": "Keep-Alive",
+            "content-length": "80",
+            "content-type": "application/json",
+            "host": "notesapp-vector-search.monocle0712.workers.dev",
+            "origin": "https://notesapp-frontend.pages.dev",
+            "priority": "u=1, i",
+            "referer": "https://notesapp-frontend.pages.dev/",
+            "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "x-forwarded-proto": "https",
+            "x-real-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83"
+          },
+          "path": "/rag-search-auth"
+        },
+        "rayId": "9d3624fe5b6884fa",
+        "response": {
+          "status": 200
+        }
+      },
+      "diagnosticsChannelEvents": [],
+      "truncated": false,
+      "scriptName": "notesapp-vector-search",
+      "outcome": "ok",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fe5b6884fa",
+      "cpuTimeMs": 24,
+      "wallTimeMs": 3998
+    },
+    "$metadata": {
+      "id": "01KJA1RQA9E72N2MHR8FXRRN9Y",
+      "requestId": "9d3624fe5b6884fa",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "level": "info",
+      "message": "POST https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker-event",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "POST https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "info",
+      "message": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:23:32.078Z",
+    "$workers": {
+      "event": {
+        "request": {
+          "cf": {
+            "requestHeaderNames": {},
+            "isEUCountry": false,
+            "httpProtocol": "HTTP/3",
+            "clientAcceptEncoding": "gzip, deflate, br",
+            "requestPriority": "",
+            "colo": "HKG",
+            "asOrganization": "Bharti Airtel Limited",
+            "country": "IN",
+            "city": "Pimpri",
+            "continent": "AS",
+            "region": "Maharashtra",
+            "regionCode": "MH",
+            "timezone": "Asia/Kolkata",
+            "longitude": "73.80696",
+            "latitude": "18.62292",
+            "postalCode": "412303",
+            "tlsVersion": "TLSv1.3",
+            "tlsCipher": "AEAD-AES128-GCM-SHA256",
+            "tlsClientRandom": "2qRCfLRBL6LzjXb1ISMzGaVLDoNAgvKzF/n6Q6eoq84=",
+            "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+            "tlsClientExtensionsSha1": "gVTUK2QwtWCC10FPEAJIsPa+aK4=",
+            "tlsClientExtensionsSha1Le": "",
+            "tlsClientHelloLength": "1724",
+            "tlsClientAuth": {
+              "certPresented": "0",
+              "certVerified": "NONE",
+              "certRevoked": "0",
+              "certIssuerDN": "",
+              "certSubjectDN": "",
+              "certIssuerDNRFC2253": "",
+              "certSubjectDNRFC2253": "",
+              "certIssuerDNLegacy": "",
+              "certSubjectDNLegacy": "",
+              "certSerial": "",
+              "certIssuerSerial": "",
+              "certSKI": "",
+              "certIssuerSKI": "",
+              "certFingerprintSHA1": "",
+              "certFingerprintSHA256": "",
+              "certNotBefore": "",
+              "certNotAfter": ""
+            },
+            "verifiedBotCategory": "",
+            "edgeRequestKeepAliveStatus": 1,
+            "clientTcpRtt": 0,
+            "asn": 45609
+          },
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "OPTIONS",
+          "headers": {
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9,mr;q=0.8",
+            "access-control-request-headers": "authorization,content-type",
+            "access-control-request-method": "POST",
+            "cf-connecting-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d3624fd6b2f84fa",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "connection": "Keep-Alive",
+            "host": "notesapp-vector-search.monocle0712.workers.dev",
+            "origin": "https://notesapp-frontend.pages.dev",
+            "priority": "u=1, i",
+            "referer": "https://notesapp-frontend.pages.dev/",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "transfer-encoding": "chunked",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "x-forwarded-proto": "https",
+            "x-real-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83"
+          },
+          "path": "/rag-search-auth"
+        },
+        "rayId": "9d3624fd6b2f84fa",
+        "response": {
+          "status": 204
+        }
+      },
+      "diagnosticsChannelEvents": [],
+      "truncated": false,
+      "scriptName": "notesapp-vector-search",
+      "outcome": "ok",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3624fd6b2f84fa",
+      "cpuTimeMs": 1,
+      "wallTimeMs": 1
+    },
+    "$metadata": {
+      "id": "01KJA1RPKE84KT98HS2EKJ4MQT",
+      "requestId": "9d3624fd6b2f84fa",
+      "trigger": "OPTIONS /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "level": "info",
+      "message": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker-event",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] RAG search complete: 1 results, path=hybrid, total=2619ms"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:47.178Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16VDAJM0N15AEKMV78HNH",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] RAG search complete: 1 results, path=hybrid, total=2619ms",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] RAG search <*>: <*> <*> <*> <*>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] Added view URLs for 1 results"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:47.178Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16VDAJM0N15AEKMV78HNG",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] Added view URLs for 1 results",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] Added view URLs for 1 results"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] Dedup: 3 → 1 unique documents"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:46.962Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16V6JP42308V9EX4AQSYP",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] Dedup: 3 → 1 unique documents",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] Dedup: 3 → 1 unique documents"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "error",
+      "message": "Relevance verification failed: Error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:46.962Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16V6JP42308V9EX4AQSYN",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "level": "error",
+      "error": "Relevance verification failed: Error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "message": "Relevance verification failed: Error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "d9ec749f1af210a7c75e030b09123215",
+      "origin": "fetch",
+      "messageTemplate": "Relevance verification failed: Error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] CONTENT_SEARCH → HYBRID PATH: 3 results"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:46.949Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16V65ET4GH0NGJ6XZ1QDH",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] CONTENT_SEARCH → HYBRID PATH: 3 results",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] CONTENT_SEARCH → HYBRID PATH: 3 results"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Reranking completed in 366ms, input=3, output=3"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:46.949Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16V65ET4GH0NGJ6XZ1QDG",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Reranking completed in 366ms, input=3, output=3",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Reranking completed in 366ms, input=3, output=3"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Keyword search: 2 matches in 390ms"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:46.283Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16THBJ96RGRGKC4S0KDEK",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Keyword search: 2 matches in 390ms",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Keyword search: 2 matches in 390ms"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Cached embedding for: \"chunking methods...\""
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:45.893Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16T55ES77XM7R378D18HH",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Cached embedding for: \"chunking methods...\"",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Cached embedding for: \"chunking methods...\""
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Embedding generated in 259ms, dim=768"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:45.893Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16T55ES77XM7R378D18HG",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Embedding generated in 259ms, dim=768",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Embedding generated in 259ms, dim=768"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "Cache MISS for query: \"chunking methods...\""
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:45.634Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SX2MVSNRZAG5ZHCXAER",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "Cache MISS for query: \"chunking methods...\"",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "Cache MISS for query: \"chunking methods...\""
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] Intent: CONTENT_SEARCH (LOW) — Fallback due to error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:45.420Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SPCXH1VW1VJVWQQ8Z8P",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] Intent: CONTENT_SEARCH (LOW) — Fallback due to error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] Intent: CONTENT_SEARCH (LOW) — Fallback due to error: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "error",
+      "message": "Intent classification failed, falling back to CONTENT_SEARCH: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:45.420Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SPCXH1VW1VJVWQQ8Z8N",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "level": "error",
+      "error": "Intent classification failed, falling back to CONTENT_SEARCH: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "message": "Intent classification failed, falling back to CONTENT_SEARCH: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "ae1f10b783783eaf3c66205687cbe61f",
+      "origin": "fetch",
+      "messageTemplate": "Intent classification failed, falling back to CONTENT_SEARCH: Groq API error: 403 - {\"error\":{\"message\":\"Forbidden\"}}"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] Tags: 15 available"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:45.399Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SNQ9FMR3KN2PX2J1BHM",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] Tags: 15 available",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] Tags: 15 available"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] Spell check: DISABLED (using original query)"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.559Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WJ",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] Spell check: DISABLED (using original query)",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] Spell check: DISABLED (using original query)"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] RAG search: query=\"chunking methods...\", user=2649b4d0"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.559Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WH",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] RAG search: query=\"chunking methods...\", user=2649b4d0",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] RAG search: <*>\"<*> <*>...\"<*> <*>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010824064_5no60sp] RAG auth: method=jwt, user=2649b4d0, auth_ms=495, source=dashboard"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.559Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WG",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010824064_5no60sp] RAG auth: method=jwt, user=2649b4d0, auth_ms=495, source=dashboard",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010824064_5no60sp] RAG auth: method=jwt, user=2649b4d0, auth_ms=495, source=dashboard"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] JWT result: SUCCESS"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.559Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WF",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] JWT result: SUCCESS",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] JWT <*>: <*>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Session exists result: true"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.559Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WE",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Session exists result: true",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Session exists result: true"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Session check response status: 200"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.559Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WD",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Session check response status: 200",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Session check response status: 200"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Checking session exists via RPC..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.339Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WC",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Checking session exists via RPC...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Checking session exists via RPC..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] JWT session_id: dcf1acd9-6f32-490e-bae0-ad22fbd40d1d"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.339Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WB",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] JWT session_id: dcf1acd9-6f32-490e-bae0-ad22fbd40d1d",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] JWT session_id: <UUID>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Supabase API verified user: 2649b4d0 email: ameet.navgire@gmail.com"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.339Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9WA",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Supabase API verified user: 2649b4d0 email: ameet.navgire@gmail.com",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Supabase API verified user: 2649b4d0 email: <EMAIL>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Supabase response status: 200"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.339Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9W9",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Supabase response status: 200",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Supabase response status: 200"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.064Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9W8",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.064Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9W7",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Validating JWT token, length: 1376"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.064Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9W6",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Validating JWT token, length: 1376",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Validating JWT token, length: 1376"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Headers - X-API-Key: none"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.064Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9W5",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Headers - X-API-Key: none",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Headers - X-API-Key: none"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.064Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "path": "/rag-search-auth"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8"
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9W4",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "info",
+      "message": "POST https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:44.064Z",
+    "$workers": {
+      "event": {
+        "request": {
+          "cf": {
+            "requestHeaderNames": {},
+            "isEUCountry": false,
+            "httpProtocol": "HTTP/3",
+            "clientAcceptEncoding": "gzip, deflate, br",
+            "requestPriority": "",
+            "colo": "HKG",
+            "asOrganization": "Bharti Airtel Limited",
+            "country": "IN",
+            "city": "Pimpri",
+            "continent": "AS",
+            "region": "Maharashtra",
+            "regionCode": "MH",
+            "timezone": "Asia/Kolkata",
+            "longitude": "73.80696",
+            "latitude": "18.62292",
+            "postalCode": "412303",
+            "tlsVersion": "TLSv1.3",
+            "tlsCipher": "AEAD-AES128-GCM-SHA256",
+            "tlsClientRandom": "1e02syBryNusH1QaDGCUHXu5xztbG0yTQLCIFYJ+2rc=",
+            "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+            "tlsClientExtensionsSha1": "6Xb8OGzwCe0KsUDKPFSSm2+6r+M=",
+            "tlsClientExtensionsSha1Le": "",
+            "tlsClientHelloLength": "1981",
+            "tlsClientAuth": {
+              "certPresented": "0",
+              "certVerified": "NONE",
+              "certRevoked": "0",
+              "certIssuerDN": "",
+              "certSubjectDN": "",
+              "certIssuerDNRFC2253": "",
+              "certSubjectDNRFC2253": "",
+              "certIssuerDNLegacy": "",
+              "certSubjectDNLegacy": "",
+              "certSerial": "",
+              "certIssuerSerial": "",
+              "certSKI": "",
+              "certIssuerSKI": "",
+              "certFingerprintSHA1": "",
+              "certFingerprintSHA256": "",
+              "certNotBefore": "",
+              "certNotAfter": ""
+            },
+            "verifiedBotCategory": "",
+            "edgeRequestKeepAliveStatus": 1,
+            "clientTcpRtt": 0,
+            "asn": 45609
+          },
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "POST",
+          "headers": {
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9,mr;q=0.8",
+            "authorization": "********",
+            "cf-connecting-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d3616a26f25c6b8",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "connection": "Keep-Alive",
+            "content-length": "72",
+            "content-type": "application/json",
+            "host": "notesapp-vector-search.monocle0712.workers.dev",
+            "origin": "https://notesapp-frontend.pages.dev",
+            "priority": "u=1, i",
+            "referer": "https://notesapp-frontend.pages.dev/",
+            "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "x-forwarded-proto": "https",
+            "x-real-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83"
+          },
+          "path": "/rag-search-auth"
+        },
+        "rayId": "9d3616a26f25c6b8",
+        "response": {
+          "status": 200
+        }
+      },
+      "diagnosticsChannelEvents": [],
+      "truncated": false,
+      "scriptName": "notesapp-vector-search",
+      "outcome": "ok",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a26f25c6b8",
+      "cpuTimeMs": 17,
+      "wallTimeMs": 3812
+    },
+    "$metadata": {
+      "id": "01KJA16SEC55ZM7EVA18TTY9W3",
+      "requestId": "9d3616a26f25c6b8",
+      "trigger": "POST /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "level": "info",
+      "message": "POST https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker-event",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "POST https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "info",
+      "message": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:13:43.862Z",
+    "$workers": {
+      "event": {
+        "request": {
+          "cf": {
+            "requestHeaderNames": {},
+            "isEUCountry": false,
+            "httpProtocol": "HTTP/3",
+            "clientAcceptEncoding": "gzip, deflate, br",
+            "requestPriority": "",
+            "colo": "HKG",
+            "asOrganization": "Bharti Airtel Limited",
+            "country": "IN",
+            "city": "Pimpri",
+            "continent": "AS",
+            "region": "Maharashtra",
+            "regionCode": "MH",
+            "timezone": "Asia/Kolkata",
+            "longitude": "73.80696",
+            "latitude": "18.62292",
+            "postalCode": "412303",
+            "tlsVersion": "TLSv1.3",
+            "tlsCipher": "AEAD-AES128-GCM-SHA256",
+            "tlsClientRandom": "1e02syBryNusH1QaDGCUHXu5xztbG0yTQLCIFYJ+2rc=",
+            "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+            "tlsClientExtensionsSha1": "6Xb8OGzwCe0KsUDKPFSSm2+6r+M=",
+            "tlsClientExtensionsSha1Le": "",
+            "tlsClientHelloLength": "1981",
+            "tlsClientAuth": {
+              "certPresented": "0",
+              "certVerified": "NONE",
+              "certRevoked": "0",
+              "certIssuerDN": "",
+              "certSubjectDN": "",
+              "certIssuerDNRFC2253": "",
+              "certSubjectDNRFC2253": "",
+              "certIssuerDNLegacy": "",
+              "certSubjectDNLegacy": "",
+              "certSerial": "",
+              "certIssuerSerial": "",
+              "certSKI": "",
+              "certIssuerSKI": "",
+              "certFingerprintSHA1": "",
+              "certFingerprintSHA256": "",
+              "certNotBefore": "",
+              "certNotAfter": ""
+            },
+            "verifiedBotCategory": "",
+            "edgeRequestKeepAliveStatus": 1,
+            "clientTcpRtt": 0,
+            "asn": 45609
+          },
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+          "method": "OPTIONS",
+          "headers": {
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9,mr;q=0.8",
+            "access-control-request-headers": "authorization,content-type",
+            "access-control-request-method": "POST",
+            "cf-connecting-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d3616a11e76c6b8",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "connection": "Keep-Alive",
+            "host": "notesapp-vector-search.monocle0712.workers.dev",
+            "origin": "https://notesapp-frontend.pages.dev",
+            "priority": "u=1, i",
+            "referer": "https://notesapp-frontend.pages.dev/",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "transfer-encoding": "chunked",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "x-forwarded-proto": "https",
+            "x-real-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83"
+          },
+          "path": "/rag-search-auth"
+        },
+        "rayId": "9d3616a11e76c6b8",
+        "response": {
+          "status": 204
+        }
+      },
+      "diagnosticsChannelEvents": [],
+      "truncated": false,
+      "scriptName": "notesapp-vector-search",
+      "outcome": "ok",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3616a11e76c6b8",
+      "cpuTimeMs": 0,
+      "wallTimeMs": 0
+    },
+    "$metadata": {
+      "id": "01KJA16R5PKGB98QGPHEKK8K3H",
+      "requestId": "9d3616a11e76c6b8",
+      "trigger": "OPTIONS /rag-search-auth",
+      "service": "notesapp-vector-search",
+      "level": "info",
+      "message": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker-event",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/rag-search-auth"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "📄 Document view: note=197febb9... user=2649b4d0..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.959Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA15ABZ0FQH3KTZTT0967RY",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "📄 Document view: note=197febb9... user=2649b4d0...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "📄 Document view: note=197febb9... user=2649b4d0..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Azure SAS] Final URL: https://rawnotesstorage.blob.core.windows.net/notes-storage/2649b4d0-c40d-4ab1-a..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.959Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA15ABZ0FQH3KTZTT0967RX",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "[Azure SAS] Final URL: https://rawnotesstorage.blob.core.windows.net/notes-storage/2649b4d0-c40d-4ab1-a...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Azure SAS] Final URL: https://rawnotesstorage.blob.core.windows.net/notes-storage/2649b4d0-c40d-4ab1-a..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Azure SAS] Canonicalized resource: /blob/rawnotesstorage/notes-storage/2649b4d0-c40d-4ab1-ac04-928fe1cf5969/uploaded_file/20260122_133519_f10e1482.pdf"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.959Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA15ABZ0FQH3KTZTT0967RW",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "[Azure SAS] Canonicalized resource: /blob/rawnotesstorage/notes-storage/2649b4d0-c40d-4ab1-ac04-928fe1cf5969/uploaded_file/20260122_133519_f10e1482.pdf",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Azure SAS] Canonicalized resource: /blob/rawnotesstorage/notes-storage/<UUID>/uploaded_file/<DOMAIN>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Azure SAS] String to sign length: 181"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.959Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA15ABZ0FQH3KTZTT0967RV",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "[Azure SAS] String to sign length: 181",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Azure SAS] String to sign length: 181"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[VIEW] Token verified! user_id: 2649b4d0..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.023Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA159EQS152ZCZB1AXQPHSH",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "[VIEW] Token verified! user_id: 2649b4d0...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[VIEW] Token verified! user_id: 2649b4d0..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[VIEW] Token: 197febb9-a6ef-4fa1-bfd1-aee12268e25c:2649b4d0-c40d..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.023Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA159EQS152ZCZB1AXQPHSG",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "[VIEW] Token: 197febb9-a6ef-4fa1-bfd1-aee12268e25c:2649b4d0-c40d...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[VIEW] Token: <UUID>:2649b4d0-c40d..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[VIEW] Request for note 197febb9-a6ef-4fa1-bfd1-aee12268e25c, token provided: true"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.023Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA159EQS152ZCZB1AXQPHSF",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "[VIEW] Request for note 197febb9-a6ef-4fa1-bfd1-aee12268e25c, token provided: true",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[VIEW] Request for note <UUID>, token provided: true"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "📄 Note view: noteId=197febb9..., hasToken=true"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.023Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA159EQS152ZCZB1AXQPHSE",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "📄 Note view: noteId=197febb9..., hasToken=true",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "📄 Note view: noteId=197febb9..., hasToken=true"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "📄 Note view request: path=\"/notes/197febb9-a6ef-4fa1-bfd1-aee12268e25c/view\""
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.023Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683"
+    },
+    "$metadata": {
+      "id": "01KJA159EQS152ZCZB1AXQPHSD",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "message": "📄 Note view request: path=\"/notes/197febb9-a6ef-4fa1-bfd1-aee12268e25c/view\"",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "📄 Note view request: path=\"/notes/<UUID>/view\""
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "info",
+      "message": "GET https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:56.023Z",
+    "$workers": {
+      "event": {
+        "request": {
+          "cf": {
+            "requestHeaderNames": {},
+            "isEUCountry": false,
+            "httpProtocol": "HTTP/3",
+            "clientAcceptEncoding": "gzip, deflate, br",
+            "requestPriority": "",
+            "colo": "KIX",
+            "asOrganization": "Bharti Airtel Limited",
+            "country": "IN",
+            "city": "Pimpri",
+            "continent": "AS",
+            "region": "Maharashtra",
+            "regionCode": "MH",
+            "timezone": "Asia/Kolkata",
+            "longitude": "73.80696",
+            "latitude": "18.62292",
+            "postalCode": "412303",
+            "tlsVersion": "TLSv1.3",
+            "tlsCipher": "AEAD-AES128-GCM-SHA256",
+            "tlsClientRandom": "UfsGbu9VhfjUKVSrjcLUh77Qwq0nrYoDHvcBHfH5wUE=",
+            "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+            "tlsClientExtensionsSha1": "J+15HZqvTrlfeDtBPjfi6k276/Y=",
+            "tlsClientExtensionsSha1Le": "",
+            "tlsClientHelloLength": "2015",
+            "tlsClientAuth": {
+              "certPresented": "0",
+              "certVerified": "NONE",
+              "certRevoked": "0",
+              "certIssuerDN": "",
+              "certSubjectDN": "",
+              "certIssuerDNRFC2253": "",
+              "certSubjectDNRFC2253": "",
+              "certIssuerDNLegacy": "",
+              "certSubjectDNLegacy": "",
+              "certSerial": "",
+              "certIssuerSerial": "",
+              "certSKI": "",
+              "certIssuerSKI": "",
+              "certFingerprintSHA1": "",
+              "certFingerprintSHA256": "",
+              "certNotBefore": "",
+              "certNotAfter": ""
+            },
+            "verifiedBotCategory": "",
+            "edgeRequestKeepAliveStatus": 1,
+            "clientTcpRtt": 0,
+            "asn": 45609
+          },
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+          "method": "GET",
+          "headers": {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9,mr;q=0.8",
+            "cf-connecting-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d3615761d969683",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "connection": "Keep-Alive",
+            "host": "notesapp-vector-search.monocle0712.workers.dev",
+            "priority": "u=0, i",
+            "referer": "https://notesapp-frontend.pages.dev/",
+            "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "document",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "cross-site",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "x-forwarded-proto": "https",
+            "x-real-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83"
+          },
+          "path": "/notes/REDACTED/view",
+          "search": {
+            "token": "REDACTED%REDACTED:1772097175:e7e88913c62c2fae"
+          }
+        },
+        "rayId": "9d3615761d969683",
+        "response": {
+          "status": 302
+        }
+      },
+      "diagnosticsChannelEvents": [],
+      "truncated": false,
+      "scriptName": "notesapp-vector-search",
+      "outcome": "ok",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615761d969683",
+      "cpuTimeMs": 7,
+      "wallTimeMs": 941
+    },
+    "$metadata": {
+      "id": "01KJA159EQS152ZCZB1AXQPHSC",
+      "requestId": "9d3615761d969683",
+      "trigger": "GET /notes/REDACTED/view",
+      "service": "notesapp-vector-search",
+      "level": "info",
+      "message": "GET https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker-event",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "GET https://notesapp-vector-search.monocle0712.workers.dev/notes/REDACTED/view?token=REDACTED%REDACTED%3A1772097175%3Ae7e88913c62c2fae"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] JWT result: SUCCESS"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:54.743Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA1586QS6QGMVGZ9E4PFTMK",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] JWT result: SUCCESS",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] JWT <*>: <*>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Session exists result: true"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:54.743Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA1586QS6QGMVGZ9E4PFTMJ",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Session exists result: true",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Session exists result: true"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Session check response status: 200"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:54.743Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA1586QS6QGMVGZ9E4PFTMH",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Session check response status: 200",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Session check response status: 200"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Checking session exists via RPC..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:54.136Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGX",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Checking session exists via RPC...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Checking session exists via RPC..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] JWT session_id: dcf1acd9-6f32-490e-bae0-ad22fbd40d1d"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:54.136Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGW",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] JWT session_id: dcf1acd9-6f32-490e-bae0-ad22fbd40d1d",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] JWT session_id: <UUID>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Supabase API verified user: 2649b4d0 email: ameet.navgire@gmail.com"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:54.136Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGV",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Supabase API verified user: 2649b4d0 email: ameet.navgire@gmail.com",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Supabase API verified user: 2649b4d0 email: <EMAIL>"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Supabase response status: 200"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:54.136Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGT",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Supabase response status: 200",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Supabase response status: 200"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:53.099Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGS",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Using service key prefix: eyJhbGciOiJIUzI1NiIs"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:53.099Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGR",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Calling Supabase URL: https://vnpqsmiuismvwsynpmfu.supabase.co"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Validating JWT token, length: 1376"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:53.099Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGQ",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Validating JWT token, length: 1376",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Validating JWT token, length: 1376"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Headers - X-API-Key: none"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:53.099Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGP",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Headers - X-API-Key: none",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Headers - X-API-Key: none"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU..."
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:53.099Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGN",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU...",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[Auth] Headers - Authorization: Bearer eyJhbGciOiJFU..."
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010773099_6xlq64o] API route: path=\"/api/v1/notes/197febb9-a6ef-4fa1-bfd1-aee12268e25c/view-token\", method=GET"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:53.099Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866"
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGM",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010773099_6xlq64o] API route: path=\"/api/v1/notes/197febb9-a6ef-4fa1-bfd1-aee12268e25c/view-token\", method=GET",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010773099_6xlq64o] API route: path=\"/api/v1/notes/<UUID>/view-token\", method=GET"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "info",
+      "message": "GET https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:53.099Z",
+    "$workers": {
+      "event": {
+        "request": {
+          "cf": {
+            "requestHeaderNames": {},
+            "isEUCountry": false,
+            "httpProtocol": "HTTP/3",
+            "clientAcceptEncoding": "gzip, deflate, br",
+            "requestPriority": "",
+            "colo": "HKG",
+            "asOrganization": "Bharti Airtel Limited",
+            "country": "IN",
+            "city": "Pimpri",
+            "continent": "AS",
+            "region": "Maharashtra",
+            "regionCode": "MH",
+            "timezone": "Asia/Kolkata",
+            "longitude": "73.80696",
+            "latitude": "18.62292",
+            "postalCode": "412303",
+            "tlsVersion": "TLSv1.3",
+            "tlsCipher": "AEAD-AES128-GCM-SHA256",
+            "tlsClientRandom": "xovNbP4KERr/Davjzdb31zBliBMc5zv6A/115Ww1ybA=",
+            "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+            "tlsClientExtensionsSha1": "phhVQ8hGGTy8RwubAVXmj4bItP4=",
+            "tlsClientExtensionsSha1Le": "",
+            "tlsClientHelloLength": "1980",
+            "tlsClientAuth": {
+              "certPresented": "0",
+              "certVerified": "NONE",
+              "certRevoked": "0",
+              "certIssuerDN": "",
+              "certSubjectDN": "",
+              "certIssuerDNRFC2253": "",
+              "certSubjectDNRFC2253": "",
+              "certIssuerDNLegacy": "",
+              "certSubjectDNLegacy": "",
+              "certSerial": "",
+              "certIssuerSerial": "",
+              "certSKI": "",
+              "certIssuerSKI": "",
+              "certFingerprintSHA1": "",
+              "certFingerprintSHA256": "",
+              "certNotBefore": "",
+              "certNotAfter": ""
+            },
+            "verifiedBotCategory": "",
+            "edgeRequestKeepAliveStatus": 1,
+            "clientTcpRtt": 0,
+            "asn": 45609
+          },
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "GET",
+          "headers": {
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9,mr;q=0.8",
+            "authorization": "********",
+            "cf-connecting-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d361563ddbcf866",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "connection": "Keep-Alive",
+            "host": "notesapp-vector-search.monocle0712.workers.dev",
+            "origin": "https://notesapp-frontend.pages.dev",
+            "priority": "u=1, i",
+            "referer": "https://notesapp-frontend.pages.dev/",
+            "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"Google Chrome\";v=\"145\", \"Chromium\";v=\"145\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "x-forwarded-proto": "https",
+            "x-real-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83"
+          },
+          "path": "/api/v1/notes/REDACTED/view-token"
+        },
+        "rayId": "9d361563ddbcf866",
+        "response": {
+          "status": 200
+        }
+      },
+      "diagnosticsChannelEvents": [],
+      "truncated": false,
+      "scriptName": "notesapp-vector-search",
+      "outcome": "ok",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d361563ddbcf866",
+      "cpuTimeMs": 3,
+      "wallTimeMs": 1918
+    },
+    "$metadata": {
+      "id": "01KJA157QF7TG8DQX00Z9NQRGK",
+      "requestId": "9d361563ddbcf866",
+      "trigger": "GET /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "level": "info",
+      "message": "GET https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker-event",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "GET https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "message": "[wr_1772010772873_pf8fu8i] API route: path=\"/api/v1/notes/197febb9-a6ef-4fa1-bfd1-aee12268e25c/view-token\", method=OPTIONS"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:52.873Z",
+    "$workers": {
+      "truncated": false,
+      "event": {
+        "request": {
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "OPTIONS",
+          "path": "/api/v1/notes/REDACTED/view-token"
+        }
+      },
+      "outcome": "ok",
+      "scriptName": "notesapp-vector-search",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615626d68f866"
+    },
+    "$metadata": {
+      "id": "01KJA156C9XYY7C6QT1BGSTQT6",
+      "requestId": "9d3615626d68f866",
+      "trigger": "OPTIONS /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "message": "[wr_1772010772873_pf8fu8i] API route: path=\"/api/v1/notes/197febb9-a6ef-4fa1-bfd1-aee12268e25c/view-token\", method=OPTIONS",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "[wr_1772010772873_pf8fu8i] API route: path=\"/api/v1/notes/<UUID>/view-token\", method=OPTIONS"
+    },
+    "links": []
+  },
+  {
+    "source": {
+      "level": "info",
+      "message": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token"
+    },
+    "dataset": "cloudflare-workers",
+    "timestamp": "2026-02-25T09:12:52.873Z",
+    "$workers": {
+      "event": {
+        "request": {
+          "cf": {
+            "requestHeaderNames": {},
+            "isEUCountry": false,
+            "httpProtocol": "HTTP/3",
+            "clientAcceptEncoding": "gzip, deflate, br",
+            "requestPriority": "",
+            "colo": "HKG",
+            "asOrganization": "Bharti Airtel Limited",
+            "country": "IN",
+            "city": "Pimpri",
+            "continent": "AS",
+            "region": "Maharashtra",
+            "regionCode": "MH",
+            "timezone": "Asia/Kolkata",
+            "longitude": "73.80696",
+            "latitude": "18.62292",
+            "postalCode": "412303",
+            "tlsVersion": "TLSv1.3",
+            "tlsCipher": "AEAD-AES128-GCM-SHA256",
+            "tlsClientRandom": "xovNbP4KERr/Davjzdb31zBliBMc5zv6A/115Ww1ybA=",
+            "tlsClientCiphersSha1": "3HTt3+R/6BL3zeALJDSq0pR1yOQ=",
+            "tlsClientExtensionsSha1": "phhVQ8hGGTy8RwubAVXmj4bItP4=",
+            "tlsClientExtensionsSha1Le": "",
+            "tlsClientHelloLength": "1980",
+            "tlsClientAuth": {
+              "certPresented": "0",
+              "certVerified": "NONE",
+              "certRevoked": "0",
+              "certIssuerDN": "",
+              "certSubjectDN": "",
+              "certIssuerDNRFC2253": "",
+              "certSubjectDNRFC2253": "",
+              "certIssuerDNLegacy": "",
+              "certSubjectDNLegacy": "",
+              "certSerial": "",
+              "certIssuerSerial": "",
+              "certSKI": "",
+              "certIssuerSKI": "",
+              "certFingerprintSHA1": "",
+              "certFingerprintSHA256": "",
+              "certNotBefore": "",
+              "certNotAfter": ""
+            },
+            "verifiedBotCategory": "",
+            "edgeRequestKeepAliveStatus": 1,
+            "clientTcpRtt": 0,
+            "asn": 45609
+          },
+          "url": "https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+          "method": "OPTIONS",
+          "headers": {
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9,mr;q=0.8",
+            "access-control-request-headers": "authorization",
+            "access-control-request-method": "GET",
+            "cf-connecting-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d3615626d68f866",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "connection": "Keep-Alive",
+            "host": "notesapp-vector-search.monocle0712.workers.dev",
+            "origin": "https://notesapp-frontend.pages.dev",
+            "priority": "u=1, i",
+            "referer": "https://notesapp-frontend.pages.dev/",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "transfer-encoding": "chunked",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "x-forwarded-proto": "https",
+            "x-real-ip": "2401:4900:ad5d:3f25:a861:6ee3:ffcf:7a83"
+          },
+          "path": "/api/v1/notes/REDACTED/view-token"
+        },
+        "rayId": "9d3615626d68f866",
+        "response": {
+          "status": 204
+        }
+      },
+      "diagnosticsChannelEvents": [],
+      "truncated": false,
+      "scriptName": "notesapp-vector-search",
+      "outcome": "ok",
+      "eventType": "fetch",
+      "executionModel": "stateless",
+      "scriptVersion": {
+        "id": "0ea86129-c4db-4627-a855-0edf8cfa2759"
+      },
+      "requestId": "9d3615626d68f866",
+      "cpuTimeMs": 1,
+      "wallTimeMs": 1
+    },
+    "$metadata": {
+      "id": "01KJA156C9XYY7C6QT1BGSTQT5",
+      "requestId": "9d3615626d68f866",
+      "trigger": "OPTIONS /api/v1/notes/REDACTED/view-token",
+      "service": "notesapp-vector-search",
+      "level": "info",
+      "message": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token",
+      "account": "540f86da830862f033e02d84633d59dd",
+      "type": "cf-worker-event",
+      "fingerprint": "f471c65957370e6a73694f6dc18df7a1",
+      "origin": "fetch",
+      "messageTemplate": "OPTIONS https://notesapp-vector-search.monocle0712.workers.dev/api/v1/notes/REDACTED/view-token"
+    },
+    "links": []
+  }
+]

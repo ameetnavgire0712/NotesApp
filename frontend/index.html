@@ -1,0 +1,3586 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>infoSnap - Save anything, find it instantly</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta name="description" content="AI-powered document intelligence platform. Capture files, screenshots, notes, and webpages — then let AI retrieve them instantly.">
+    <meta name="author" content="infoSnap.ai">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    
+    <style>
+        /* ========================================
+           CSS Variables - Dark Theme with Green Accent
+           ======================================== */
+        :root {
+            --background: hsl(160, 10%, 6%);
+            --foreground: hsl(150, 15%, 90%);
+            --card: hsl(160, 8%, 10%);
+            --card-foreground: hsl(150, 15%, 90%);
+            --primary: hsl(155, 70%, 45%);
+            --primary-foreground: hsl(160, 10%, 6%);
+            --secondary: hsl(160, 6%, 14%);
+            --secondary-foreground: hsl(150, 12%, 78%);
+            --muted: hsl(160, 6%, 16%);
+            --muted-foreground: hsl(155, 6%, 46%);
+            --border: hsl(160, 6%, 18%);
+            --ring: hsl(155, 70%, 45%);
+            --radius: 0.75rem;
+            
+            /* Custom tokens */
+            --glow: hsl(155, 70%, 45%);
+            --gradient-primary: linear-gradient(135deg, hsl(155, 70%, 45%), hsl(165, 60%, 35%));
+            --shadow-glow: 0 0 40px -10px hsla(155, 70%, 45%, 0.3);
+            --shadow-card: 0 8px 32px -8px hsla(160, 10%, 2%, 0.6);
+            
+            --font-display: 'Space Grotesk', system-ui, sans-serif;
+            --font-body: 'Inter', system-ui, sans-serif;
+        }
+
+        /* ========================================
+           Base Styles
+           ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            border-color: var(--border);
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--background);
+            color: var(--foreground);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-display);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* ========================================
+           Utility Classes
+           ======================================== */
+        .text-gradient {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glass {
+            background: hsla(160, 8%, 10%, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-bottom: 1px solid hsla(160, 6%, 20%, 0.6);
+        }
+
+        .glow-border {
+            box-shadow: 0 0 0 1px hsla(155, 70%, 45%, 0.15), var(--shadow-glow);
+        }
+
+        /* ========================================
+           Navigation
+           ======================================== */
+        .nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 50;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--foreground);
+        }
+
+        /* Logo */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 30px;
+            height: 30px;
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.125rem;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text-main {
+            color: var(--foreground);
+        }
+
+        .logo-text-accent {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text-suffix {
+            color: var(--muted-foreground);
+            font-weight: 300;
+        }
+
+        /* Inline brand — reusable anywhere infoSnap.ai appears in body text */
+        .brand-inline {
+            font-family: var(--font-display);
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+        }
+        .brand-inline .bi-main  { color: var(--foreground); }
+        .brand-inline .bi-accent { color: var(--primary); }
+        .brand-inline .bi-suffix { color: var(--muted-foreground); font-weight: 300; }
+
+        /* ========================================
+           Buttons
+           ======================================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: var(--font-body);
+            font-weight: 500;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-lg {
+            padding: 0.875rem 2rem;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--primary-foreground);
+            box-shadow: 0 4px 14px -3px hsla(155, 70%, 45%, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: hsl(155, 70%, 40%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px -3px hsla(155, 70%, 45%, 0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--foreground);
+            border: 1px solid var(--border);
+        }
+
+        .btn-outline:hover {
+            background: var(--secondary);
+            border-color: hsla(155, 70%, 45%, 0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted-foreground);
+        }
+
+        .btn-ghost:hover {
+            color: var(--foreground);
+            background: var(--secondary);
+        }
+
+        /* ========================================
+           Hero Section
+           ======================================== */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 5rem;
+            padding-bottom: 4rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+
+        .hero-glow {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 400px;
+            border-radius: 9999px;
+            background: hsla(155, 70%, 45%, 0.05);
+            filter: blur(120px);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 64rem;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+            animation: fadeUp 0.7s ease-out;
+        }
+
+        .hero-logo-icon {
+            width: 56px;
+            height: 56px;
+        }
+
+        .hero-logo-text {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 2.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.08;
+            letter-spacing: -0.02em;
+            animation: fadeUp 0.7s ease-out 0.15s both;
+        }
+
+        .hero-subtitle {
+            margin-top: 1.5rem;
+            font-size: clamp(1rem, 3vw, 1.25rem);
+            color: var(--muted-foreground);
+            max-width: 42rem;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+            animation: fadeUp 0.7s ease-out 0.3s both;
+        }
+
+        .hero-actions {
+            margin-top: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            animation: fadeUp 0.7s ease-out 0.45s both;
+        }
+
+        @media (min-width: 640px) {
+            .hero-actions {
+                flex-direction: row;
+            }
+        }
+
+        /* ========================================
+           Problem / Solution Section
+           ======================================== */
+        .problem-solution {
+            padding: 6rem 1.5rem 2rem;
+            background: transparent;
+        }
+
+        .ps-section-header {
+            text-align: center;
+            margin-bottom: 4.5rem;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .ps-section-header.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ps-section-header h2 {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.08;
+        }
+
+        .ps-section-header h2 .text-muted {
+            color: var(--muted-foreground);
+        }
+
+        .ps-section-header p {
+            margin-top: 1rem;
+            color: var(--muted-foreground);
+            font-size: 1.1rem;
+            max-width: 36rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .ps-container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+
+        .ps-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: stretch;
+            margin-bottom: 9rem;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .ps-row.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ps-row.reverse .ps-text {
+            order: 2;
+        }
+
+        .ps-row.reverse .ps-illustration {
+            order: 1;
+        }
+
+        .ps-label {
+            display: inline-block;
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            margin-bottom: 1rem;
+        }
+
+        .ps-label.problem {
+            background: hsla(0, 70%, 55%, 0.12);
+            color: hsl(0, 85%, 65%);
+            border: 1px solid hsla(0, 70%, 55%, 0.2);
+        }
+
+        .ps-label.solution {
+            background: hsla(155, 70%, 45%, 0.12);
+            color: hsl(155, 70%, 55%);
+            border: 1px solid hsla(155, 70%, 45%, 0.2);
+        }
+
+        .ps-text h2 {
+            font-size: clamp(1.5rem, 4vw, 2.25rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 1.25rem;
+        }
+
+        .ps-text p.ps-desc {
+            color: var(--muted-foreground);
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .ps-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .ps-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--foreground);
+        }
+
+        .ps-list .marker {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-top: 0.15rem;
+        }
+
+        .ps-list .marker.bad {
+            background: hsla(0, 70%, 55%, 0.15);
+            color: hsl(0, 85%, 65%);
+        }
+
+        .ps-list .marker.good {
+            background: hsla(155, 70%, 45%, 0.15);
+            color: hsl(155, 70%, 55%);
+        }
+
+        /* Illustration cards */
+        .ps-illustration {
+            position: relative;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--card);
+            padding: 2.5rem 2rem;
+            min-height: 360px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+        }
+
+        /* ======== PROBLEM illustration: step-by-step search fail ======== */
+        .ps-illust-problem {
+            overflow: hidden;
+            padding: 0;
+        }
+
+        /* Pause ALL illustration animations until the row scrolls into view */
+        .ps-illust-problem,
+        .ps-illust-problem *,
+        .ps-illust-solution,
+        .ps-illust-solution * {
+            animation-play-state: paused !important;
+        }
+        .ps-illust-problem *::after,
+        .ps-illust-solution *::after {
+            animation-play-state: paused !important;
+        }
+        .ps-row.visible .ps-illust-problem,
+        .ps-row.visible .ps-illust-problem *,
+        .ps-row.visible .ps-illust-solution,
+        .ps-row.visible .ps-illust-solution * {
+            animation-play-state: running !important;
+        }
+        .ps-row.visible .ps-illust-problem *::after,
+        .ps-row.visible .ps-illust-solution *::after {
+            animation-play-state: running !important;
+        }
+
+        .fail-story {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top: the question */
+        .fs-query {
+            padding: 14px 18px;
+            background: hsl(160, 8%, 8%);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fs-query-icon { font-size: 1rem; }
+
+        .fs-query-text {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--foreground);
+            font-family: var(--font-body);
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: none;
+            width: 0;
+            animation: fsTyping 18s infinite;
+        }
+
+        /* 42 chars — types ~3s, holds long, erases, ~2s blank gap before restart */
+        @keyframes fsTyping {
+            0%        { width: 0; }
+            2%        { width: 0; }
+            18%       { width: 42ch; }
+            78%       { width: 42ch; }
+            84%       { width: 0; }
+            100%      { width: 0; }
+        }
+
+        .fs-query-cursor {
+            width: 2px;
+            height: 16px;
+            background: var(--primary);
+            flex-shrink: 0;
+            animation: fsCursorBlink 0.6s steps(2) infinite, fsCursorVis 18s infinite;
+        }
+
+        @keyframes fsCursorBlink {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0; }
+        }
+
+        @keyframes fsCursorVis {
+            0%, 2%   { opacity: 0; }
+            4%       { opacity: 1; }
+            80%      { opacity: 1; }
+            84%, 100%{ opacity: 0; }
+        }
+
+        /* Steps container */
+        .fs-steps {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+
+        /* Each step row — no delay, stagger baked into per-step keyframes */
+        .fs-step {
+            display: flex;
+            align-items: stretch;
+            border-bottom: 1px solid hsla(0, 0%, 100%, 0.04);
+            opacity: 0;
+        }
+
+        .fs-step:last-child { border-bottom: none; }
+
+        /* --- Step 1: appears at 18% --- */
+        .fs-step:nth-child(1) { animation: fsS1 18s infinite; }
+        .fs-step:nth-child(1) .fs-step-num { animation: fsN1 18s infinite; }
+        .fs-step:nth-child(1) .fs-step-rail::after { animation: fsR1 18s infinite; }
+        .fs-step:nth-child(1) .fs-step-action::after { animation: fsSh1 18s infinite; }
+        .fs-step:nth-child(1) .fs-result { animation: fsFl1 18s infinite; }
+
+        /* --- Step 2: appears at 22% --- */
+        .fs-step:nth-child(2) { animation: fsS2 18s infinite; }
+        .fs-step:nth-child(2) .fs-step-num { animation: fsN2 18s infinite; }
+        .fs-step:nth-child(2) .fs-step-rail::after { animation: fsR2 18s infinite; }
+        .fs-step:nth-child(2) .fs-step-action::after { animation: fsSh2 18s infinite; }
+        .fs-step:nth-child(2) .fs-result { animation: fsFl2 18s infinite; }
+
+        /* --- Step 3: appears at 26% --- */
+        .fs-step:nth-child(3) { animation: fsS3 18s infinite; }
+        .fs-step:nth-child(3) .fs-step-num { animation: fsN3 18s infinite; }
+        .fs-step:nth-child(3) .fs-step-rail::after { animation: fsR3 18s infinite; }
+        .fs-step:nth-child(3) .fs-step-action::after { animation: fsSh3 18s infinite; }
+        .fs-step:nth-child(3) .fs-result { animation: fsFl3 18s infinite; }
+
+        /* === STEP CYCLE keyframes === */
+        @keyframes fsS1 {
+            0%, 18%   { opacity: 0; transform: translateY(8px); }
+            22%       { opacity: 1; transform: translateY(0); }
+            78%       { opacity: 1; transform: translateY(0); }
+            84%       { opacity: 0; transform: translateY(-4px); }
+            100%      { opacity: 0; }
+        }
+        @keyframes fsS2 {
+            0%, 22%   { opacity: 0; transform: translateY(8px); }
+            26%       { opacity: 1; transform: translateY(0); }
+            80%       { opacity: 1; transform: translateY(0); }
+            86%       { opacity: 0; transform: translateY(-4px); }
+            100%      { opacity: 0; }
+        }
+        @keyframes fsS3 {
+            0%, 26%   { opacity: 0; transform: translateY(8px); }
+            30%       { opacity: 1; transform: translateY(0); }
+            82%       { opacity: 1; transform: translateY(0); }
+            88%       { opacity: 0; transform: translateY(-4px); }
+            100%      { opacity: 0; }
+        }
+
+        /* === NUM PULSE keyframes === */
+        @keyframes fsN1 {
+            0%, 18%  { box-shadow: none; background: hsla(0, 60%, 50%, 0.1); }
+            22%      { box-shadow: 0 0 12px -2px hsla(0, 70%, 50%, 0.5); background: hsla(0, 60%, 50%, 0.2); }
+            26%      { box-shadow: 0 0 6px -2px hsla(0, 70%, 50%, 0.25); background: hsla(0, 60%, 50%, 0.15); }
+            78%      { box-shadow: 0 0 6px -2px hsla(0, 70%, 50%, 0.25); }
+            84%, 100%{ box-shadow: none; background: hsla(0, 60%, 50%, 0.1); }
+        }
+        @keyframes fsN2 {
+            0%, 22%  { box-shadow: none; background: hsla(0, 60%, 50%, 0.1); }
+            26%      { box-shadow: 0 0 12px -2px hsla(0, 70%, 50%, 0.5); background: hsla(0, 60%, 50%, 0.2); }
+            30%      { box-shadow: 0 0 6px -2px hsla(0, 70%, 50%, 0.25); background: hsla(0, 60%, 50%, 0.15); }
+            80%      { box-shadow: 0 0 6px -2px hsla(0, 70%, 50%, 0.25); }
+            86%, 100%{ box-shadow: none; background: hsla(0, 60%, 50%, 0.1); }
+        }
+        @keyframes fsN3 {
+            0%, 26%  { box-shadow: none; background: hsla(0, 60%, 50%, 0.1); }
+            30%      { box-shadow: 0 0 12px -2px hsla(0, 70%, 50%, 0.5); background: hsla(0, 60%, 50%, 0.2); }
+            34%      { box-shadow: 0 0 6px -2px hsla(0, 70%, 50%, 0.25); background: hsla(0, 60%, 50%, 0.15); }
+            82%      { box-shadow: 0 0 6px -2px hsla(0, 70%, 50%, 0.25); }
+            88%, 100%{ box-shadow: none; background: hsla(0, 60%, 50%, 0.1); }
+        }
+
+        /* Left: step number + connector line */
+        .fs-step-rail {
+            width: 44px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 16px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .fs-step-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: hsl(0, 60%, 60%);
+            background: hsla(0, 60%, 50%, 0.1);
+            border: 1.5px solid hsla(0, 60%, 50%, 0.3);
+            z-index: 1;
+        }
+
+        /* Vertical connector */
+        .fs-step-rail::after {
+            content: '';
+            flex: 1;
+            width: 1.5px;
+            background: hsla(0, 50%, 50%, 0.15);
+            margin-top: 6px;
+            transform-origin: top;
+        }
+
+        /* === RAIL GROW keyframes === */
+        @keyframes fsR1 {
+            0%, 18%  { transform: scaleY(0); }
+            26%      { transform: scaleY(1); }
+            78%      { transform: scaleY(1); }
+            84%, 100%{ transform: scaleY(0); }
+        }
+        @keyframes fsR2 {
+            0%, 22%  { transform: scaleY(0); }
+            30%      { transform: scaleY(1); }
+            80%      { transform: scaleY(1); }
+            86%, 100%{ transform: scaleY(0); }
+        }
+        @keyframes fsR3 {
+            0%, 26%  { transform: scaleY(0); }
+            34%      { transform: scaleY(1); }
+            82%      { transform: scaleY(1); }
+            88%, 100%{ transform: scaleY(0); }
+        }
+
+        .fs-step:last-child .fs-step-rail::after {
+            display: none;
+        }
+
+        /* Right: content */
+        .fs-step-body {
+            flex: 1;
+            padding: 14px 16px 14px 6px;
+        }
+
+        .fs-step-header {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 6px;
+        }
+
+        .fs-step-icon {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .fs-step-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--foreground);
+            font-family: var(--font-display);
+        }
+
+        .fs-step-action {
+            font-size: 0.68rem;
+            color: var(--muted-foreground);
+            margin-bottom: 7px;
+            font-family: var(--font-body);
+            line-height: 1.4;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Shimmer sweep across action text */
+        .fs-step-action::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, hsla(0, 0%, 100%, 0.04), transparent);
+        }
+
+        /* === SHIMMER keyframes === */
+        @keyframes fsSh1 {
+            0%, 18%  { left: -100%; }
+            28%      { left: 100%; }
+            100%     { left: 100%; }
+        }
+        @keyframes fsSh2 {
+            0%, 22%  { left: -100%; }
+            32%      { left: 100%; }
+            100%     { left: 100%; }
+        }
+        @keyframes fsSh3 {
+            0%, 26%  { left: -100%; }
+            36%      { left: 100%; }
+            100%     { left: 100%; }
+        }
+
+        /* Result badge */
+        .fs-result {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        /* === RESULT FLASH keyframes === */
+        @keyframes fsFl1 {
+            0%, 20%  { opacity: 0; transform: scale(0.9); }
+            24%      { opacity: 1; transform: scale(1.08); }
+            28%      { transform: scale(1); }
+            78%      { opacity: 1; }
+            84%      { opacity: 0; }
+            100%     { opacity: 0; }
+        }
+        @keyframes fsFl2 {
+            0%, 24%  { opacity: 0; transform: scale(0.9); }
+            28%      { opacity: 1; transform: scale(1.08); }
+            32%      { transform: scale(1); }
+            80%      { opacity: 1; }
+            86%      { opacity: 0; }
+            100%     { opacity: 0; }
+        }
+        @keyframes fsFl3 {
+            0%, 28%  { opacity: 0; transform: scale(0.9); }
+            32%      { opacity: 1; transform: scale(1.08); }
+            36%      { transform: scale(1); }
+            82%      { opacity: 1; }
+            88%      { opacity: 0; }
+            100%     { opacity: 0; }
+        }
+
+        .fs-result.fail {
+            background: hsla(0, 60%, 50%, 0.1);
+            border: 1px solid hsla(0, 60%, 50%, 0.2);
+            color: hsl(0, 60%, 60%);
+        }
+
+        .fs-result.fail::before {
+            content: '✕';
+            font-size: 0.7rem;
+        }
+
+        /* Footer */
+        .fs-footer {
+            padding: 10px 18px;
+            text-align: center;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: hsl(0, 55%, 58%);
+            border-top: 1px solid var(--border);
+            background: hsla(0, 50%, 50%, 0.03);
+            animation: fsFooterCycle 18s infinite;
+        }
+
+        @keyframes fsFooterCycle {
+            0%, 28%  { opacity: 0; }
+            32%      { opacity: 1; background: hsla(0, 50%, 50%, 0.08); }
+            36%      { background: hsla(0, 50%, 50%, 0.03); }
+            82%      { opacity: 1; }
+            88%, 100%{ opacity: 0; }
+        }
+
+        /* ======== SOLUTION illustration: upload → chat animation ======== */
+        .ps-illust-solution {
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .sol-scene {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* === PHASE 1: Upload hub === */
+        .sol-hub {
+            position: absolute;
+            inset: 0;
+            animation: solHubVis 22s infinite;
+        }
+
+        @keyframes solHubVis {
+            0%        { opacity: 1; }
+            40%       { opacity: 1; }
+            46%       { opacity: 0; }
+            100%      { opacity: 0; }
+        }
+
+        /* Central logo badge — absolutely centered */
+        .sol-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border-radius: 22px;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 2;
+            box-shadow: 0 0 40px -8px hsla(155, 70%, 45%, 0.3);
+            animation: solCenterPulse 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes solCenterPulse {
+            0%   { box-shadow: 0 0 24px -6px hsla(155, 70%, 45%, 0.2); }
+            100% { box-shadow: 0 0 44px -4px hsla(155, 70%, 45%, 0.45); }
+        }
+
+        .sol-center svg { width: 36px; height: 36px; }
+        .sol-center-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: white;
+            margin-top: 3px;
+            letter-spacing: 0.03em;
+            font-family: var(--font-display);
+        }
+
+        /* Orbit rings — purely decorative, centered */
+        .sol-orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 1px dashed hsla(155, 70%, 45%, 0.1);
+            pointer-events: none;
+        }
+
+        .sol-orbit-1 {
+            width: 200px; height: 200px;
+            margin-top: -100px; margin-left: -100px;
+        }
+        .sol-orbit-2 {
+            width: 320px; height: 320px;
+            margin-top: -160px; margin-left: -160px;
+        }
+
+        /* Flying doc items — positioned with top/left in %, fly to center via JS-free keyframes */
+        .sol-item {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--foreground);
+            font-family: var(--font-body);
+            white-space: nowrap;
+            z-index: 3;
+            opacity: 0;
+        }
+
+        .sol-item-icon {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        /* Each item: appear at its position, then fly toward center & shrink */
+        .sol-item:nth-child(3) { animation: solFly1 22s infinite; }
+        .sol-item:nth-child(4) { animation: solFly2 22s infinite; }
+        .sol-item:nth-child(5) { animation: solFly3 22s infinite; }
+        .sol-item:nth-child(6) { animation: solFly4 22s infinite; }
+        .sol-item:nth-child(7) { animation: solFly5 22s infinite; }
+
+        /* Item 1: top-left → center */
+        @keyframes solFly1 {
+            0%   { top: 12%; left: 8%;  opacity: 0; transform: scale(1); }
+            4%   { top: 12%; left: 8%;  opacity: 1; transform: scale(1); }
+            14%  { top: 12%; left: 8%;  opacity: 1; transform: scale(1); }
+            28%  { top: 44%; left: 42%; opacity: 0; transform: scale(0.2); }
+            100% { top: 44%; left: 42%; opacity: 0; transform: scale(0.2); }
+        }
+        /* Item 2: top-right → center */
+        @keyframes solFly2 {
+            0%, 5%   { top: 10%; right: 8%; left: auto;  opacity: 0; transform: scale(1); }
+            9%       { top: 10%; right: 8%; left: auto;  opacity: 1; transform: scale(1); }
+            19%      { top: 10%; right: 8%; left: auto;  opacity: 1; transform: scale(1); }
+            32%      { top: 44%; right: 42%; left: auto; opacity: 0; transform: scale(0.2); }
+            100%     { top: 44%; right: 42%; left: auto; opacity: 0; transform: scale(0.2); }
+        }
+        /* Item 3: bottom-left → center */
+        @keyframes solFly3 {
+            0%, 10%  { bottom: 16%; left: 6%; top: auto;  opacity: 0; transform: scale(1); }
+            14%      { bottom: 16%; left: 6%; top: auto;  opacity: 1; transform: scale(1); }
+            24%      { bottom: 16%; left: 6%; top: auto;  opacity: 1; transform: scale(1); }
+            36%      { bottom: 42%; left: 42%; top: auto; opacity: 0; transform: scale(0.2); }
+            100%     { bottom: 42%; left: 42%; top: auto; opacity: 0; transform: scale(0.2); }
+        }
+        /* Item 4: bottom-right → center */
+        @keyframes solFly4 {
+            0%, 15%  { bottom: 12%; right: 6%; top: auto; left: auto;  opacity: 0; transform: scale(1); }
+            19%      { bottom: 12%; right: 6%; top: auto; left: auto;  opacity: 1; transform: scale(1); }
+            29%      { bottom: 12%; right: 6%; top: auto; left: auto;  opacity: 1; transform: scale(1); }
+            40%      { bottom: 42%; right: 42%; top: auto; left: auto; opacity: 0; transform: scale(0.2); }
+            100%     { bottom: 42%; right: 42%; top: auto; left: auto; opacity: 0; transform: scale(0.2); }
+        }
+        /* Item 5: mid-left → center */
+        @keyframes solFly5 {
+            0%, 6%   { top: 48%; left: 2%;  opacity: 0; transform: scale(1); }
+            10%      { top: 48%; left: 2%;  opacity: 1; transform: scale(1); }
+            20%      { top: 48%; left: 2%;  opacity: 1; transform: scale(1); }
+            34%      { top: 46%; left: 42%; opacity: 0; transform: scale(0.2); }
+            100%     { top: 46%; left: 42%; opacity: 0; transform: scale(0.2); }
+        }
+
+        /* Absorb flash on center when items arrive */
+        .sol-center::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 18px;
+            background: hsla(155, 70%, 45%, 0.12);
+            animation: solAbsorb 22s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes solAbsorb {
+            0%, 18%  { opacity: 0; transform: scale(1); }
+            24%      { opacity: 0.6; transform: scale(1.2); }
+            30%      { opacity: 0.8; transform: scale(1.4); }
+            38%      { opacity: 0; transform: scale(2); }
+            100%     { opacity: 0; }
+        }
+
+        /* === PHASE 2: Chat UI === */
+        .sol-chat {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            animation: solChatVis 22s infinite;
+        }
+
+        @keyframes solChatVis {
+            0%, 44%  { opacity: 0; }
+            50%      { opacity: 1; }
+            88%      { opacity: 1; }
+            95%, 100%{ opacity: 0; }
+        }
+
+        /* Chat top bar */
+        .chat-topbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: hsl(160, 8%, 8%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chat-logo-sm {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-logo-sm svg { width: 14px; height: 14px; }
+
+        .chat-topbar-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--foreground);
+            font-family: var(--font-display);
+        }
+
+        .chat-topbar-status {
+            font-size: 0.58rem;
+            color: var(--primary);
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .chat-topbar-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+
+        /* Messages area */
+        .chat-messages {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .chat-msg {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 0.76rem;
+            font-weight: 400;
+            line-height: 1.5;
+            font-family: var(--font-body);
+            opacity: 0;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            background: hsla(155, 70%, 45%, 0.12);
+            border: 1px solid hsla(155, 70%, 45%, 0.2);
+            color: var(--foreground);
+            border-bottom-right-radius: 4px;
+            animation: solMsgIn 22s infinite;
+        }
+
+        .chat-msg.ai {
+            align-self: flex-start;
+            background: hsl(160, 8%, 12%);
+            border: 1px solid var(--border);
+            color: var(--foreground);
+            border-bottom-left-radius: 4px;
+            animation: solMsgAI 22s infinite;
+        }
+
+        @keyframes solMsgIn {
+            0%, 52%  { opacity: 0; transform: translateY(8px); }
+            58%      { opacity: 1; transform: translateY(0); }
+            88%      { opacity: 1; }
+            95%, 100%{ opacity: 0; }
+        }
+
+        /* AI message appears slightly after user message — stagger baked in */
+        @keyframes solMsgAI {
+            0%, 58%  { opacity: 0; transform: translateY(8px); }
+            64%      { opacity: 1; transform: translateY(0); }
+            88%      { opacity: 1; }
+            95%, 100%{ opacity: 0; }
+        }
+
+        /* Source file chip inside AI message */
+        .chat-source {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            background: hsla(155, 70%, 45%, 0.08);
+            border: 1px solid hsla(155, 70%, 45%, 0.15);
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .chat-source-icon { font-size: 0.8rem; }
+
+        /* Typing indicator */
+        .chat-typing {
+            align-self: flex-start;
+            display: flex;
+            gap: 4px;
+            padding: 10px 16px;
+            border-radius: 14px;
+            background: hsl(160, 8%, 12%);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-typing span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--muted-foreground);
+            animation: typeDot 1.4s ease-in-out infinite;
+        }
+
+        .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typeDot {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30%           { opacity: 1;   transform: translateY(-4px); }
+        }
+
+        /* Input bar — pinned to bottom */
+        .chat-input {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-top: 1px solid var(--border);
+            background: hsl(160, 8%, 8%);
+        }
+
+        .chat-input-field {
+            flex: 1;
+            height: 30px;
+            border-radius: 8px;
+            background: hsl(160, 6%, 12%);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 0.68rem;
+            color: var(--muted-foreground);
+        }
+
+        .chat-send-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: var(--gradient-primary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Responsive – stack on mobile */
+        @media (max-width: 768px) {
+            .ps-row {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .ps-row.reverse .ps-text {
+                order: 1;
+            }
+
+            .ps-row.reverse .ps-illustration {
+                order: 2;
+            }
+
+            .ps-illustration {
+                min-height: 260px;
+            }
+
+            .ps-text h3 {
+                font-size: 1.2rem;
+            }
+
+            .ps-text p {
+                font-size: 0.9rem;
+            }
+
+            .fs-query-text { font-size: 0.72rem; }
+            .fs-step-label { font-size: 0.68rem; }
+            .fs-step-action { font-size: 0.62rem; }
+            .chat-msg { font-size: 0.7rem; }
+            .sol-item { font-size: 0.72rem; padding: 6px 12px; }
+            .sol-item-icon { font-size: 1rem; }
+            .sol-center { width: 72px; height: 72px; border-radius: 18px; }
+            .sol-center svg { width: 28px; height: 28px; }
+            .sol-center-label { font-size: 0.5rem; }
+            .sol-orbit-1 { width: 150px; height: 150px; margin-top: -75px; margin-left: -75px; }
+            .sol-orbit-2 { width: 240px; height: 240px; margin-top: -120px; margin-left: -120px; }
+        }
+
+        /* ========================================
+           How It Works Section
+           ======================================== */
+        .features {
+            padding: 6rem 1.5rem;
+            background: transparent;
+        }
+
+        .features-container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+
+        .features-header {
+            text-align: center;
+            margin-bottom: 5rem;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .features-header.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .features-header h2 {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.08;
+        }
+
+        .features-header p {
+            margin-top: 1rem;
+            color: var(--muted-foreground);
+            font-size: 1.1rem;
+            max-width: 36rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* --- Feature row: text + illustration side by side --- */
+        .hiw-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            align-items: start;
+            margin-bottom: 9rem;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .hiw-row.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        @media (min-width: 768px) {
+            .hiw-row {
+                grid-template-columns: 1fr 1fr;
+                align-items: center;
+            }
+            .hiw-row.reverse {
+                direction: rtl;
+            }
+            .hiw-row.reverse > * {
+                direction: ltr;
+            }
+
+        }
+
+        .hiw-text {}
+
+        .hiw-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            margin-bottom: 1rem;
+            font-family: var(--font-body);
+        }
+        .hiw-label.green {
+            background: hsla(155, 70%, 45%, 0.12);
+            color: hsl(155, 70%, 50%);
+        }
+        .hiw-label.blue {
+            background: hsla(210, 70%, 50%, 0.12);
+            color: hsl(210, 70%, 60%);
+        }
+        .hiw-label.amber {
+            background: hsla(38, 90%, 50%, 0.12);
+            color: hsl(38, 90%, 60%);
+        }
+        .hiw-label.purple {
+            background: hsla(270, 60%, 55%, 0.12);
+            color: hsl(270, 60%, 65%);
+        }
+
+        .hiw-text h2 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 0.75rem;
+        }
+
+        .hiw-text .hiw-desc {
+            color: var(--muted-foreground);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Step list */
+        .hiw-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .hiw-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+        }
+
+        .hiw-step-num {
+            flex-shrink: 0;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: hsla(155, 70%, 45%, 0.12);
+            color: var(--primary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+            font-family: var(--font-display);
+        }
+
+        .hiw-step-content {
+            font-size: 0.9rem;
+            color: var(--foreground);
+            line-height: 1.55;
+        }
+
+        .hiw-step-content strong {
+            color: var(--foreground);
+        }
+
+        .hiw-step-content .muted {
+            color: var(--muted-foreground);
+            font-size: 0.82rem;
+        }
+
+        .hiw-tip {
+            margin-top: 1.25rem;
+            margin-left: calc(26px + 0.85rem);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            background: hsla(38, 90%, 50%, 0.06);
+            border: 1px solid hsla(38, 90%, 50%, 0.15);
+            font-size: 0.82rem;
+            color: hsl(38, 90%, 65%);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* -------- Illustration mockups -------- */
+        .hiw-illust {
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--card);
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            position: relative;
+        }
+
+        /* === Capture: Extension popup mockup === */
+        .ext-popup {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            font-family: var(--font-body);
+        }
+
+        .ext-popup-header {
+            background: hsl(160, 10%, 6%);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ext-popup-logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ext-popup-logo svg { width: 18px; height: 18px; }
+
+        .ext-popup-brand {
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--foreground);
+        }
+
+        .ext-popup-body {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ext-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, hsla(155, 60%, 40%, 0.15), hsla(160, 55%, 35%, 0.08));
+            border: 1px solid hsla(155, 70%, 45%, 0.2);
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--foreground);
+            transition: background 0.2s;
+        }
+
+        .ext-action-btn .act-icon {
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .ext-action-btn .act-hint {
+            margin-left: auto;
+            font-size: 0.65rem;
+            color: var(--muted-foreground);
+            font-weight: 400;
+        }
+
+        .ext-action-btn.highlight {
+            background: var(--gradient-primary);
+            border-color: transparent;
+            color: white;
+        }
+
+        .ext-action-btn .act-sub {
+            display: block;
+            font-size: 0.6rem;
+            color: var(--muted-foreground);
+            font-weight: 400;
+            margin-top: 2px;
+        }
+        .ext-action-btn.highlight .act-sub {
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Two-card layout for pre-login + post-login */
+        .ext-duo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+        @media (max-width: 768px) {
+            .ext-duo {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .ext-card {
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--card);
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            font-family: var(--font-body);
+        }
+
+        .ext-card-label {
+            text-align: center;
+            padding: 6px 0;
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted-foreground);
+        }
+
+        /* Pre-login panel styles */
+        .ext-login-body {
+            padding: 20px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            background: hsl(160, 8%, 10%);
+        }
+
+        .ext-lock-icon {
+            font-size: 1.6rem;
+            margin-bottom: 2px;
+        }
+
+        .ext-login-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--foreground);
+            text-align: center;
+            font-family: var(--font-display);
+        }
+
+        .ext-login-subtitle {
+            font-size: 0.68rem;
+            color: var(--primary);
+            text-align: center;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .ext-login-steps {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 4px;
+        }
+
+        .ext-login-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.68rem;
+            color: var(--muted-foreground);
+        }
+
+        .ext-login-step .els-num {
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: white;
+            font-size: 0.58rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .ext-login-step strong {
+            color: var(--foreground);
+        }
+
+        .ext-api-field {
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        .ext-api-field label {
+            display: block;
+            font-size: 0.66rem;
+            font-weight: 600;
+            color: var(--foreground);
+            margin-bottom: 4px;
+        }
+
+        .ext-api-field .api-input {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: hsl(160, 8%, 14%);
+            font-size: 0.68rem;
+            color: var(--muted-foreground);
+            box-sizing: border-box;
+        }
+
+        .ext-signin-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            background: var(--gradient-primary);
+            color: white;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-align: center;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* Post-login user bar */
+        .ext-user-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: hsla(155, 10%, 18%, 0.5);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 4px;
+        }
+
+        .ext-user-avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ext-user-email {
+            font-size: 0.68rem;
+            color: var(--muted-foreground);
+            font-weight: 500;
+        }
+
+        .ext-user-settings {
+            margin-left: auto;
+            font-size: 1rem;
+            color: var(--primary);
+        }
+
+        /* Post-login footer */
+        .ext-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            font-size: 0.58rem;
+            color: var(--muted-foreground);
+            border-top: 1px solid var(--border);
+            background: hsl(160, 8%, 8%);
+        }
+
+        .ext-footer a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* Tagline under header */
+        .ext-popup-tagline {
+            text-align: center;
+            padding: 6px 0 0;
+            font-size: 0.6rem;
+            color: var(--muted-foreground);
+            background: hsl(160, 10%, 6%);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            font-style: italic;
+        }
+
+        .ext-tag-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            background: hsla(155, 70%, 45%, 0.04);
+            border: 1px solid hsla(155, 70%, 45%, 0.1);
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        .ext-tag-row .tag-label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* === Dashboard: chat mockup === */
+        .dash-mock {
+            display: flex;
+            flex-direction: column;
+            font-family: var(--font-body);
+        }
+
+        .dash-sidebar-mini {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: hsl(160, 10%, 6%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dash-sidebar-mini .dsm-logo {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dash-sidebar-mini .dsm-logo svg { width: 14px; height: 14px; }
+
+        .dash-sidebar-mini .dsm-brand {
+            font-family: var(--font-display);
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--foreground);
+        }
+
+        .dash-sidebar-mini .dsm-nav {
+            margin-left: auto;
+            display: flex;
+            gap: 6px;
+        }
+
+        .dash-sidebar-mini .dsm-nav-btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: hsla(155, 70%, 45%, 0.08);
+            color: var(--muted-foreground);
+            border: 1px solid transparent;
+        }
+
+        .dash-sidebar-mini .dsm-nav-btn.active {
+            color: var(--primary);
+            border-color: hsla(155, 70%, 45%, 0.2);
+            background: hsla(155, 70%, 45%, 0.12);
+        }
+
+        .dash-chat-area {
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .dash-msg {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .dash-msg.user {
+            align-self: flex-end;
+            background: var(--gradient-primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .dash-msg.ai {
+            align-self: flex-start;
+            background: hsl(160, 8%, 12%);
+            border: 1px solid var(--border);
+            color: var(--foreground);
+            border-bottom-left-radius: 4px;
+        }
+
+        .dash-msg.ai .msg-source {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: hsla(155, 70%, 45%, 0.08);
+            border: 1px solid hsla(155, 70%, 45%, 0.15);
+            font-size: 0.62rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .dash-input-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            background: hsl(160, 8%, 8%);
+        }
+
+        .dash-input-bar .dinput {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: hsl(160, 8%, 10%);
+            color: var(--muted-foreground);
+            font-size: 0.78rem;
+            font-family: var(--font-body);
+        }
+
+        .dash-input-bar .dsend {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        /* === Google Search Companion mockup === */
+        .google-mock {
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }
+
+        .gm-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: hsl(0, 0%, 95%);
+            border-bottom: 1px solid hsl(0, 0%, 88%);
+        }
+
+        .gm-logo {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .gm-logo span:nth-child(1) { color: #4285F4; }
+        .gm-logo span:nth-child(2) { color: #EA4335; }
+        .gm-logo span:nth-child(3) { color: #FBBC05; }
+        .gm-logo span:nth-child(4) { color: #4285F4; }
+        .gm-logo span:nth-child(5) { color: #34A853; }
+        .gm-logo span:nth-child(6) { color: #EA4335; }
+
+        .gm-search {
+            flex: 1;
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid hsl(0, 0%, 82%);
+            background: white;
+            font-size: 0.78rem;
+            color: #333;
+            font-family: Arial, sans-serif;
+        }
+
+        .gm-body {
+            display: flex;
+            background: white;
+            min-height: 200px;
+        }
+
+        .gm-results {
+            flex: 1;
+            padding: 16px 20px;
+        }
+
+        .gm-result-item {
+            margin-bottom: 16px;
+        }
+
+        .gm-result-item .gm-url {
+            font-size: 0.68rem;
+            color: #70757a;
+        }
+
+        .gm-result-item .gm-title {
+            font-size: 0.85rem;
+            color: #1a0dab;
+            font-weight: 400;
+            margin: 2px 0;
+            text-decoration: none;
+        }
+
+        .gm-result-item .gm-snippet {
+            font-size: 0.72rem;
+            color: #4d5156;
+            line-height: 1.5;
+        }
+
+        .gm-notification {
+            width: 180px;
+            flex-shrink: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-left: 1px solid hsl(0, 0%, 90%);
+            background: hsl(0, 0%, 98%);
+        }
+
+        .gm-notif-card {
+            border-radius: 10px;
+            background: linear-gradient(135deg, hsl(160, 10%, 8%), hsl(160, 10%, 4%));
+            padding: 12px;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.25);
+            border: 1px solid hsla(155, 70%, 45%, 0.2);
+        }
+
+        .gm-notif-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .gm-notif-header .notif-logo {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gm-notif-header .notif-logo svg { width: 10px; height: 10px; }
+
+        .gm-notif-header .notif-brand {
+            font-family: var(--font-display);
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .gm-notif-match {
+            padding: 8px;
+            border-radius: 6px;
+            background: hsla(155, 70%, 45%, 0.08);
+            border: 1px solid hsla(155, 70%, 45%, 0.12);
+        }
+
+        .gm-notif-match .match-title {
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 3px;
+        }
+
+        .gm-notif-match .match-snippet {
+            font-size: 0.56rem;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.4;
+        }
+
+        .gm-notif-match .match-tag {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: hsla(155, 70%, 45%, 0.15);
+            font-size: 0.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .gm-notif-footer {
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .gm-notif-footer span {
+            font-size: 0.55rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* === Secure: Shield mockup === */
+        .secure-visual {
+            padding: 3rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            min-height: 340px;
+            justify-content: center;
+        }
+
+        .secure-shield {
+            width: 120px;
+            height: 140px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .secure-shield svg {
+            width: 120px;
+            height: 140px;
+        }
+
+        .secure-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .secure-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            background: hsl(160, 8%, 10%);
+            border: 1px solid var(--border);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--foreground);
+        }
+
+        .secure-badge .sb-icon {
+            font-size: 0.85rem;
+        }
+
+        .secure-badge .sb-check {
+            color: var(--primary);
+            font-size: 0.7rem;
+        }
+
+        .secure-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px dashed hsla(155, 70%, 45%, 0.12);
+            animation: secRotate 20s linear infinite;
+        }
+        .secure-ring-1 { width: 140px; height: 140px; top: 50%; left: 50%; margin: -70px 0 0 -70px; }
+        .secure-ring-2 { width: 200px; height: 200px; top: 50%; left: 50%; margin: -100px 0 0 -100px; animation-direction: reverse; animation-duration: 30s; }
+
+        @keyframes secRotate {
+            to { transform: rotate(360deg); }
+        }
+
+        /* === How It Works: illustration animations ===
+           All use a 6s cycle: fade-in during first portion, hold, then fade-out,
+           so they repeat infinitely while visible. */
+
+        /* --- Step 1: Extension popup cards --- */
+        /* Animations removed — elements always visible */
+
+        @keyframes hiwFadeCycle {
+            0%   { opacity: 0; transform: translateY(8px); }
+            12%  { opacity: 1; transform: translateY(0); }
+            75%  { opacity: 1; transform: translateY(0); }
+            90%  { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 0; transform: translateY(8px); }
+        }
+
+        /* --- Step 2: Dashboard chat --- */
+        /* Animations removed — elements always visible */
+
+        /* --- Step 3: Google search companion --- */
+
+        .hiw-row.visible .gm-notif-card {
+            animation: hiwNotifCycle 7s ease 1.2s infinite;
+        }
+
+        @keyframes hiwNotifCycle {
+            0%   { opacity: 0; transform: translateX(20px); }
+            12%  { opacity: 1; transform: translateX(0); }
+            72%  { opacity: 1; transform: translateX(0); }
+            88%  { opacity: 0; transform: translateX(20px); }
+            100% { opacity: 0; transform: translateX(20px); }
+        }
+
+        .hiw-row.visible .gm-result-item {
+            animation: hiwFadeCycle 7s ease infinite;
+        }
+        .hiw-row.visible .gm-result-item:nth-child(1) { animation-delay: 0.4s; }
+        .hiw-row.visible .gm-result-item:nth-child(2) { animation-delay: 0.8s; }
+
+        /* Shield pulse glow */
+        .hiw-row.visible .secure-shield svg {
+            animation: hiwShieldPulse 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes hiwShieldPulse {
+            0%   { filter: drop-shadow(0 0 8px hsla(270, 60%, 55%, 0.2)); }
+            100% { filter: drop-shadow(0 0 20px hsla(270, 60%, 55%, 0.5)); }
+        }
+
+        /* Security badges stagger in (looping) */
+        .hiw-row.visible .secure-badge {
+            animation: hiwFadeCycle 7s ease infinite;
+        }
+        .hiw-row.visible .secure-badge:nth-child(1) { animation-delay: 0.5s; }
+        .hiw-row.visible .secure-badge:nth-child(2) { animation-delay: 0.9s; }
+        .hiw-row.visible .secure-badge:nth-child(3) { animation-delay: 1.3s; }
+        .hiw-row.visible .secure-badge:nth-child(4) { animation-delay: 1.7s; }
+
+        /* Ext popup header shimmer removed (Step 1 is static) */
+
+        /* ========================================
+           CTA Section
+           ======================================== */
+        .cta {
+            padding: 6rem 1.5rem;
+            background: transparent;
+        }
+
+        .cta-container {
+            max-width: 56rem;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .cta-card {
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            background: hsl(160, 8%, 10%);
+            padding: 3rem 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .cta-card {
+                padding: 4rem;
+            }
+        }
+
+        .cta-card h2 {
+            font-size: clamp(1.75rem, 5vw, 2.5rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .cta-card p {
+            margin-top: 1rem;
+            color: var(--muted-foreground);
+            font-size: 1.125rem;
+        }
+
+        .cta-card .btn {
+            margin-top: 2rem;
+        }
+
+        /* ========================================
+           Footer
+           ======================================== */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 2.5rem 1.5rem;
+            background: transparent;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .footer-container {
+                flex-direction: row;
+            }
+        }
+
+        .footer p {
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+
+        /* ========================================
+           Modal Styles
+           ======================================== */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: hsla(160, 10%, 6%, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: none;
+            color: var(--muted-foreground);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--foreground);
+        }
+
+        .auth-form h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: var(--muted-foreground);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--secondary);
+            color: var(--foreground);
+            border: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .btn-google:hover {
+            background: var(--muted);
+            border-color: hsla(155, 70%, 45%, 0.3);
+        }
+
+        .btn-google svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .auth-switch {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--muted-foreground);
+        }
+
+        .auth-switch a {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .auth-message {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .auth-message.error {
+            background: hsla(0, 72%, 55%, 0.1);
+            border: 1px solid hsla(0, 72%, 55%, 0.3);
+            color: hsl(0, 72%, 65%);
+        }
+
+        .auth-message.success {
+            background: hsla(155, 70%, 45%, 0.1);
+            border: 1px solid hsla(155, 70%, 45%, 0.3);
+            color: var(--primary);
+        }
+
+        /* Auth Loading Overlay */
+        .auth-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--background);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .auth-loading-content {
+            text-align: center;
+        }
+
+        .auth-loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        .auth-loading-content h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-loading-content p {
+            color: var(--muted-foreground);
+            font-size: 0.875rem;
+        }
+
+        /* ========================================
+           Animations
+           ======================================== */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ========================================
+           Responsive Adjustments
+           ======================================== */
+        @media (max-width: 640px) {
+            .nav-link {
+                display: none;
+            }
+            
+            .hero {
+                padding-top: 4rem;
+            }
+        }
+        /* Hexagon grid texture - flows through entire page
+           Honeycomb: each hex has flat-top orientation.
+           Hex radius=20, so width=40, height=34.64 (2*r, sqrt(3)*r).
+           Tile = 60x52 with hex centered → 10px gap on each side equally.
+           Offset row shifted by half-width (30px) for honeycomb interlock. */
+        .texture-hex {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='52' viewBox='0 0 60 52'%3E%3Cg fill='none' stroke='%23f59e0b' stroke-opacity='0.13' stroke-width='0.8'%3E%3Cpath d='M20 9l10-5.77 10 5.77v11.55L30 26.3 20 20.55V9z'/%3E%3Cpath d='M50 35l10-5.77 10 5.77v11.55L60 52.3 50 46.55V35z'/%3E%3Cpath d='M-10 35l10-5.77 10 5.77v11.55L0 52.3-10 46.55V35z'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* All sections are transparent so hex shows through */
+        .nav, .hero, .features, .problem-solution, .cta, .footer, .auth-overlay, .auth-loading-overlay {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Content BLOCKS get opaque backgrounds so hex doesn't overlap them */
+        .hiw-illust, .cta-card, .ps-illustration, .modal-content, .auth-loading-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ========================================
+           Mobile Responsive Enhancements
+           ======================================== */
+
+        /* --- Tablet & small desktop (≤ 1024px) --- */
+        @media (max-width: 1024px) {
+            .ps-container,
+            .features-container {
+                max-width: 100%;
+                padding: 0 1rem;
+            }
+
+            .hiw-row {
+                margin-bottom: 6rem;
+            }
+
+            .ps-row {
+                margin-bottom: 6rem;
+            }
+        }
+
+        /* --- Mobile landscape / small tablet (≤ 768px) --- */
+        @media (max-width: 768px) {
+            .hero {
+                min-height: auto;
+                padding-top: 6rem;
+                padding-bottom: 3rem;
+            }
+
+            .hero h1 {
+                font-size: clamp(1.8rem, 7vw, 2.5rem);
+            }
+
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .hero-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .problem-solution {
+                padding: 4rem 1rem 1rem;
+            }
+
+            .ps-section-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .ps-row {
+                margin-bottom: 4rem;
+            }
+
+            .features {
+                padding: 4rem 1rem;
+            }
+
+            .features-header {
+                margin-bottom: 3rem;
+            }
+
+            .features-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .hiw-row {
+                margin-bottom: 4rem;
+                gap: 1.5rem;
+            }
+
+            .hiw-text h2 {
+                font-size: 1.3rem;
+            }
+
+            .hiw-desc {
+                font-size: 0.9rem;
+            }
+
+            .hiw-step-content {
+                font-size: 0.85rem;
+            }
+
+            .hiw-tip {
+                font-size: 0.8rem;
+                margin-left: 0 !important;
+            }
+
+            /* Google mockup: stack notification below results */
+            .gm-body {
+                flex-direction: column;
+                min-height: auto;
+            }
+
+            .gm-notification {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid hsl(0, 0%, 90%);
+                padding: 12px;
+            }
+
+            /* Dashboard mockup */
+            .dash-chat-area {
+                padding: 14px;
+                min-height: 160px;
+            }
+
+            .dash-msg {
+                font-size: 0.72rem;
+                padding: 10px 12px;
+            }
+
+            /* Secure visual */
+            .secure-visual {
+                min-height: auto;
+                padding: 2rem 1.5rem;
+            }
+
+            .secure-shield {
+                width: 90px;
+                height: 110px;
+            }
+
+            .secure-shield svg {
+                width: 90px;
+                height: 110px;
+            }
+
+            .secure-badge {
+                padding: 8px 12px;
+                font-size: 0.7rem;
+            }
+
+            .cta {
+                padding: 4rem 1rem;
+            }
+
+            .nav-link {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* --- Mobile portrait (≤ 480px) --- */
+        @media (max-width: 480px) {
+            .hero {
+                padding-top: 5rem;
+                padding-bottom: 2rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .hero-logo-icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .hero-logo-text {
+                font-size: 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 1.6rem;
+            }
+
+            .hero-subtitle {
+                font-size: 0.9rem;
+                margin-top: 1rem;
+            }
+
+            .hero-actions {
+                margin-top: 1.5rem;
+            }
+
+            .problem-solution {
+                padding: 3rem 0.75rem 1rem;
+            }
+
+            .ps-section-header h2 {
+                font-size: 1.3rem;
+            }
+
+            .ps-label {
+                font-size: 0.65rem;
+            }
+
+            .ps-text h3 {
+                font-size: 1.1rem;
+            }
+
+            .ps-text p {
+                font-size: 0.85rem;
+            }
+
+            .ps-row {
+                margin-bottom: 3rem;
+            }
+
+            .features {
+                padding: 3rem 0.75rem;
+            }
+
+            .features-header {
+                margin-bottom: 2rem;
+            }
+
+            .features-header h2 {
+                font-size: 1.3rem;
+            }
+
+            .features-header p {
+                font-size: 0.9rem;
+            }
+
+            .hiw-row {
+                margin-bottom: 3rem;
+                gap: 1.25rem;
+            }
+
+            .hiw-text h2 {
+                font-size: 1.15rem;
+            }
+
+            .hiw-desc {
+                font-size: 0.85rem;
+            }
+
+            .hiw-label {
+                font-size: 0.65rem;
+            }
+
+            .hiw-step-content {
+                font-size: 0.8rem;
+            }
+
+            .hiw-step-num {
+                width: 22px;
+                height: 22px;
+                font-size: 0.6rem;
+            }
+
+            .hiw-tip {
+                font-size: 0.75rem;
+                padding: 10px 12px;
+                margin-left: 0 !important;
+            }
+
+            /* Extension cards: stack and constrain */
+            .ext-card {
+                font-size: 0.75rem;
+            }
+
+            .ext-popup-header {
+                padding: 12px 14px;
+            }
+
+            .ext-popup-logo {
+                width: 26px;
+                height: 26px;
+            }
+
+            .ext-popup-brand {
+                font-size: 0.78rem;
+            }
+
+            .ext-action-btn {
+                padding: 10px 14px;
+                font-size: 0.72rem;
+            }
+
+            .ext-login-step {
+                font-size: 0.62rem;
+            }
+
+            .ext-login-title {
+                font-size: 0.78rem;
+            }
+
+            .ext-signin-btn {
+                font-size: 0.7rem;
+                padding: 8px;
+            }
+
+            /* Google mockup */
+            .gm-bar {
+                padding: 8px 12px;
+            }
+
+            .gm-search {
+                font-size: 0.7rem;
+                padding: 6px 10px;
+            }
+
+            .gm-results {
+                padding: 12px 14px;
+            }
+
+            .gm-result-item .gm-title {
+                font-size: 0.78rem;
+            }
+
+            .gm-result-item .gm-snippet {
+                font-size: 0.65rem;
+            }
+
+            .gm-notification {
+                padding: 10px;
+            }
+
+            .gm-notif-card {
+                padding: 10px;
+            }
+
+            /* Dashboard mockup */
+            .dash-sidebar-mini {
+                padding: 8px 12px;
+            }
+
+            .dsm-nav-btn {
+                font-size: 0.58rem;
+                padding: 3px 6px;
+            }
+
+            .dash-chat-area {
+                padding: 12px;
+                min-height: 140px;
+                gap: 10px;
+            }
+
+            .dash-msg {
+                font-size: 0.68rem;
+                padding: 8px 10px;
+                max-width: 92%;
+            }
+
+            .dash-msg.ai .msg-source {
+                font-size: 0.55rem;
+            }
+
+            .dash-input-bar {
+                padding: 8px 10px;
+            }
+
+            .dash-input-bar .dinput {
+                font-size: 0.7rem;
+                padding: 8px 10px;
+            }
+
+            .dash-input-bar .dsend {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+
+            /* Security shield */
+            .secure-visual {
+                min-height: auto;
+                padding: 1.5rem 1rem;
+                gap: 1.25rem;
+            }
+
+            .secure-shield {
+                width: 70px;
+                height: 85px;
+            }
+
+            .secure-shield svg {
+                width: 70px;
+                height: 85px;
+            }
+
+            .secure-badges {
+                gap: 6px;
+            }
+
+            .secure-badge {
+                padding: 6px 10px;
+                font-size: 0.62rem;
+                gap: 5px;
+            }
+
+            .secure-ring-1,
+            .secure-ring-2 {
+                display: none;
+            }
+
+            /* CTA */
+            .cta {
+                padding: 3rem 0.75rem;
+            }
+
+            .cta-card {
+                padding: 2rem 1.25rem;
+            }
+
+            .cta-card h2 {
+                font-size: 1.3rem;
+            }
+
+            .cta-card p {
+                font-size: 0.9rem;
+            }
+
+            /* Footer */
+            .footer {
+                padding: 1.5rem 1rem;
+            }
+
+            /* Modal */
+            .modal-content {
+                padding: 1.5rem;
+                margin: 0.5rem;
+                max-width: 100%;
+                border-radius: 0.75rem;
+            }
+
+            .modal {
+                padding: 0.75rem;
+                align-items: flex-start;
+                padding-top: 10vh;
+            }
+
+            .auth-form h2 {
+                font-size: 1.25rem;
+            }
+
+            .auth-subtitle {
+                font-size: 0.8rem;
+            }
+
+            .form-input {
+                padding: 0.625rem 0.75rem;
+                font-size: 0.875rem;
+            }
+
+            .btn-google {
+                padding: 0.625rem 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            .auth-divider {
+                margin: 1rem 0;
+            }
+
+            /* Nav */
+            .nav-container {
+                padding: 0.75rem 1rem;
+            }
+
+            .btn-sm {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.72rem;
+            }
+
+            .logo-text {
+                font-size: 1rem;
+            }
+
+            .logo-icon {
+                width: 24px;
+                height: 24px;
+            }
+        }
+
+        /* --- Extra small screens (≤ 360px) --- */
+        @media (max-width: 360px) {
+            .hero h1 {
+                font-size: 1.4rem;
+            }
+
+            .hero-logo-text {
+                font-size: 1.25rem;
+            }
+
+            .hiw-text h2 {
+                font-size: 1.05rem;
+            }
+
+            .nav-link {
+                display: none;
+            }
+
+            .ext-action-btn {
+                padding: 8px 10px;
+                font-size: 0.65rem;
+            }
+
+            .ext-action-btn .act-sub {
+                display: none;
+            }
+
+            .gm-result-item:nth-child(2) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hexagon grid texture -->
+    <div class="texture-hex"></div>
+
+    <!-- Navigation -->
+    <nav class="nav glass">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <svg class="logo-icon" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logo-g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="hsl(155, 70%, 50%)" />
+                            <stop offset="100%" stop-color="hsl(165, 55%, 35%)" />
+                        </linearGradient>
+                        <linearGradient id="logo-g2" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="hsl(155, 65%, 42%)" stop-opacity="0.4" />
+                            <stop offset="100%" stop-color="hsl(160, 60%, 40%)" stop-opacity="0.8" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="10" y="10" width="28" height="28" rx="6" fill="url(#logo-g1)" />
+                    <rect x="18" y="18" width="28" height="28" rx="6" fill="url(#logo-g2)" />
+                </svg>
+                <span class="logo-text">
+                    <span class="logo-text-main">info</span><span class="logo-text-accent">Snap</span><span class="logo-text-suffix">.ai</span>
+                </span>
+            </a>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Features</a>
+                <button class="btn btn-ghost btn-sm" onclick="showAuthModal('signin')">Sign In</button>
+                <button class="btn btn-primary btn-sm" onclick="showAuthModal('signup')">Get Started</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-glow"></div>
+        <div class="hero-content">
+            <div class="hero-logo">
+                <svg class="hero-logo-icon" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="hero-logo-g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="hsl(155, 70%, 50%)" />
+                            <stop offset="100%" stop-color="hsl(165, 55%, 35%)" />
+                        </linearGradient>
+                        <linearGradient id="hero-logo-g2" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="hsl(155, 65%, 42%)" stop-opacity="0.4" />
+                            <stop offset="100%" stop-color="hsl(160, 60%, 40%)" stop-opacity="0.8" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="10" y="10" width="28" height="28" rx="6" fill="url(#hero-logo-g1)" />
+                    <rect x="18" y="18" width="28" height="28" rx="6" fill="url(#hero-logo-g2)" />
+                </svg>
+                <span class="hero-logo-text">
+                    <span class="logo-text-main">info</span><span class="logo-text-accent">Snap</span><span class="logo-text-suffix">.ai</span>
+                </span>
+            </div>
+            
+            <h1>Save anything, <span class="text-gradient">find it instantly.</span></h1>
+            
+            <p class="hero-subtitle">
+                Capture files, screenshots, notes, and webpages — then let AI retrieve
+                them instantly through natural conversation or right inside your Google searches.
+            </p>
+            
+            <div class="hero-actions">
+                <button class="btn btn-primary btn-lg" onclick="showAuthModal('signup')">Get Started</button>
+                <a href="#features" class="btn btn-outline btn-lg">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem / Solution Section -->
+    <section class="problem-solution">
+        <div class="ps-container">
+            <div class="ps-section-header" data-animate>
+                <h2>Stop searching. <span class="text-gradient">Start finding.</span></h2>
+                <p>See how <span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span> transforms the way you save and retrieve information.</p>
+            </div>
+
+            <!-- Row 1: THE PROBLEM — text left, illustration right -->
+            <div class="ps-row" data-animate>
+                <div class="ps-text">
+                    <span class="ps-label problem">The Problem</span>
+                    <h2>Your information is <span style="color: hsl(0, 85%, 65%);">everywhere.</span></h2>
+                    <p class="ps-desc">You save things all day long — but when you actually need them, they've vanished.</p>
+                    <ul class="ps-list">
+                        <li><span class="marker bad">✕</span>Documents buried across phone, personal laptop, and office PC — never where you need them</li>
+                        <li><span class="marker bad">✕</span>Screenshots taken for quick reference quietly vanish into camera rolls and downloads</li>
+                        <li><span class="marker bad">✕</span>Bookmarks pile up and are never opened again</li>
+                        <li><span class="marker bad">✕</span>Notes scattered across Notion, Google Docs, Slack, email…</li>
+                        <li><span class="marker bad">✕</span>Countless hours lost every week just <em>searching</em></li>
+                    </ul>
+                </div>
+                <div class="ps-illustration ps-illust-problem">
+                    <div class="fail-story">
+                        <!-- The question -->
+                        <div class="fs-query">
+                            <span class="fs-query-icon">🔍</span>
+                            <span class="fs-query-text">Where’s my tax document from last year?</span>
+                            <span class="fs-query-cursor"></span>
+                        </div>
+
+                        <!-- 3 steps -->
+                        <div class="fs-steps">
+                            <!-- Step 1: Email -->
+                            <div class="fs-step">
+                                <div class="fs-step-rail"><span class="fs-step-num">1</span></div>
+                                <div class="fs-step-body">
+                                    <div class="fs-step-header">
+                                        <span class="fs-step-icon">📧</span>
+                                        <span class="fs-step-label">Check Email</span>
+                                    </div>
+                                    <div class="fs-step-action">Searched inbox for “tax document”…</div>
+                                    <span class="fs-result fail">Not found</span>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Laptop -->
+                            <div class="fs-step">
+                                <div class="fs-step-rail"><span class="fs-step-num">2</span></div>
+                                <div class="fs-step-body">
+                                    <div class="fs-step-header">
+                                        <span class="fs-step-icon">💻</span>
+                                        <span class="fs-step-label">Search Laptop</span>
+                                    </div>
+                                    <div class="fs-step-action">Checked Downloads, Documents, Desktop…</div>
+                                    <span class="fs-result fail">Not found</span>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Phone -->
+                            <div class="fs-step">
+                                <div class="fs-step-rail"><span class="fs-step-num">3</span></div>
+                                <div class="fs-step-body">
+                                    <div class="fs-step-header">
+                                        <span class="fs-step-icon">📱</span>
+                                        <span class="fs-step-label">Phone Notes</span>
+                                    </div>
+                                    <div class="fs-step-action">Scrolled through Notes, Photos, Files…</div>
+                                    <span class="fs-result fail">Not found</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="fs-footer">⏱ 45 minutes wasted. Still can’t find it.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: THE SOLUTION — illustration left, text right (zigzag) -->
+            <div class="ps-row reverse" data-animate>
+                <div class="ps-text">
+                    <span class="ps-label solution">The Solution</span>
+                    <h2>One hub. <span class="text-gradient">AI‑powered retrieval.</span></h2>
+                    <p class="ps-desc"><span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span> captures everything in a single place and lets you find it the way you think — just ask in plain English.</p>
+                    <ul class="ps-list">
+                        <li><span class="marker good">✓</span>Save anything — files, screenshots, web pages, notes</li>
+                        <li><span class="marker good">✓</span>Ask in plain English and get instant answers</li>
+                        <li><span class="marker good">✓</span>Quietly watches your Google searches and alerts you when a saved doc matches — so you rediscover information you forgot you had</li>
+                        <li><span class="marker good">✓</span>Zero organizing required — AI does it for you</li>
+                    </ul>
+                </div>
+                <div class="ps-illustration ps-illust-solution">
+                    <div class="sol-scene">
+                        <!-- PHASE 1: Upload hub -->
+                        <div class="sol-hub">
+                            <!-- Orbit rings -->
+                            <div class="sol-orbit sol-orbit-1"></div>
+                            <div class="sol-orbit sol-orbit-2"></div>
+
+                            <!-- Flying items -->
+                            <div class="sol-item"><span class="sol-item-icon">📄</span> Documents</div>
+                            <div class="sol-item"><span class="sol-item-icon">📝</span> Notes</div>
+                            <div class="sol-item"><span class="sol-item-icon">🖼️</span> Images</div>
+                            <div class="sol-item"><span class="sol-item-icon">📸</span> Screenshots</div>
+                            <div class="sol-item"><span class="sol-item-icon">🌐</span> Web Pages</div>
+
+                            <!-- Central hub -->
+                            <div class="sol-center">
+                                <svg viewBox="6 6 44 44" fill="none"><rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(255,255,255,0.9)"/><rect x="18" y="18" width="28" height="28" rx="6" fill="rgba(255,255,255,0.4)"/></svg>
+                                <span class="sol-center-label">infoSnap.ai</span>
+                            </div>
+                        </div>
+
+                        <!-- PHASE 2: Chat UI -->
+                        <div class="sol-chat">
+                            <div class="chat-topbar">
+                                <div class="chat-logo-sm">
+                                    <svg viewBox="6 6 44 44" fill="none"><rect x="10" y="10" width="28" height="28" rx="6" fill="rgba(255,255,255,0.9)"/><rect x="18" y="18" width="28" height="28" rx="6" fill="rgba(255,255,255,0.4)"/></svg>
+                                </div>
+                                <span class="chat-topbar-name"><span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span></span>
+                                <span class="chat-topbar-status">Online</span>
+                            </div>
+
+                            <div class="chat-messages">
+                                <div class="chat-msg user">Where's my tax document from last year?</div>
+                                <div class="chat-msg ai">
+                                    Found it! You saved <strong>"2024_Tax_Return.pdf"</strong> on March 15, 2025. It contains your federal filing and W-2 forms.
+                                    <div class="chat-source">
+                                        <span class="chat-source-icon">📄</span>
+                                        2024_Tax_Return.pdf · 1.2 MB
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="chat-input">
+                                <div class="chat-input-field">Ask anything…</div>
+                                <div class="chat-send-btn">↑</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="features" class="features">
+        <div class="features-container">
+            <div class="features-header" data-animate>
+                <h2>How it <span class="text-gradient">works</span></h2>
+                <p>Get started in under a minute. Here's how.</p>
+            </div>
+
+            <!-- ===== 1. CAPTURE ANYTHING ===== -->
+            <div class="hiw-row" data-animate>
+                <div class="hiw-text">
+                    <span class="hiw-label green">Step 1</span>
+                    <h2>Capture <span class="text-gradient">anything.</span></h2>
+                    <p class="hiw-desc">Get set up in under a minute. Install the Chrome extension, authenticate, and start saving — files, screenshots, webpages, and quick notes — all in one click.</p>
+                    <ol class="hiw-steps">
+                        <li class="hiw-step">
+                            <span class="hiw-step-num">0</span>
+                            <span class="hiw-step-content"><strong>Sign up</strong> on <a href="#" style="color:var(--primary);text-decoration:underline;" onclick="showAuthModal('signup');return false;"><span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span></a> — free, takes 10 seconds.</span>
+                        </li>
+                        <li class="hiw-step">
+                            <span class="hiw-step-num">1</span>
+                            <span class="hiw-step-content"><strong>Install the Chrome extension</strong> from the Chrome Web Store. <span class="muted">Look for "<span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span>" — the green icon.</span></span>
+                        </li>
+                        <li class="hiw-step">
+                            <span class="hiw-step-num">2</span>
+                            <span class="hiw-step-content"><strong>Enter your API Key</strong> to authenticate. <span class="muted">Generate one from Profile → API Keys on your dashboard.</span></span>
+                        </li>
+                        <li class="hiw-step">
+                            <span class="hiw-step-num">3</span>
+                            <span class="hiw-step-content"><strong>Start capturing</strong> — upload files (PDF, DOCX, XLSX, images), take screenshots, save webpages, or jot quick notes.</span>
+                        </li>
+                    </ol>
+                    <div class="hiw-tip">💡 <strong>Quick Tip:</strong>&nbsp; Add a tag to every upload for lightning-fast search later.</div>
+                </div>
+                <div class="hiw-illust ext-duo">
+                    <!-- Card 1: Pre-login -->
+                    <div class="ext-card">
+                        <div class="ext-popup-header">
+                            <div class="ext-popup-logo">
+                                <svg viewBox="0 0 56 56" fill="none"><rect x="8" y="8" width="26" height="26" rx="6" fill="white" fill-opacity="0.9"/><rect x="18" y="18" width="26" height="26" rx="6" fill="white" fill-opacity="0.5"/></svg>
+                            </div>
+                            <span class="ext-popup-brand"><span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span></span>
+                        </div>
+                        <div class="ext-popup-tagline">Save Anything, find it instantly</div>
+                        <div class="ext-login-body">
+                            <div class="ext-lock-icon">🔐</div>
+                            <div class="ext-login-title">Welcome to <span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span></div>
+                            <div class="ext-login-subtitle">How do I get my API Key?</div>
+                            <div class="ext-login-steps">
+                                <div class="ext-login-step"><span class="els-num">1</span> Login to <strong><span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span></strong></div>
+                                <div class="ext-login-step"><span class="els-num">2</span> Click <strong>Profile</strong> on the left sidebar</div>
+                                <div class="ext-login-step"><span class="els-num">3</span> Under <strong>API Keys</strong>, create a new key</div>
+                                <div class="ext-login-step"><span class="els-num">4</span> Paste the key below to connect</div>
+                            </div>
+                            <div class="ext-api-field">
+                                <label>API Key</label>
+                                <div class="api-input">Enter your API key</div>
+                            </div>
+                            <div class="ext-signin-btn">🔑 Sign In</div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Post-login -->
+                    <div class="ext-card">
+                        <div class="ext-popup-header">
+                            <div class="ext-popup-logo">
+                                <svg viewBox="0 0 56 56" fill="none"><rect x="8" y="8" width="26" height="26" rx="6" fill="white" fill-opacity="0.9"/><rect x="18" y="18" width="26" height="26" rx="6" fill="white" fill-opacity="0.5"/></svg>
+                            </div>
+                            <span class="ext-popup-brand"><span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span></span>
+                        </div>
+                        <div class="ext-popup-tagline">Save Anything, find it instantly</div>
+                        <div class="ext-popup-body">
+                            <div class="ext-user-bar">
+                                <div class="ext-user-avatar">A</div>
+                                <span class="ext-user-email">ameet@gmail.com</span>
+                                <span class="ext-user-settings">⚙️</span>
+                            </div>
+                            <div class="ext-action-btn highlight">
+                                <span class="act-icon">📷</span>
+                                <span><strong>Take Screenshot</strong></span>
+                            </div>
+                            <div class="ext-action-btn highlight">
+                                <span class="act-icon">📁</span>
+                                <span><strong>Upload File</strong><span class="act-sub">Supports: txt, xlsx, pdf, doc, images</span></span>
+                            </div>
+                            <div class="ext-action-btn highlight">
+                                <span class="act-icon">📝</span>
+                                <span><strong>Take Notes</strong></span>
+                            </div>
+                            <div class="ext-action-btn highlight">
+                                <span class="act-icon">🌐</span>
+                                <span><strong>Save this Webpage</strong><span class="act-sub">Saves page as searchable PDF</span></span>
+                            </div>
+                            <div class="ext-tag-row">
+                                <span class="tag-label">🏷️ Tag:</span>
+                                <span>tax-documents-2025</span>
+                            </div>
+                        </div>
+                        <div class="ext-footer">
+                            <span>v1.2.0</span>
+                            <span><a href="#">Help</a>&nbsp;&nbsp;&nbsp;<a href="#">Logout</a></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 2. ASK IN PLAIN ENGLISH ===== -->
+            <div class="hiw-row reverse" data-animate>
+                <div class="hiw-text">
+                    <span class="hiw-label blue">Step 2</span>
+                    <h2>Ask in <span style="color:hsl(210,70%,60%);">plain English.</span></h2>
+                    <p class="hiw-desc">No folders. No keyword guessing. Just type what you're looking for and get an instant answer.</p>
+                    <ol class="hiw-steps">
+                        <li class="hiw-step">
+                            <span class="hiw-step-num" style="background:hsla(210,70%,50%,0.12);color:hsl(210,70%,60%);">1</span>
+                            <span class="hiw-step-content"><strong>Open your dashboard</strong> and type a question in the chat.</span>
+                        </li>
+                        <li class="hiw-step">
+                            <span class="hiw-step-num" style="background:hsla(210,70%,50%,0.12);color:hsl(210,70%,60%);">2</span>
+                            <span class="hiw-step-content"><strong>Get an AI-powered answer</strong> with source references — instantly.</span>
+                        </li>
+                    </ol>
+                    <div class="hiw-tip" style="background:hsla(210,70%,50%,0.06);border-color:hsla(210,70%,50%,0.15);color:hsl(210,70%,65%);">
+                        📄 <strong>Bonus:</strong>&nbsp; Browse <em>My Snaps</em> to see every upload — searchable & filterable.
+                    </div>
+                </div>
+                <div class="hiw-illust dash-mock">
+                    <!-- Dashboard chat mockup -->
+                    <div class="dash-sidebar-mini">
+                        <div class="dsm-logo">
+                            <svg viewBox="0 0 56 56" fill="none"><rect x="8" y="8" width="26" height="26" rx="6" fill="white" fill-opacity="0.9"/><rect x="18" y="18" width="26" height="26" rx="6" fill="white" fill-opacity="0.5"/></svg>
+                        </div>
+                        <span class="dsm-brand"><span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span></span>
+                        <div class="dsm-nav">
+                            <span class="dsm-nav-btn active">💬 Chat</span>
+                            <span class="dsm-nav-btn">📄 Notes</span>
+                        </div>
+                    </div>
+                    <div class="dash-chat-area">
+                        <div class="dash-msg user">Where's my 2024 tax return?</div>
+                        <div class="dash-msg ai">
+                            I found your <strong>2024 Federal Tax Return (Form 1040)</strong> uploaded on March 15, 2024. It shows an adjusted gross income of $92,400 and a refund of $1,847.
+                            <div class="msg-source">📄 2024_Tax_Return_Final.pdf</div>
+                        </div>
+                    </div>
+                    <div class="dash-input-bar">
+                        <div class="dinput">Ask a question about your documents…</div>
+                        <div class="dsend">➤</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 3. GOOGLE SEARCH COMPANION ===== -->
+            <div class="hiw-row" data-animate>
+                <div class="hiw-text">
+                    <span class="hiw-label amber">Step 3</span>
+                    <h2>Your docs surface <span style="color:hsl(38,90%,60%);">inside Google.</span></h2>
+                    <p class="hiw-desc">Search Google like normal. If you've saved something relevant, a notification appears automatically — no extra clicks.</p>
+                    <ol class="hiw-steps">
+                        <li class="hiw-step">
+                            <span class="hiw-step-num" style="background:hsla(38,90%,50%,0.12);color:hsl(38,90%,60%);">→</span>
+                            <span class="hiw-step-content">The extension quietly checks your library in the background and <strong>surfaces matching docs</strong> right inside your search results.</span>
+                        </li>
+                    </ol>
+                    <div class="hiw-tip">
+                        ⚡ <strong>Zero friction:</strong>&nbsp; You only see it when it finds a match.
+                    </div>
+                </div>
+                <div class="hiw-illust google-mock">
+                    <!-- Google search + notification mockup -->
+                    <div class="gm-bar">
+                        <div class="gm-logo"><span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span></div>
+                        <div class="gm-search">2024 federal tax filing deadline</div>
+                    </div>
+                    <div class="gm-body">
+                        <div class="gm-results">
+                            <div class="gm-result-item">
+                                <div class="gm-url">www.irs.gov › filing</div>
+                                <div class="gm-title">Filing Season 2024: Key Dates & Deadlines</div>
+                                <div class="gm-snippet">The deadline for filing your 2024 federal income tax return is April 15, 2025. Taxpayers can request an automatic extension…</div>
+                            </div>
+                            <div class="gm-result-item">
+                                <div class="gm-url">www.turbotax.com › deadlines</div>
+                                <div class="gm-title">Tax Deadlines 2024-2025 | TurboTax</div>
+                                <div class="gm-snippet">Important tax dates: April 15 — Individual returns due. June 15 — Extended deadline for U.S. citizens abroad…</div>
+                            </div>
+                        </div>
+                        <div class="gm-notification">
+                            <div class="gm-notif-card">
+                                <div class="gm-notif-header">
+                                    <div class="notif-logo">
+                                        <svg viewBox="0 0 56 56" fill="none"><rect x="8" y="8" width="26" height="26" rx="6" fill="white" fill-opacity="0.9"/><rect x="18" y="18" width="26" height="26" rx="6" fill="white" fill-opacity="0.5"/></svg>
+                                    </div>
+                                    <span class="notif-brand"><span class="brand-inline"><span class="bi-main" style="color:white">info</span><span class="bi-accent" style="color:hsl(155,70%,50%)">Snap</span><span class="bi-suffix" style="color:rgba(255,255,255,0.5)">.ai</span></span></span>
+                                </div>
+                                <div class="gm-notif-match">
+                                    <div class="match-title">📄 2024 Tax Return</div>
+                                    <div class="match-snippet">Your filed 2024 Federal Form 1040 — AGI $92,400, refund $1,847.</div>
+                                    <span class="match-tag">tax-documents-2025</span>
+                                </div>
+                                <div class="gm-notif-footer">
+                                    <span>View in Dashboard →</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 4. PRIVATE & SECURE ===== -->
+            <div class="hiw-row reverse" data-animate>
+                <div class="hiw-text">
+                    <span class="hiw-label purple">Always On</span>
+                    <h2>Private & <span style="color:hsl(270,60%,65%);">secure.</span></h2>
+                    <p class="hiw-desc">Your data is <strong>yours</strong> — period. We built <span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span> with privacy as the foundation, not an afterthought. Every document, note, and screenshot is protected.</p>
+                    <ol class="hiw-steps">
+                        <li class="hiw-step">
+                            <span class="hiw-step-num" style="background:hsla(270,60%,55%,0.12);color:hsl(270,60%,65%);">🛡️</span>
+                            <span class="hiw-step-content"><strong>No data selling. Ever.</strong> — Your information is never shared, sold, or used for advertising. Your documents stay completely private.</span>
+                        </li>
+                        <li class="hiw-step">
+                            <span class="hiw-step-num" style="background:hsla(270,60%,55%,0.12);color:hsl(270,60%,65%);">🔑</span>
+                            <span class="hiw-step-content"><strong>API Key authentication</strong> — Every request is authenticated with your unique key. Only you access your data.</span>
+                        </li>
+                        <li class="hiw-step">
+                            <span class="hiw-step-num" style="background:hsla(270,60%,55%,0.12);color:hsl(270,60%,65%);">☁️</span>
+                            <span class="hiw-step-content"><strong>Secure cloud infrastructure</strong> — Hosted on enterprise-grade servers with automated backups and 99.9% uptime.</span>
+                        </li>
+                    </ol>
+                </div>
+                <div class="hiw-illust secure-visual">
+                    <!-- Security visual -->
+                    <div class="secure-shield" style="position:relative;">
+                        <svg viewBox="0 0 80 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="shield-g" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="hsl(270, 60%, 55%)" />
+                                    <stop offset="100%" stop-color="hsl(270, 50%, 40%)" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M40 4L8 20v28c0 22 14 38 32 44 18-6 32-22 32-44V20L40 4z" fill="url(#shield-g)" fill-opacity="0.15" stroke="hsl(270, 60%, 55%)" stroke-width="1.5"/>
+                            <path d="M30 48l8 8 14-16" stroke="hsl(270, 60%, 65%)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        </svg>
+                        <div class="secure-ring secure-ring-1"></div>
+                        <div class="secure-ring secure-ring-2"></div>
+                    </div>
+                    <div class="secure-badges">
+                        <div class="secure-badge"><span class="sb-icon">🛡️</span> Zero Data Selling <span class="sb-check">✓</span></div>
+                        <div class="secure-badge"><span class="sb-icon">🔑</span> API Key Auth <span class="sb-check">✓</span></div>
+                        <div class="secure-badge"><span class="sb-icon">☁️</span> 99.9% Uptime <span class="sb-check">✓</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="cta-container">
+            <div class="cta-card glow-border">
+                <h2>Ready to get started?</h2>
+                <p>Join thousands of users already using <span class="brand-inline"><span class="bi-main">info</span><span class="bi-accent">Snap</span><span class="bi-suffix">.ai</span></span></p>
+                <button class="btn btn-primary btn-lg" onclick="showAuthModal('signup')">Try <span class="brand-inline" style="display:inline"><span class="bi-main" style="color:inherit">info</span><span class="bi-accent" style="color:inherit">Snap</span><span class="bi-suffix" style="color:inherit;font-weight:inherit">.ai</span></span> Free</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <a href="/" class="logo">
+                <svg class="logo-icon" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="footer-logo-g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="hsl(155, 70%, 50%)" />
+                            <stop offset="100%" stop-color="hsl(165, 55%, 35%)" />
+                        </linearGradient>
+                        <linearGradient id="footer-logo-g2" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="hsl(155, 65%, 42%)" stop-opacity="0.4" />
+                            <stop offset="100%" stop-color="hsl(160, 60%, 40%)" stop-opacity="0.8" />
+                        </linearGradient>
+                    </defs>
+                    <rect x="10" y="10" width="28" height="28" rx="6" fill="url(#footer-logo-g1)" />
+                    <rect x="18" y="18" width="28" height="28" rx="6" fill="url(#footer-logo-g2)" />
+                </svg>
+                <span class="logo-text">
+                    <span class="logo-text-main">info</span><span class="logo-text-accent">Snap</span><span class="logo-text-suffix">.ai</span>
+                </span>
+            </a>
+            <p>© 2026 infoSnap.ai — All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="hideAuthModal()">&times;</button>
+            
+            <!-- Sign In Form -->
+            <div id="signinForm" class="auth-form">
+                <h2>Welcome Back</h2>
+                <p class="auth-subtitle">Sign in to access your knowledge hub</p>
+                
+                <button class="btn btn-google" onclick="signInWithGoogle('signin')">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                        <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                    </svg>
+                    Sign In with Google
+                </button>
+                
+                <p class="auth-switch">
+                    Don't have an account? <a href="#" onclick="showAuthModal('signup'); return false;">Sign up</a>
+                </p>
+            </div>
+            
+            <!-- Sign Up Form -->
+            <div id="signupForm" class="auth-form" style="display: none;">
+                <h2>Create Account</h2>
+                <p class="auth-subtitle">Start building your personal knowledge hub</p>
+                
+                <button class="btn btn-google" onclick="signInWithGoogle('signup')">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                        <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                    </svg>
+                    Sign Up with Google
+                </button>
+                
+                <p class="auth-switch">
+                    Already have an account? <a href="#" onclick="showAuthModal('signin'); return false;">Sign in</a>
+                </p>
+            </div>
+            
+            <!-- Error/Success Messages -->
+            <div id="authMessage" class="auth-message"></div>
+        </div>
+    </div>
+
+    <!-- Auth Loading Overlay -->
+    <div id="authLoadingOverlay" class="auth-loading-overlay" style="display: none;">
+        <div class="auth-loading-content">
+            <div class="auth-loading-spinner"></div>
+            <h2>Signing you in...</h2>
+            <p>Please wait while we complete your sign in</p>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        // Force scroll to top on page load/refresh
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+        window.scrollTo(0, 0);
+
+        // Intersection Observer for scroll-triggered animations (repeating)
+        (function () {
+            const rows = document.querySelectorAll('[data-animate]');
+            if (!rows.length) return;
+            const io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (e) {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('visible');
+                    } else {
+                        e.target.classList.remove('visible');
+                    }
+                });
+            }, { threshold: 0.15 });
+            rows.forEach(function (r) { io.observe(r); });
+        })();
+    </script>
+</body>
+</html>

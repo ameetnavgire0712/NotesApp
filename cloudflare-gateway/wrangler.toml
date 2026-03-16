@@ -1,0 +1,27 @@
+name = "notesapp-gateway"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Disable preview URLs (required for Durable Objects)
+preview_urls = false
+
+# Durable Objects for rate limiting
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RateLimiter"]
+
+[vars]
+# Fly.io backend URL
+FLY_BACKEND_URL = "https://notesapp-search.fly.dev"
+
+# Rate limit settings
+RATE_LIMIT_PER_KEY_PER_MINUTE = "60"
+RATE_LIMIT_GLOBAL_PER_SECOND = "500"
+
+# Environment-specific settings (override in wrangler for production)
+# [env.production.vars]
+# FLY_BACKEND_URL = "https://notesapp-search.fly.dev"

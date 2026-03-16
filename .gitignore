@@ -1,0 +1,55 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Secrets
+azure_sas_url.txt
+*.pem
+*.key
+
+# Files containing hardcoded secrets (debug/test scripts)
+check_containers.py
+generate_sas_token.py
+test_azure_sas.py
+test_sas_upload.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs_*.txt
+fly_*.txt
+worker_*.txt
+full_logs.txt
+live_logs.txt
+realtime_logs.txt
+test_logs.txt
+
+# Test outputs
+*.csv
+chunking_comparison_output.txt
+query_results.txt
+test_chunking_output*.txt
+temp_cid.txt
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+.wrangler/

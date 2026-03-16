@@ -1,0 +1,2549 @@
+<!DOCTYPE html>
+<!-- Deploy v18: 2025-02-13T18:25 - Fixed auth in timing bar + correct network latency calculation -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotesApp Activity Logs Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="auth.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .sidebar-header h1 {
+            color: #58a6ff;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sidebar-header h1::before {
+            content: "📋";
+        }
+        
+        /* User selector */
+        .user-selector {
+            margin-bottom: 15px;
+        }
+        
+        .user-selector label {
+            display: block;
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .user-selector select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .user-selector select:focus {
+            border-color: #58a6ff;
+            outline: none;
+        }
+        
+        /* Time range */
+        .time-range {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .time-range button {
+            flex: 1;
+            padding: 8px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #8b949e;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .time-range button:hover {
+            background: #30363d;
+            color: #c9d1d9;
+        }
+        
+        .time-range button.active {
+            background: #238636;
+            border-color: #238636;
+            color: #fff;
+        }
+        
+        /* Activity list */
+        .activity-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .activity-item {
+            padding: 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .activity-item:hover {
+            border-color: #58a6ff;
+            background: #161b22;
+        }
+        
+        .activity-item.selected {
+            border-color: #58a6ff;
+            background: #1f2937;
+            box-shadow: 0 0 0 1px #58a6ff;
+        }
+        
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .activity-action {
+            font-weight: 600;
+            color: #c9d1d9;
+            font-size: 13px;
+        }
+        
+        .activity-status {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .activity-status.success {
+            background: rgba(35, 134, 54, 0.2);
+            color: #3fb950;
+        }
+        
+        .activity-status.error {
+            background: rgba(248, 81, 73, 0.2);
+            color: #f85149;
+        }
+        
+        .activity-status.warning {
+            background: rgba(240, 136, 62, 0.2);
+            color: #f0883e;
+        }
+        
+        .activity-status.pending {
+            background: rgba(187, 128, 9, 0.2);
+            color: #d29922;
+        }
+        
+        .activity-meta {
+            font-size: 12px;
+            color: #8b949e;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .activity-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .activity-query {
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: #21262d;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #58a6ff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .content-header {
+            padding: 20px;
+            border-bottom: 1px solid #30363d;
+            background: #161b22;
+        }
+        
+        .content-header h2 {
+            color: #c9d1d9;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .content-header .correlation-id {
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 13px;
+            color: #8b949e;
+            background: #0d1117;
+            padding: 6px 12px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        
+        .content-header .summary {
+            margin-top: 12px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .summary-item {
+            background: #21262d;
+            padding: 10px 16px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .summary-item .value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #58a6ff;
+        }
+        
+        .summary-item .label {
+            font-size: 11px;
+            color: #8b949e;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        
+        /* Log entries */
+        .log-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .log-entry {
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            border-left: 3px solid transparent;
+            background: #161b22;
+        }
+        
+        .log-entry.DEBUG {
+            border-left-color: #8b949e;
+            color: #8b949e;
+        }
+        
+        .log-entry.INFO {
+            border-left-color: #58a6ff;
+            color: #c9d1d9;
+        }
+        
+        .log-entry.WARNING {
+            border-left-color: #d29922;
+            color: #d29922;
+        }
+        
+        .log-entry.ERROR {
+            border-left-color: #f85149;
+            color: #f85149;
+            background: rgba(248, 81, 73, 0.1);
+        }
+        
+        .log-timestamp {
+            color: #6e7681;
+            margin-right: 8px;
+        }
+        
+        .log-level {
+            font-weight: 600;
+            margin-right: 8px;
+            min-width: 60px;
+            display: inline-block;
+        }
+        
+        .log-logger {
+            color: #7ee787;
+            margin-right: 8px;
+        }
+        
+        .log-message {
+            word-break: break-word;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #8b949e;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state p {
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #8b949e;
+        }
+        
+        .loading::before {
+            content: "";
+            width: 20px;
+            height: 20px;
+            border: 2px solid #30363d;
+            border-top-color: #58a6ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Error state */
+        .error-message {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid #f85149;
+            border-radius: 6px;
+            padding: 12px 16px;
+            color: #f85149;
+            margin: 10px;
+        }
+        
+        /* Stats bar */
+        .stats-bar {
+            padding: 12px 20px;
+            background: #21262d;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+        }
+        
+        .stats-bar .stat {
+            color: #8b949e;
+        }
+        
+        .stats-bar .stat strong {
+            color: #c9d1d9;
+            margin-left: 4px;
+        }
+
+        /* Refresh button */
+        .refresh-btn {
+            padding: 8px 16px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+        }
+        
+        .refresh-btn:hover {
+            background: #30363d;
+        }
+        
+        .refresh-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Tab navigation for log views */
+        .log-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 12px 20px;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .log-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: #8b949e;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .log-tab:hover {
+            color: #c9d1d9;
+            background: #21262d;
+        }
+        
+        .log-tab.active {
+            background: #238636;
+            color: #fff;
+            border-color: #238636;
+        }
+        
+        /* JSON viewer */
+        .json-viewer {
+            background: #0d1117;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 10px 0;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .json-key {
+            color: #79c0ff;
+        }
+        
+        .json-string {
+            color: #a5d6ff;
+        }
+        
+        .json-number {
+            color: #79c0ff;
+        }
+        
+        .json-boolean {
+            color: #ff7b72;
+        }
+        
+        .json-null {
+            color: #8b949e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar with user selection and activity list -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>Activity Logs</h1>
+                
+                <div class="user-selector">
+                    <label>Select User</label>
+                    <select id="userSelect">
+                        <option value="">Loading users...</option>
+                    </select>
+                </div>
+                
+                <div class="time-range">
+                    <button data-hours="1">1h</button>
+                    <button data-hours="6">6h</button>
+                    <button data-hours="24" class="active">24h</button>
+                    <button data-hours="168">7d</button>
+                </div>
+                
+                <button class="refresh-btn" id="refreshBtn">
+                    🔄 Refresh
+                </button>
+            </div>
+            
+            <div class="activity-list" id="activityList">
+                <div class="empty-state">
+                    <div class="icon">👤</div>
+                    <p>Select a user to view their activities</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content area for detailed logs -->
+        <div class="main-content">
+            <div class="content-header" id="contentHeader" style="display: none;">
+                <h2 id="activityTitle">Activity Details</h2>
+                <div class="correlation-id" id="correlationId"></div>
+                <div class="summary" id="activitySummary"></div>
+            </div>
+            
+            <div class="log-tabs" id="logTabs" style="display: none;">
+                <button class="log-tab active" data-view="metadata">📋 Details</button>
+                <button class="log-tab" data-view="trace">🔬 Search Trace</button>
+                <button class="log-tab" data-view="upload-trace">📤 Upload Trace</button>
+                <button class="log-tab" data-view="operations">⚙️ Operations</button>
+                <button class="log-tab" data-view="file">📄 Server Logs</button>
+                <button class="log-tab" data-view="raw">📝 Raw JSON</button>
+            </div>
+            
+            <div class="log-container" id="logContainer">
+                <div class="empty-state">
+                    <div class="icon">📋</div>
+                    <p>Click on an activity to see detailed logs</p>
+                    <p style="color: #6e7681; font-size: 12px; margin-top: 12px;">
+                        Logs include: embedding generation, vector search scores,<br>
+                        keyword matching, reranking, and filtering decisions
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // State
+        let currentUserId = null;
+        let currentHours = 24;
+        let currentCorrelationId = null;
+        let currentActivity = null;
+        let currentView = 'metadata';
+        let activities = [];
+        
+        // API base URL - always go direct to Fly.io for logs (has CORS enabled)
+        const API_BASE = 'https://notesapp-vector-search.monocle0712.workers.dev';
+        
+        // Auth token from Supabase session
+        let accessToken = null;
+        
+        // Get access token from localStorage (set by auth.js)
+        function getAccessToken() {
+            if (!accessToken) {
+                accessToken = localStorage.getItem('access_token');
+            }
+            return accessToken;
+        }
+        
+        // Get auth headers for API calls
+        function getAuthHeaders() {
+            const token = getAccessToken();
+            if (token) {
+                return { 'Authorization': `Bearer ${token}` };
+            }
+            return {};
+        }
+        
+        // Check if user is logged in
+        async function checkAuth() {
+            const token = getAccessToken();
+            if (!token) {
+                // Redirect to login
+                window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.pathname);
+                return false;
+            }
+            return true;
+        }
+        
+        // Debug: log errors to the page
+        window.onerror = function(msg, url, line) {
+            console.error('JS Error:', msg, url, line);
+            const list = document.getElementById('activityList');
+            if (list) {
+                list.innerHTML = `<div class="error-message">JS Error: ${msg}<br>at line ${line}</div>`;
+            }
+        };
+        
+        // Catch unhandled promise rejections (fetch failures in async functions)
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled rejection:', event.reason);
+            const list = document.getElementById('activityList');
+            if (list) {
+                list.innerHTML = `<div class="error-message">Async Error: ${event.reason?.message || event.reason}</div>`;
+            }
+            const select = document.getElementById('userSelect');
+            if (select && select.options[0]?.text === 'Loading...') {
+                select.innerHTML = `<option value="">Error: ${event.reason?.message || 'Unknown error'}</option>`;
+            }
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('[ActivityLogs] DOMContentLoaded fired');
+            
+            // Check auth before loading data
+            const isAuthed = await checkAuth();
+            if (!isAuthed) return;
+            
+            loadUsers();
+            setupEventListeners();
+        });
+        
+        function setupEventListeners() {
+            // User selection
+            document.getElementById('userSelect').addEventListener('change', (e) => {
+                currentUserId = e.target.value;
+                if (currentUserId) {
+                    loadActivities();
+                }
+            });
+            
+            // Time range buttons
+            document.querySelectorAll('.time-range button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.time-range button').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentHours = parseInt(e.target.dataset.hours);
+                    if (currentUserId) {
+                        loadActivities();
+                    }
+                });
+            });
+            
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                if (currentUserId) {
+                    loadActivities();
+                } else {
+                    loadUsers();
+                }
+            });
+            
+            // Log view tabs
+            document.querySelectorAll('.log-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.log-tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentView = e.target.dataset.view;
+                    renderCurrentView();
+                });
+            });
+        }
+        
+        async function loadUsers() {
+            const select = document.getElementById('userSelect');
+            select.innerHTML = '<option value="">Loading...</option>';
+            
+            // Always fetch users with a large time range (30 days) — users don't change often
+            // The time filter only limits activities, not the user dropdown
+            const userHours = Math.max(currentHours, 720);
+            const url = `${API_BASE}/api/v1/logs/dashboard/users?hours=${userHours}`;
+            console.log('Fetching users from:', url);
+            
+            try {
+                console.log('[loadUsers] Starting fetch...');
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+                
+                console.log('[loadUsers] Response status:', response.status);
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    console.error('[loadUsers] Response body:', text);
+                    throw new Error(`HTTP ${response.status}: ${text}`);
+                }
+                
+                const data = await response.json();
+                console.log('[loadUsers] Users data:', JSON.stringify(data).substring(0, 200));
+                
+                if (!data.users || data.users.length === 0) {
+                    select.innerHTML = '<option value="">No users found</option>';
+                    return;
+                }
+                
+                select.innerHTML = '<option value="">Select a user...</option>';
+                data.users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.user_id;
+                    option.textContent = `${user.user_id.substring(0, 8)}... (${user.activity_count} activities)`;
+                    select.appendChild(option);
+                });
+                
+                // If only one user, auto-select
+                if (data.users.length === 1) {
+                    select.value = data.users[0].user_id;
+                    currentUserId = data.users[0].user_id;
+                    loadActivities();
+                }
+            } catch (err) {
+                select.innerHTML = `<option value="">Error: ${err.message}</option>`;
+                console.error('Error loading users:', err);
+                // Show error in activity list too
+                document.getElementById('activityList').innerHTML = `
+                    <div class="error-message">
+                        <strong>Failed to load users</strong><br>
+                        ${err.message}<br><br>
+                        <small>URL: ${url}</small>
+                    </div>
+                `;
+            }
+        }
+        
+        async function loadActivities() {
+            const list = document.getElementById('activityList');
+            list.innerHTML = '<div class="loading">Loading activities...</div>';
+            
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/v1/logs/dashboard/activities?user_id=${currentUserId}&hours=${currentHours}&limit=100`,
+                    { headers: getAuthHeaders() }
+                );
+                
+                if (!response.ok) throw new Error('Failed to load activities');
+                
+                const data = await response.json();
+                activities = data.activities || [];
+                
+                if (activities.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <p>No activities found</p>
+                            <p style="color: #6e7681; font-size: 12px;">Try a longer time range</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                renderActivityList();
+            } catch (err) {
+                list.innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
+                console.error('Error loading activities:', err);
+            }
+        }
+        
+        function renderActivityList() {
+            const list = document.getElementById('activityList');
+            list.innerHTML = activities.map((activity, index) => {
+                const isSelected = activity.correlation_id === currentCorrelationId;
+                const timestamp = new Date(activity.created_at).toLocaleString();
+                const query = activity.metadata?.query || activity.metadata?.filename || '';
+                const intent = activity.metadata?.intent;
+                const intentConfidence = activity.metadata?.intent_confidence;
+                const tool = activity.metadata?.tool_invoked;
+                const hasError = activity.status === 'error' || activity.metadata?.error_occurred;
+                const isGroqFallback = intentConfidence === 'LOW' && intent === 'CONTENT_SEARCH';
+                const isPipelinePartialError = activity.metadata?.error_occurred && activity.metadata?.error_type && (activity.metadata.error_type !== 'UnknownError' && activity.metadata.error_type !== 'Error' && activity.status !== 'error');
+                
+                // Intent badge colors
+                const intentColors = {
+                    'CONTENT_SEARCH': { bg: '#1f3a5f', color: '#58a6ff', label: '🔍 Content' },
+                    'TAG_BROWSE': { bg: '#2d1f4e', color: '#a371f7', label: '🏷️ Tag Browse' },
+                    'COLLECTION_SUMMARY': { bg: '#1f3d2e', color: '#3fb950', label: '📊 Summary' },
+                    'EXPLORATORY': { bg: '#3d2f1f', color: '#f0883e', label: '🔭 Explore' },
+                    'DATE_QUERY': { bg: '#3d3a1f', color: '#d29922', label: '📅 Date' },
+                    'MULTI_STEP': { bg: '#3d1f1f', color: '#f85149', label: '🔗 Multi' },
+                };
+                const intentInfo = intentColors[intent] || null;
+                
+                return `
+                    <div class="activity-item ${isSelected ? 'selected' : ''}" 
+                         data-index="${index}"
+                         onclick="selectActivity(${index})">
+                        <div class="activity-header">
+                            <span class="activity-action">${formatAction(activity.action)}</span>
+                            <span class="activity-status ${isPipelinePartialError ? 'warning' : hasError ? 'error' : activity.status}">${isPipelinePartialError ? '⚠ partial' : hasError ? 'error' : activity.status}</span>
+                        </div>
+                        ${intentInfo ? `
+                        <div style="margin: 4px 0;">
+                            <span style="background: ${isGroqFallback ? '#3d1f1f' : intentInfo.bg}; color: ${isGroqFallback ? '#f85149' : intentInfo.color}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">${isGroqFallback ? '⚠️ Fallback' : intentInfo.label}</span>
+                            ${tool ? `<span style="background: #21262d; color: #8b949e; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 4px;">→ ${tool}</span>` : ''}
+                            ${isPipelinePartialError && !isGroqFallback ? `<span style="background: #3d2f1f; color: #f0883e; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 4px;">⚠️ Errors</span>` : ''}
+                        </div>
+                        ` : ''}
+                        <div class="activity-meta">
+                            <span>🕐 ${timestamp}</span>
+                            <span>⏱️ ${activity.duration_ms || 0}ms</span>
+                            ${activity.resource_type ? `<span>📁 ${activity.resource_type}</span>` : ''}
+                        </div>
+                        ${query ? `<div class="activity-query">"${escapeHtml(query)}"</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function formatAction(action) {
+            const icons = {
+                'search': '🔍',
+                'search_notes': '🔍',
+                'hybrid_search': '🔍',
+                'chat_search': '🤖',
+                'upload': '📤',
+                'upload_file': '📤',
+                'upload_screenshot': '📸',
+                'upload_quick_note': '📝',
+                'delete': '🗑️',
+                'delete_note': '🗑️',
+                'create': '➕',
+                'create_note': '➕',
+                'update': '✏️'
+            };
+            const icon = icons[action] || '📋';
+            return `${icon} ${action.replace(/_/g, ' ')}`;
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;');
+        }
+        
+        async function selectActivity(index) {
+            currentActivity = activities[index];
+            currentCorrelationId = currentActivity.correlation_id;
+            
+            // Update selection UI
+            document.querySelectorAll('.activity-item').forEach((el, i) => {
+                el.classList.toggle('selected', i === index);
+            });
+            
+            // Show header
+            document.getElementById('contentHeader').style.display = 'block';
+            document.getElementById('logTabs').style.display = 'flex';
+            
+            // Update header info
+            document.getElementById('activityTitle').textContent = formatAction(currentActivity.action);
+            document.getElementById('correlationId').textContent = currentCorrelationId;
+            
+            // Load detailed logs
+            await loadDetailedLogs();
+        }
+        
+        async function loadDetailedLogs() {
+            const container = document.getElementById('logContainer');
+            container.innerHTML = '<div class="loading">Loading detailed logs...</div>';
+            
+            // Initialize empty logs
+            currentActivity.traceLogs = null;
+            currentActivity.dbLogs = null;
+            currentActivity.searchTrace = null;
+            currentActivity.uploadTrace = null;
+            
+            // Check if this is an upload activity
+            const isUpload = currentActivity.action?.includes('upload') || currentActivity.trace_id;
+            
+            // Try to load upload trace (for upload activities)
+            if (isUpload && currentActivity.trace_id) {
+                try {
+                    // Pass the user_id from the activity or selected user for proper filtering
+                    const traceUserId = currentActivity.trace_data?.user_id || currentUserId;
+                    const uploadTraceResponse = await fetch(
+                        `${API_BASE}/api/v1/upload/status/${currentActivity.trace_id}?user_id=${traceUserId}`,
+                        { headers: getAuthHeaders() }
+                    );
+                    if (uploadTraceResponse.ok) {
+                        currentActivity.uploadTrace = await uploadTraceResponse.json();
+                        console.log('Upload trace loaded:', currentActivity.uploadTrace);
+                    }
+                } catch (e) {
+                    console.log('Failed to load upload trace:', e.message);
+                }
+            }
+            
+            // Try to load search trace (for search activities)
+            if (currentActivity.action.includes('search')) {
+                // For smart_search, use worker_request_id from metadata
+                // For other searches, fall back to correlation_id
+                const searchTraceId = currentActivity.metadata?.worker_request_id || currentCorrelationId;
+                console.log('Looking up search trace with ID:', searchTraceId);
+                
+                try {
+                    const traceResponse = await fetch(
+                        `${API_BASE}/api/v1/logs/search-trace/${searchTraceId}`,
+                        { headers: getAuthHeaders() }
+                    );
+                    
+                    if (traceResponse.ok) {
+                        currentActivity.searchTrace = await traceResponse.json();
+                        console.log('Search trace loaded:', currentActivity.searchTrace);
+                    } else {
+                        console.log('Search trace not found for this activity');
+                    }
+                } catch (e) {
+                    console.log('Failed to load search trace:', e.message);
+                }
+            }
+            
+            // Try to load file trace logs (may fail if logs rotated)
+            try {
+                const traceResponse = await fetch(
+                    `${API_BASE}/api/v1/logs/file/trace/${currentCorrelationId}?include_context=true`,
+                    { headers: getAuthHeaders() }
+                );
+                
+                if (traceResponse.ok) {
+                    currentActivity.traceLogs = await traceResponse.json();
+                } else {
+                    console.log('File trace logs not found (logs may have rotated)');
+                }
+            } catch (e) {
+                console.log('Failed to load file trace:', e.message);
+            }
+            
+            // Try to load operation logs from database
+            try {
+                const opsResponse = await fetch(
+                    `${API_BASE}/api/v1/logs/trace/${currentCorrelationId}`,
+                    { headers: getAuthHeaders() }
+                );
+                if (opsResponse.ok) {
+                    currentActivity.dbLogs = await opsResponse.json();
+                }
+            } catch (e) {
+                console.log('Failed to load DB logs:', e.message);
+            }
+            
+            // Update summary and render (even if some logs are missing)
+            updateSummary();
+            renderCurrentView();
+        }
+        
+        function updateSummary() {
+            const summary = document.getElementById('activitySummary');
+            const trace = currentActivity.traceLogs;
+            
+            const items = [
+                { label: 'Duration', value: `${currentActivity.duration_ms || trace?.duration_ms || 0}ms` },
+                { label: 'Log Lines', value: trace?.total_lines || 0 },
+                { label: 'Status', value: currentActivity.status },
+            ];
+            
+            if (trace?.levels_summary) {
+                if (trace.levels_summary.ERROR) {
+                    items.push({ label: 'Errors', value: trace.levels_summary.ERROR });
+                }
+                if (trace.levels_summary.WARNING) {
+                    items.push({ label: 'Warnings', value: trace.levels_summary.WARNING });
+                }
+            }
+            
+            summary.innerHTML = items.map(item => `
+                <div class="summary-item">
+                    <div class="value">${item.value}</div>
+                    <div class="label">${item.label}</div>
+                </div>
+            `).join('');
+        }
+        
+        function renderCurrentView() {
+            const container = document.getElementById('logContainer');
+            
+            switch (currentView) {
+                case 'file':
+                    renderFileLogs(container);
+                    break;
+                case 'operations':
+                    renderOperations(container);
+                    break;
+                case 'metadata':
+                    renderMetadata(container);
+                    break;
+                case 'trace':
+                    renderSearchTrace(container);
+                    break;
+                case 'upload-trace':
+                    renderUploadTrace(container);
+                    break;
+                case 'raw':
+                    renderRawJson(container);
+                    break;
+            }
+        }
+        
+        function renderRawJson(container) {
+            const trace = currentActivity.searchTrace;
+            const activity = currentActivity;
+            
+            let html = `
+                <style>
+                    .raw-section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+                    .raw-section h3 { color: #58a6ff; font-size: 14px; margin-bottom: 12px; }
+                    .raw-json { background: #0d1117; padding: 12px; border-radius: 6px; overflow-x: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #8b949e; max-height: 400px; overflow-y: auto; }
+                    .copy-btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-bottom: 8px; }
+                    .copy-btn:hover { background: #30363d; }
+                </style>
+            `;
+            
+            // Activity Data
+            html += `
+                <div class="raw-section">
+                    <h3>📋 Activity Data</h3>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText(JSON.stringify(${JSON.stringify(activity).replace(/'/g, "\\'")}, null, 2))">📋 Copy</button>
+                    <pre class="raw-json">${JSON.stringify(activity, null, 2)}</pre>
+                </div>
+            `;
+            
+            // Search Trace Data
+            if (trace) {
+                html += `
+                    <div class="raw-section">
+                        <h3>🔬 Search Trace Data</h3>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText(JSON.stringify(currentActivity.searchTrace, null, 2))">📋 Copy</button>
+                        <pre class="raw-json">${JSON.stringify(trace, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function renderUploadTrace(container) {
+            const trace = currentActivity.uploadTrace;
+            
+            if (!trace) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📤</div>
+                        <p>No upload trace found for this activity</p>
+                        <p style="color: #6e7681; font-size: 12px;">
+                            Upload traces are only available for upload activities.<br>
+                            If processing, try refreshing in a few seconds.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const statusColors = {
+                'accepted': '#d29922',
+                'processing': '#58a6ff',
+                'completed': '#3fb950',
+                'failed': '#f85149',
+            };
+            const statusColor = statusColors[trace.status] || '#8b949e';
+            
+            let html = `
+                <style>
+                    .ut-section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+                    .ut-section h3 { color: #58a6ff; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+                    .ut-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+                    .ut-stat { background: #0d1117; padding: 12px; border-radius: 6px; }
+                    .ut-stat-label { font-size: 11px; color: #8b949e; text-transform: uppercase; margin-bottom: 4px; }
+                    .ut-stat-value { font-size: 16px; font-weight: 600; color: #c9d1d9; }
+                    .ut-pipeline { display: flex; flex-direction: column; gap: 8px; }
+                    .ut-step { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #0d1117; border-radius: 6px; }
+                    .ut-step-icon { font-size: 16px; width: 24px; text-align: center; }
+                    .ut-step-name { flex: 1; font-size: 13px; }
+                    .ut-step-time { font-size: 12px; color: #8b949e; font-family: monospace; }
+                    .ut-step-bar { height: 4px; background: #30363d; border-radius: 2px; flex: 1; min-width: 60px; position: relative; overflow: hidden; }
+                    .ut-step-bar-fill { height: 100%; border-radius: 2px; background: #58a6ff; }
+                    .ut-errors { background: #1c0c0c; border: 1px solid #f8514930; border-radius: 6px; padding: 12px; }
+                    .ut-error-item { color: #f0883e; font-size: 12px; font-family: monospace; padding: 4px 0; border-bottom: 1px solid #30363d30; }
+                </style>
+            `;
+            
+            // Overview section
+            html += `
+                <div class="ut-section">
+                    <h3>📤 Upload Overview</h3>
+                    <div class="ut-grid">
+                        <div class="ut-stat">
+                            <div class="ut-stat-label">Status</div>
+                            <div class="ut-stat-value" style="color: ${statusColor}">${trace.status?.toUpperCase() || 'UNKNOWN'}</div>
+                        </div>
+                        <div class="ut-stat">
+                            <div class="ut-stat-label">Upload Type</div>
+                            <div class="ut-stat-value">${trace.upload_type || '-'}</div>
+                        </div>
+                        <div class="ut-stat">
+                            <div class="ut-stat-label">File</div>
+                            <div class="ut-stat-value" style="font-size: 13px; word-break: break-all;">${escapeHtml(trace.original_filename) || '-'}</div>
+                        </div>
+                        <div class="ut-stat">
+                            <div class="ut-stat-label">File Size</div>
+                            <div class="ut-stat-value">${trace.file_size_bytes ? (trace.file_size_bytes / 1024 / 1024).toFixed(2) + ' MB' : '-'}</div>
+                        </div>
+                        <div class="ut-stat">
+                            <div class="ut-stat-label">Total Time</div>
+                            <div class="ut-stat-value">${trace.timing_total_ms ? trace.timing_total_ms + 'ms' : 'In progress...'}</div>
+                        </div>
+                        <div class="ut-stat">
+                            <div class="ut-stat-label">Trace ID</div>
+                            <div class="ut-stat-value" style="font-size: 11px; font-family: monospace;">${trace.trace_id || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Title & Results section
+            if (trace.status === 'completed') {
+                html += `
+                    <div class="ut-section">
+                        <h3>✅ Results</h3>
+                        <div class="ut-grid">
+                            <div class="ut-stat" style="grid-column: span 2;">
+                                <div class="ut-stat-label">Generated Title</div>
+                                <div class="ut-stat-value" style="font-size: 13px;">${escapeHtml(trace.title_generated) || '-'}</div>
+                            </div>
+                            <div class="ut-stat">
+                                <div class="ut-stat-label">Chunks</div>
+                                <div class="ut-stat-value">${trace.chunk_count || 0}</div>
+                            </div>
+                            <div class="ut-stat">
+                                <div class="ut-stat-label">Vectors</div>
+                                <div class="ut-stat-value">${trace.vector_count || 0}</div>
+                            </div>
+                            <div class="ut-stat">
+                                <div class="ut-stat-label">Note ID</div>
+                                <div class="ut-stat-value" style="font-size: 11px; font-family: monospace;">${trace.note_id || '-'}</div>
+                            </div>
+                            <div class="ut-stat">
+                                <div class="ut-stat-label">Conversion Method</div>
+                                <div class="ut-stat-value">${trace.conversion_method || '-'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Pipeline Progress section - shows all steps with status indicators
+            const pipelineSteps = [
+                { id: 'init', icon: '🚀', name: 'Initialize', timingKey: null },
+                { id: 'blob_upload', icon: '☁️', name: 'Azure Blob Upload', timingKey: 'timing_blob_upload_ms' },
+                { id: 'tensorlake_parse', icon: '📄', name: 'Document Conversion', timingKey: 'timing_conversion_ms' },
+                { id: 'tensorlake_poll', icon: '⏳', name: 'Conversion Polling', timingKey: null },
+                { id: 'html_cleanup', icon: '🧹', name: 'HTML Cleanup (LLM)', timingKey: 'timing_html_cleanup_ms' },
+                { id: 'title_gen', icon: '📝', name: 'Title Generation (LLM)', timingKey: 'timing_title_gen_ms' },
+                { id: 'chunking', icon: '✂️', name: 'Text Chunking', timingKey: null },
+                { id: 'embedding', icon: '🧮', name: 'Embedding Generation', timingKey: 'timing_embedding_ms' },
+                { id: 'db_insert', icon: '💾', name: 'Database Insert', timingKey: 'timing_db_insert_ms' },
+                { id: 'vectorize_upsert', icon: '🔍', name: 'Vectorize Upsert', timingKey: 'timing_vectorize_ms' },
+                { id: 'finalize', icon: '✨', name: 'Finalize', timingKey: null },
+            ];
+            
+            // Determine step status based on current_step and timestamps
+            const stepOrder = pipelineSteps.map(s => s.id);
+            const currentStepIndex = stepOrder.indexOf(trace.current_step || 'init');
+            const stepErrors = trace.step_errors || {};
+            
+            const getStepStatus = (step, idx) => {
+                if (trace.status === 'cancelled') {
+                    return idx <= currentStepIndex ? 'cancelled' : 'pending';
+                }
+                if (trace.status === 'failed') {
+                    if (stepErrors[step.id]) return 'error';
+                    if (idx < currentStepIndex) return 'completed';
+                    if (idx === currentStepIndex) return 'error';
+                    return 'pending';
+                }
+                if (trace.status === 'completed') {
+                    return 'completed';
+                }
+                // Processing
+                if (idx < currentStepIndex) return 'completed';
+                if (idx === currentStepIndex) return 'active';
+                return 'pending';
+            };
+            
+            const statusIcons = {
+                completed: '✅',
+                active: '🔄',
+                pending: '⏸️',
+                error: '❌',
+                cancelled: '🚫',
+            };
+            
+            const stepStatusColors = {
+                completed: '#3fb950',
+                active: '#58a6ff',
+                pending: '#6e7681',
+                error: '#f85149',
+                cancelled: '#d29922',
+            };
+            
+            html += `
+                <div class="ut-section">
+                    <h3>🔧 Pipeline Progress ${trace.current_step ? `<span style="font-size: 11px; background: #21262d; padding: 2px 8px; border-radius: 4px; color: #8b949e; margin-left: 8px;">Current: ${trace.current_step}</span>` : ''}</h3>
+                    <div class="ut-pipeline">
+                        ${pipelineSteps.map((step, idx) => {
+                            const status = getStepStatus(step, idx);
+                            const timing = step.timingKey ? trace[step.timingKey] : null;
+                            const error = stepErrors[step.id];
+                            return `
+                                <div class="ut-step" style="border-left: 3px solid ${stepStatusColors[status]}; ${status === 'active' ? 'animation: pulse 1.5s infinite;' : ''}">
+                                    <div class="ut-step-icon">${statusIcons[status]}</div>
+                                    <div class="ut-step-icon">${step.icon}</div>
+                                    <div class="ut-step-name" style="color: ${stepStatusColors[status]}; ${status === 'pending' ? 'opacity: 0.6;' : ''}">${step.name}</div>
+                                    ${timing != null ? `<div class="ut-step-time">${timing}ms</div>` : ''}
+                                    ${error ? `<div class="ut-step-time" style="color: #f85149;" title="${escapeHtml(error)}">⚠️</div>` : ''}
+                                </div>
+                                ${error ? `<div style="margin-left: 52px; padding: 4px 8px; font-size: 11px; color: #f85149; font-family: monospace; background: #1c0c0c; border-radius: 4px; margin-bottom: 4px;">${escapeHtml(error)}</div>` : ''}
+                            `;
+                        }).join('')}
+                    </div>
+                    <style>
+                        @keyframes pulse {
+                            0%, 100% { opacity: 1; }
+                            50% { opacity: 0.7; }
+                        }
+                    </style>
+                </div>
+            `;
+            
+            // Pipeline timing section (completed steps only)
+            const maxTime = trace.timing_total_ms || 1;
+            const completedSteps = [
+                { icon: '☁️', name: 'Azure Blob Upload', time: trace.timing_blob_upload_ms },
+                { icon: '📄', name: 'Document Conversion', time: trace.timing_conversion_ms },
+                { icon: '🧹', name: 'HTML Cleanup (LLM)', time: trace.timing_html_cleanup_ms },
+                { icon: '📝', name: 'Title Generation (LLM)', time: trace.timing_title_gen_ms },
+                { icon: '🧮', name: 'Embedding Generation', time: trace.timing_embedding_ms },
+                { icon: '💾', name: 'Database Insert', time: trace.timing_db_insert_ms },
+                { icon: '🔍', name: 'Vectorize Upsert', time: trace.timing_vectorize_ms },
+            ].filter(s => s.time != null);
+            
+            if (completedSteps.length > 0) {
+                html += `
+                    <div class="ut-section">
+                        <h3>⏱️ Timing Breakdown</h3>
+                        <div class="ut-pipeline">
+                            ${completedSteps.map(s => `
+                                <div class="ut-step">
+                                    <div class="ut-step-icon">${s.icon}</div>
+                                    <div class="ut-step-name">${s.name}</div>
+                                    <div class="ut-step-bar"><div class="ut-step-bar-fill" style="width: ${Math.max(2, (s.time / maxTime) * 100)}%"></div></div>
+                                    <div class="ut-step-time">${s.time}ms</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Storage quota section
+            if (trace.user_storage_before_bytes != null || trace.user_storage_after_bytes != null) {
+                const before = trace.user_storage_before_bytes || 0;
+                const after = trace.user_storage_after_bytes || before;
+                const limit = 100 * 1024 * 1024;
+                html += `
+                    <div class="ut-section">
+                        <h3>📦 Storage Quota</h3>
+                        <div class="ut-grid">
+                            <div class="ut-stat">
+                                <div class="ut-stat-label">Before Upload</div>
+                                <div class="ut-stat-value">${(before / 1024 / 1024).toFixed(1)} MB</div>
+                            </div>
+                            <div class="ut-stat">
+                                <div class="ut-stat-label">After Upload</div>
+                                <div class="ut-stat-value">${(after / 1024 / 1024).toFixed(1)} MB</div>
+                            </div>
+                            <div class="ut-stat">
+                                <div class="ut-stat-label">Usage</div>
+                                <div class="ut-stat-value">${((after / limit) * 100).toFixed(1)}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Errors section
+            if (trace.error_message || (trace.pipeline_errors && trace.pipeline_errors.length > 0)) {
+                html += `
+                    <div class="ut-section">
+                        <h3>❌ Errors</h3>
+                        ${trace.error_message ? `<div class="ut-errors"><div class="ut-error-item" style="color: #f85149; font-weight: 600;">Fatal: ${escapeHtml(trace.error_message)}</div></div>` : ''}
+                        ${trace.pipeline_errors && trace.pipeline_errors.length > 0 ? `
+                            <div class="ut-errors" style="margin-top: 8px;">
+                                ${trace.pipeline_errors.map(e => `<div class="ut-error-item">⚠️ ${escapeHtml(e)}</div>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function renderSearchTrace(container) {
+            const trace = currentActivity.searchTrace;
+            
+            if (!trace) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔬</div>
+                        <p>No search trace found for this activity</p>
+                        <p style="color: #6e7681; font-size: 12px;">
+                            Search traces are only available for search activities.<br>
+                            They may also take a few seconds to be persisted.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Build the comprehensive trace view
+            let html = `
+                <style>
+                    .trace-section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+                    .trace-section h3 { color: #58a6ff; font-size: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+                    .trace-section h3 .count { background: #21262d; padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #8b949e; }
+                    .trace-section h3 .timestamp-badge { background: #238636; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #fff; font-weight: normal; margin-left: auto; }
+                    .timing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+                    .timing-item { background: #0d1117; padding: 12px; border-radius: 6px; text-align: center; }
+                    .timing-value { font-size: 24px; font-weight: 600; color: #58a6ff; }
+                    .timing-label { font-size: 11px; color: #8b949e; margin-top: 4px; text-transform: uppercase; }
+                    .candidate-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+                    .candidate-table th { background: #21262d; padding: 8px; text-align: left; color: #8b949e; font-weight: 500; }
+                    .candidate-table td { padding: 8px; border-bottom: 1px solid #21262d; }
+                    .candidate-table tr:hover { background: #1f2937; }
+                    .score { font-family: monospace; }
+                    .score.high { color: #3fb950; }
+                    .score.medium { color: #d29922; }
+                    .score.low { color: #f85149; }
+                    .threshold-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+                    .threshold-item { background: #21262d; padding: 6px 12px; border-radius: 4px; font-size: 12px; }
+                    .threshold-item span { color: #58a6ff; font-weight: 600; }
+                    .cache-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+                    .cache-badge.hit { background: #238636; color: #fff; }
+                    .cache-badge.miss { background: #6e7681; color: #fff; }
+                    .filtered { opacity: 0.5; text-decoration: line-through; }
+                    .content-preview { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8b949e; }
+                    .backend-section { border-left: 3px solid #a371f7; }
+                    .worker-section { border-left: 3px solid #58a6ff; }
+                    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+                    .info-item { background: #0d1117; padding: 10px; border-radius: 6px; }
+                    .info-item label { font-size: 11px; color: #8b949e; display: block; margin-bottom: 4px; text-transform: uppercase; }
+                    .info-item .value { color: #c9d1d9; font-size: 13px; }
+                    .info-item .value.corrected { color: #3fb950; }
+                    .agent-step { background: #0d1117; padding: 12px; border-radius: 6px; margin-bottom: 8px; }
+                    .agent-step .step-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+                    .agent-step .step-num { background: #21262d; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+                    .agent-step .step-action { color: #58a6ff; font-weight: 500; }
+                    .agent-step .step-thought { color: #8b949e; font-size: 12px; }
+                    .agent-step .step-duration { color: #6e7681; font-size: 11px; }
+                    .gateway-section { border-left: 3px solid #f0883e; }
+                    .total-timing { background: linear-gradient(135deg, #238636 0%, #1a7f37 100%); padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+                    .total-timing .big-number { font-size: 48px; font-weight: 700; color: #fff; }
+                    .total-timing .label { color: rgba(255,255,255,0.8); font-size: 14px; }
+                    .timing-breakdown-bar { display: flex; height: 24px; border-radius: 4px; overflow: hidden; margin-top: 12px; }
+                    .timing-segment { display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; min-width: 30px; }
+                </style>
+            `;
+            
+            // ===============================================================
+            // TOTAL TIMING OVERVIEW - Direct Worker Architecture
+            // ===============================================================
+            const workerTotalMs = trace.timing_total_ms || 0;
+            const extensionTotalMs = trace.extension_total_flow_ms || null;
+            
+            // Calculate component times (including auth and intent router)
+            const authMs = trace.timing_auth_ms || 0;
+            const intentRouterMs = trace.timing_intent_router_ms || 0;
+            const tagsMs = trace.timing_tags_fetch_ms || 0;
+            const embedMs = trace.timing_embedding_ms || 0;
+            const searchMs = trace.timing_vector_search_ms || 0;
+            const rerankMs = trace.timing_rerank_ms || 0;
+            const relevanceMs = trace.timing_relevance_check_ms || 0;
+            const synthesisMs = trace.timing_synthesis_ms || 0;
+            const componentSum = authMs + intentRouterMs + tagsMs + embedMs + searchMs + rerankMs + relevanceMs + synthesisMs;
+            const otherMs = Math.max(0, workerTotalMs - componentSum);
+            
+            // Path taken indicator — updated for agentic paths
+            const pathTaken = trace.path_taken || 'hybrid';
+            const intentClassification = trace.intent_classification || '';
+            const toolInvoked = trace.tool_invoked || '';
+            const pathConfig = {
+                'tag': { color: '#a371f7', label: '🏷️ Tag Path' },
+                'tag_browse': { color: '#a371f7', label: '🏷️ Tag Browse' },
+                'hybrid': { color: '#58a6ff', label: '🔀 Hybrid Search' },
+                'collection_summary': { color: '#3fb950', label: '📊 Collection Summary' },
+                'exploratory': { color: '#f0883e', label: '🔭 Exploratory' },
+            };
+            const pathInfo = pathConfig[pathTaken] || pathConfig['hybrid'];
+            const pathColor = pathInfo.color;
+            const pathLabel = pathInfo.label;
+            
+            // Intent badge
+            const intentBadge = intentClassification ? `
+                <div style="text-align: center; background: #21262d; padding: 8px 16px; border-radius: 6px;">
+                    <div style="font-size: 11px; color: #8b949e;">Intent</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #c9d1d9;">${intentClassification}</div>
+                    ${trace.intent_confidence ? `<div style="font-size: 10px; color: ${trace.intent_confidence === 'HIGH' ? '#3fb950' : trace.intent_confidence === 'MEDIUM' ? '#d29922' : '#f85149'};">${trace.intent_confidence}</div>` : ''}
+                </div>
+            ` : '';
+            
+            // Error banner at the top
+            if (trace.error_occurred) {
+                // Check if this is a pipeline partial error (request succeeded but some stages had issues)
+                const isPipelinePartial = trace.error_type && trace.error_type !== 'UnknownError' && trace.error_type !== 'Error' && trace.error_type !== 'TypeError' && trace.error_type !== 'ReferenceError';
+                const isFatalError = !isPipelinePartial;
+                
+                if (isFatalError) {
+                    // Fatal error — red banner
+                    html += `
+                        <div style="background: rgba(248, 81, 73, 0.15); border: 1px solid #f85149; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="font-size: 20px;">❌</span>
+                                <span style="color: #f85149; font-weight: 600; font-size: 16px;">Fatal Error</span>
+                                ${trace.error_type ? `<span style="background: #3d1f1f; color: #f85149; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${trace.error_type}</span>` : ''}
+                            </div>
+                            <pre style="color: #f85149; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-word; margin: 0; background: #0d1117; padding: 12px; border-radius: 6px;">${escapeHtml(trace.error_message || 'Unknown error')}</pre>
+                        </div>
+                    `;
+                } else {
+                    // Pipeline partial error — amber banner with per-stage breakdown
+                    const errorMsg = trace.error_message || '';
+                    // Parse pipe-delimited format: [stage] error message | [stage2] error message2
+                    const stageErrors = errorMsg.split(' | ').map(part => {
+                        const match = part.match(/^\[(.+?)\]\s*(.*)/);
+                        return match ? { stage: match[1], error: match[2] } : { stage: 'unknown', error: part };
+                    });
+                    
+                    html += `
+                        <div style="background: rgba(240, 136, 62, 0.12); border: 1px solid #f0883e; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                <span style="font-size: 20px;">⚠️</span>
+                                <span style="color: #f0883e; font-weight: 600; font-size: 16px;">Pipeline Partial Errors</span>
+                                <span style="background: #3d2f1f; color: #f0883e; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${stageErrors.length} stage${stageErrors.length > 1 ? 's' : ''} affected</span>
+                                <span style="background: #1f3d2e; color: #3fb950; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Request completed</span>
+                            </div>
+                            <div style="color: #f0883e; font-size: 12px; margin-bottom: 10px;">The search request completed successfully, but some pipeline stages encountered errors and used fallback behavior.</div>
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                ${stageErrors.map(se => `
+                                    <div style="display: flex; gap: 8px; align-items: flex-start; background: #0d1117; padding: 8px 12px; border-radius: 6px;">
+                                        <span style="background: #3d2f1f; color: #f0883e; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; margin-top: 1px;">${escapeHtml(se.stage)}</span>
+                                        <span style="color: #f0883e; font-family: monospace; font-size: 12px; word-break: break-word;">${escapeHtml(se.error)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Groq fallback warning banner (intent router failed, fell back to CONTENT_SEARCH)
+            if (!trace.error_occurred && trace.intent_confidence === 'LOW' && trace.intent_classification === 'CONTENT_SEARCH' && trace.timing_intent_router_ms && trace.timing_intent_router_ms < 50) {
+                html += `
+                    <div style="background: rgba(210, 153, 34, 0.15); border: 1px solid #d29922; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="font-size: 20px;">⚠️</span>
+                            <span style="color: #d29922; font-weight: 600; font-size: 16px;">Groq Intent Router Failed — Fallback Route Used</span>
+                            <span style="background: #3d3a1f; color: #d29922; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${trace.timing_intent_router_ms}ms</span>
+                        </div>
+                        <div style="color: #d29922; font-size: 13px; line-height: 1.5;">
+                            The LLM intent router failed (Groq API error), so the query was automatically routed to <strong>hybrid_search</strong> as a safe fallback.
+                            This query may have been better served by a different tool.
+                        </div>
+                        ${trace.intent_reasoning ? `<pre style="color: #d29922; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-word; margin: 8px 0 0 0; background: #0d1117; padding: 12px; border-radius: 6px;">${escapeHtml(trace.intent_reasoning)}</pre>` : ''}
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="total-timing">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <div>
+                            <div class="big-number">${extensionTotalMs || workerTotalMs}ms</div>
+                            <div class="label">${extensionTotalMs ? 'Total End-to-End (Extension → Worker → Response)' : 'Worker Processing Time'}</div>
+                        </div>
+                        <div style="display: flex; gap: 24px; align-items: center;">
+                            ${intentBadge}
+                            <div style="text-align: center; background: ${pathColor}; padding: 8px 16px; border-radius: 6px;">
+                                <div style="font-size: 14px; font-weight: 600; color: #fff;">${pathLabel}</div>
+                            </div>
+                            ${extensionTotalMs ? `
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 600; color: #fff;">${workerTotalMs}ms</div>
+                                <div style="color: rgba(255,255,255,0.7); font-size: 11px;">Worker</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 600; color: ${(extensionTotalMs - workerTotalMs) > 500 ? '#f85149' : '#fff'};">${extensionTotalMs - workerTotalMs}ms</div>
+                                <div style="color: rgba(255,255,255,0.7); font-size: 11px;">Network</div>
+                            </div>
+                            ` : `
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 600; color: #fff;">${trace.results?.length || trace.final_count || 0}</div>
+                                <div style="color: rgba(255,255,255,0.7); font-size: 11px;">Results</div>
+                            </div>
+                            `}
+                        </div>
+                    </div>
+                    
+                    <!-- Visual timing breakdown bar -->
+                    ${workerTotalMs > 0 ? `
+                    <div class="timing-breakdown-bar">
+                        ${authMs > 0 ? `<div class="timing-segment" style="width: ${(authMs/workerTotalMs)*100}%; background: #f0883e;" title="Auth: ${authMs}ms">${authMs > 50 ? authMs : ''}</div>` : ''}
+                        ${intentRouterMs > 0 ? `<div class="timing-segment" style="width: ${(intentRouterMs/workerTotalMs)*100}%; background: #e3b341;" title="Intent Router: ${intentRouterMs}ms">${intentRouterMs > 50 ? intentRouterMs : ''}</div>` : ''}
+                        ${tagsMs > 0 ? `<div class="timing-segment" style="width: ${(tagsMs/workerTotalMs)*100}%; background: #8b949e;" title="Tags: ${tagsMs}ms">${tagsMs > 50 ? tagsMs : ''}</div>` : ''}
+                        ${embedMs > 0 ? `<div class="timing-segment" style="width: ${(embedMs/workerTotalMs)*100}%; background: #58a6ff;" title="Embedding: ${embedMs}ms">${embedMs > 50 ? embedMs : ''}</div>` : ''}
+                        ${searchMs > 0 ? `<div class="timing-segment" style="width: ${(searchMs/workerTotalMs)*100}%; background: #3fb950;" title="Search: ${searchMs}ms">${searchMs > 50 ? searchMs : ''}</div>` : ''}
+                        ${rerankMs > 0 ? `<div class="timing-segment" style="width: ${(rerankMs/workerTotalMs)*100}%; background: #d29922;" title="Rerank: ${rerankMs}ms">${rerankMs > 50 ? rerankMs : ''}</div>` : ''}
+                        ${relevanceMs > 0 ? `<div class="timing-segment" style="width: ${(relevanceMs/workerTotalMs)*100}%; background: #a371f7;" title="LLM Check: ${relevanceMs}ms">${relevanceMs > 50 ? relevanceMs : ''}</div>` : ''}
+                        ${synthesisMs > 0 ? `<div class="timing-segment" style="width: ${(synthesisMs/workerTotalMs)*100}%; background: #f85149;" title="Synthesis: ${synthesisMs}ms">${synthesisMs > 50 ? synthesisMs : ''}</div>` : ''}
+                        ${otherMs > 0 ? `<div class="timing-segment" style="width: ${(otherMs/workerTotalMs)*100}%; background: #21262d;" title="Other: ${otherMs}ms">${otherMs > 50 ? otherMs : ''}</div>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; font-size: 10px; color: rgba(255,255,255,0.7);">
+                        ${authMs > 0 ? `<span>🟧 Auth: ${authMs}ms</span>` : ''}
+                        ${intentRouterMs > 0 ? `<span>🟡 Router: ${intentRouterMs}ms</span>` : ''}
+                        ${tagsMs > 0 ? `<span>⬜ Tags: ${tagsMs}ms</span>` : ''}
+                        ${embedMs > 0 ? `<span>🟦 Embed: ${embedMs}ms</span>` : ''}
+                        ${searchMs > 0 ? `<span>🟩 Search: ${searchMs}ms</span>` : ''}
+                        ${rerankMs > 0 ? `<span>🟨 Rerank: ${rerankMs}ms</span>` : ''}
+                        ${relevanceMs > 0 ? `<span>🟪 LLM: ${relevanceMs}ms</span>` : ''}
+                        ${synthesisMs > 0 ? `<span>🟥 Synth: ${synthesisMs}ms</span>` : ''}
+                        ${otherMs > 0 ? `<span>⬛ Other: ${otherMs}ms</span>` : ''}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            // ===============================================================
+            // CHROME EXTENSION SECTION (if available)
+            // ===============================================================
+            if (trace.extension_total_flow_ms) {
+                // Calculate REAL network latency: Backend Search time (from extension) - Worker processing time
+                const networkLatencyMs = (trace.extension_backend_search_ms || 0) - workerTotalMs;
+                // Extension overhead: Total flow - Backend Search (settings + delay + notification)
+                const extensionOverhead = (trace.extension_total_flow_ms || 0) - (trace.extension_backend_search_ms || 0);
+                
+                html += `<h2 style="color: #f9826c; margin-bottom: 16px; font-size: 16px;">🧩 Chrome Extension Timing</h2>`;
+                
+                html += `
+                    <div class="trace-section" style="border-left: 3px solid #f9826c;">
+                        <h3>⏱️ Extension Flow Breakdown</h3>
+                        <div class="timing-grid">
+                            <div class="timing-item">
+                                <div class="timing-value" style="color: #f9826c;">${trace.extension_total_flow_ms}</div>
+                                <div class="timing-label">Total Flow (ms)</div>
+                            </div>
+                            <div class="timing-item">
+                                <div class="timing-value">${trace.extension_settings_check_ms || 0}</div>
+                                <div class="timing-label">Settings Check</div>
+                            </div>
+                            <div class="timing-item">
+                                <div class="timing-value">${trace.extension_backend_search_ms || 0}</div>
+                                <div class="timing-label">Backend Call (incl. network)</div>
+                            </div>
+                            <div class="timing-item">
+                                <div class="timing-value">${trace.extension_delay_ms || 0}</div>
+                                <div class="timing-label">Injection Delay</div>
+                            </div>
+                            <div class="timing-item">
+                                <div class="timing-value">${trace.extension_notification_ms || 0}</div>
+                                <div class="timing-label">Notification Show</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Network vs Worker breakdown -->
+                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #30363d;">
+                            <h4 style="color: #8b949e; font-size: 12px; margin-bottom: 12px;">📡 Backend Call Breakdown (${trace.extension_backend_search_ms || 0}ms)</h4>
+                            <div class="timing-grid">
+                                <div class="timing-item">
+                                    <div class="timing-value" style="color: #3fb950;">${workerTotalMs}</div>
+                                    <div class="timing-label">Worker Processing</div>
+                                </div>
+                                <div class="timing-item" style="background: ${networkLatencyMs > 1000 ? '#3d1f1f' : '#21262d'};">
+                                    <div class="timing-value" style="color: ${networkLatencyMs > 1000 ? '#f85149' : networkLatencyMs > 500 ? '#d29922' : '#58a6ff'};">${networkLatencyMs}</div>
+                                    <div class="timing-label">Network Latency</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 12px; font-size: 12px; color: #8b949e;">
+                            <strong>📊 Analysis:</strong> 
+                            ${networkLatencyMs > 1500 ? '🔴 High network latency! Check internet connection or try different region.' : 
+                              networkLatencyMs > 800 ? '🟡 Moderate network latency. Consider if user is far from Cloudflare edge.' : 
+                              '🟢 Good network performance.'}
+                            ${extensionOverhead > 200 ? ` Extension overhead (${extensionOverhead}ms) is slightly high.` : ''}
+                        </div>
+                        <p style="color: #6e7681; font-size: 11px; margin-top: 8px;">
+                            💡 Source: ${trace.extension_source || 'chrome-extension'}
+                        </p>
+                    </div>
+                `;
+            }
+            
+            // ===============================================================
+            // ARCHITECTURE INFO SECTION - Shows which path was used
+            // ===============================================================
+            const isDirectWorker = trace.source === 'worker-direct' || !trace.timing_gateway_ms;
+            html += `<h2 style="color: #3fb950; margin-bottom: 16px; font-size: 16px;">🏗️ Request Architecture</h2>`;
+            
+            html += `
+                <div class="trace-section" style="border-color: #3fb950;">
+                    <h3>🔀 Request Path</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Architecture</label>
+                            <div class="value" style="color: ${isDirectWorker ? '#3fb950' : '#f0883e'}">
+                                ${isDirectWorker ? '⚡ Direct Worker (Fast Path)' : '🔄 Gateway → Fly.io → Worker (Legacy)'}
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <label>Auth Method</label>
+                            <div class="value">${trace.auth_method || (isDirectWorker ? 'JWT/API Key' : 'Session')}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Worker Time</label>
+                            <div class="value">${trace.timing_total_ms || 0}ms</div>
+                        </div>
+                        ${trace.timing_gateway_ms ? `
+                        <div class="info-item">
+                            <label>Gateway Overhead</label>
+                            <div class="value">${trace.timing_gateway_ms}ms</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <p style="color: #8b949e; font-size: 12px; margin-top: 12px;">
+                        ${isDirectWorker 
+                            ? '💡 <strong style="color:#3fb950;">Direct Worker Path:</strong> Frontend calls Cloudflare Worker directly with JWT auth. Bypasses Fly.io for 10-15x faster response times.' 
+                            : '💡 <strong style="color:#f0883e;">Legacy Path:</strong> Gateway → Fly.io → Worker. Consider updating to Direct Worker path for better performance.'}
+                    </p>
+                </div>
+            `;
+            
+            // ===============================================================
+            // REQUEST TIMELINE - When each phase occurred (IST)
+            // ===============================================================
+            const formatIST = (isoString) => {
+                if (!isoString) return 'N/A';
+                const date = new Date(isoString);
+                return date.toLocaleString('en-IN', { 
+                    timeZone: 'Asia/Kolkata',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    fractionalSecondDigits: 3,
+                    hour12: true
+                });
+            };
+            
+            const formatISTFull = (isoString) => {
+                if (!isoString) return 'N/A';
+                const date = new Date(isoString);
+                return date.toLocaleString('en-IN', { 
+                    timeZone: 'Asia/Kolkata',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                }) + ' IST';
+            };
+            
+            // ===============================================================
+            // AGENTIC RAG - Intent Classification & Tool Routing
+            // ===============================================================
+            if (trace.intent_classification) {
+                html += `<h2 style="color: #e3b341; margin-bottom: 16px; font-size: 16px;">🧠 Agentic RAG Router</h2>`;
+                
+                const intentStyles = {
+                    'CONTENT_SEARCH': { icon: '🔍', color: '#58a6ff', desc: 'Hybrid vector + keyword search for specific content' },
+                    'TAG_BROWSE': { icon: '🏷️', color: '#a371f7', desc: 'Explicit tag browsing (user used word "tag")' },
+                    'COLLECTION_SUMMARY': { icon: '📊', color: '#3fb950', desc: 'Overview/count of entire document collection' },
+                    'EXPLORATORY': { icon: '🔭', color: '#f0883e', desc: 'Discovery query — LLM analyzes titles + tags' },
+                    'DATE_QUERY': { icon: '📅', color: '#d29922', desc: 'Date-based query → canned response' },
+                    'MULTI_STEP': { icon: '🔗', color: '#f85149', desc: 'Multi-step query → canned response (not supported)' },
+                };
+                const intent = intentStyles[trace.intent_classification] || { icon: '❓', color: '#8b949e', desc: 'Unknown' };
+                
+                html += `
+                    <div class="trace-section" style="border-left: 3px solid #e3b341;">
+                        <h3>🎯 Intent Classification
+                            <span style="background: ${intent.color}; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 12px; margin-left: 8px;">${intent.icon} ${trace.intent_classification}</span>
+                            ${trace.intent_confidence ? `<span style="background: ${trace.intent_confidence === 'HIGH' ? '#238636' : trace.intent_confidence === 'MEDIUM' ? '#6e4b00' : '#6e1f1f'}; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 4px;">${trace.intent_confidence}</span>` : ''}
+                            ${trace.timing_intent_router_ms ? `<span class="timestamp-badge" style="background: #e3b341; color: #000;">${trace.timing_intent_router_ms}ms</span>` : ''}
+                        </h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Classified Intent</label>
+                                <div class="value" style="color: ${intent.color};">${intent.icon} ${trace.intent_classification}</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Description</label>
+                                <div class="value" style="color: #8b949e; font-size: 12px;">${intent.desc}</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Confidence</label>
+                                <div class="value" style="color: ${trace.intent_confidence === 'HIGH' ? '#3fb950' : trace.intent_confidence === 'MEDIUM' ? '#d29922' : '#f85149'};">${trace.intent_confidence || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <label>Router Duration</label>
+                                <div class="value">${trace.timing_intent_router_ms || 0}ms ${trace.timing_intent_router_ms < 50 ? '<span style="color:#f85149; font-size:11px;">⚠️ Suspiciously fast</span>' : ''}</div>
+                            </div>
+                        </div>
+                        ${trace.intent_reasoning ? `
+                        <div style="margin-top: 12px; padding: 8px 12px; background: #0d1117; border-radius: 6px; font-size: 12px; color: #8b949e;">
+                            <strong style="color: #e3b341;">Reasoning:</strong> ${escapeHtml(trace.intent_reasoning)}
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                // Tool/Handler invoked
+                if (trace.tool_invoked) {
+                    const toolStyles = {
+                        'hybrid_search': { icon: '🔀', color: '#58a6ff', desc: 'Full hybrid pipeline: embedding → vector+keyword → rerank → LLM verify → synthesis' },
+                        'tag_filtered_search': { icon: '🏷️', color: '#a371f7', desc: 'Tag-filtered hybrid search with LLM tag intent classification' },
+                        'tag_browse': { icon: '🏷️', color: '#a371f7', desc: 'Direct tag browsing — fetches all docs under matched tag' },
+                        'collection_summary': { icon: '📊', color: '#3fb950', desc: 'Fetches all document metadata → LLM summarizes collection' },
+                        'exploratory': { icon: '🔭', color: '#f0883e', desc: 'Fetches all doc titles+tags → LLM finds relevant docs' },
+                        'date_query_canned': { icon: '📅', color: '#d29922', desc: 'Canned response directing user to Your Notes section' },
+                        'multi_step_canned': { icon: '🔗', color: '#f85149', desc: 'Canned response — multi-step queries not supported' },
+                    };
+                    const tool = toolStyles[trace.tool_invoked] || { icon: '⚙️', color: '#8b949e', desc: 'Unknown tool' };
+                    
+                    html += `
+                        <div class="trace-section" style="border-left: 3px solid ${tool.color};">
+                            <h3>${tool.icon} Tool Invoked: <span style="color: ${tool.color};">${trace.tool_invoked}</span></h3>
+                            <p style="color: #8b949e; font-size: 12px; margin-bottom: 12px;">${tool.desc}</p>
+                            <div class="info-grid">
+                                ${trace.collection_doc_count ? `
+                                <div class="info-item">
+                                    <label>Collection Docs</label>
+                                    <div class="value">${trace.collection_doc_count} documents</div>
+                                </div>
+                                ` : ''}
+                                ${trace.answer_generated !== undefined ? `
+                                <div class="info-item">
+                                    <label>Answer Generated</label>
+                                    <div class="value" style="color: ${trace.answer_generated ? '#3fb950' : '#8b949e'};">${trace.answer_generated ? '✅ Yes' : '❌ No'}</div>
+                                </div>
+                                ` : ''}
+                                ${trace.final_count !== undefined ? `
+                                <div class="info-item">
+                                    <label>Results Returned</label>
+                                    <div class="value">${trace.final_count}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                            ${trace.answer_preview ? `
+                            <div style="margin-top: 12px; padding: 8px 12px; background: #0d1117; border-radius: 6px; font-size: 12px;">
+                                <strong style="color: #3fb950;">Answer Preview:</strong>
+                                <span style="color: #c9d1d9;">${escapeHtml(trace.answer_preview)}${trace.answer_preview.length >= 200 ? '...' : ''}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+                
+                // LLM Calls Summary
+                if (trace.llm_calls?.length) {
+                    html += `
+                        <div class="trace-section" style="border-left: 3px solid #e3b341;">
+                            <h3>🤖 LLM Calls <span class="count">${trace.llm_calls.length}</span></h3>
+                            <table class="candidate-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Purpose</th>
+                                        <th>Model</th>
+                                        <th>Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${trace.llm_calls.map((call, i) => `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td style="color: #58a6ff;">${call.purpose}</td>
+                                        <td style="color: #8b949e; font-family: monospace; font-size: 11px;">${call.model}</td>
+                                        <td style="font-family: monospace; color: ${call.duration_ms > 1000 ? '#f85149' : call.duration_ms > 500 ? '#d29922' : '#3fb950'};">${call.duration_ms}ms</td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Check if we have any timestamp data
+            const hasTimestamps = trace.request_received_at || trace.embedding_started_at || trace.search_started_at;
+            
+            if (hasTimestamps) {
+                html += `<h2 style="color: #d29922; margin-bottom: 16px; font-size: 16px;">⏰ Request Timeline (IST)</h2>`;
+                
+                html += `
+                    <div class="trace-section" style="border-left: 3px solid #d29922;">
+                        <h3>📅 Phase Timestamps</h3>
+                        <p style="color: #8b949e; font-size: 11px; margin-bottom: 12px;">
+                            Full timestamp: ${formatISTFull(trace.request_received_at || trace.created_at)}
+                        </p>
+                        <div style="position: relative; padding-left: 24px;">
+                            <!-- Timeline line -->
+                            <div style="position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: #30363d;"></div>
+                            
+                            ${trace.request_received_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #3fb950; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">📥 Request Received</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.request_received_at)}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.auth_started_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #f0883e; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">🔐 Auth Started</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.auth_started_at)}</span>
+                                </div>
+                                ${trace.timing_auth_ms ? `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">Duration: ${trace.timing_auth_ms}ms</div>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.auth_completed_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #f0883e; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">✅ Auth Completed</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.auth_completed_at)}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.spell_check_started_at && trace.timing_spell_check_ms > 0 ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #79c0ff; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">📝 Spell Check Started</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.spell_check_started_at)}</span>
+                                </div>
+                                <div style="color: #8b949e; font-size: 11px; margin-top: 2px;">Duration: ${trace.timing_spell_check_ms}ms</div>
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.tags_fetch_started_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #7ee787; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">🏷️ Tags Fetch Started</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.tags_fetch_started_at)}</span>
+                                </div>
+                                ${trace.timing_tags_fetch_ms ? `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">Duration: ${trace.timing_tags_fetch_ms}ms</div>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.embedding_started_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #58a6ff; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">🧮 Embedding Started</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.embedding_started_at)}</span>
+                                </div>
+                                ${trace.timing_embedding_ms ? `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">Duration: ${trace.timing_embedding_ms}ms ${trace.embedding_cached ? '(cached)' : ''}</div>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.search_started_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #3fb950; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">🔍 Search Started</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.search_started_at)}</span>
+                                </div>
+                                ${trace.timing_vector_search_ms ? `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">Vector: ${trace.timing_vector_search_ms}ms | Keyword: ${trace.timing_keyword_search_ms || 0}ms</div>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.rerank_started_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #f0883e; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">🎯 Rerank Started</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.rerank_started_at)}</span>
+                                </div>
+                                ${trace.timing_rerank_ms ? `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">Duration: ${trace.timing_rerank_ms}ms</div>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.relevance_check_started_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #d29922; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">🤖 LLM Relevance Check</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.relevance_check_started_at)}</span>
+                                </div>
+                                ${trace.timing_relevance_check_ms ? `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">Duration: ${trace.timing_relevance_check_ms}ms</div>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.synthesis_started_at ? `
+                            <div style="position: relative; margin-bottom: 16px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #a371f7; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">✨ Synthesis Started</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.synthesis_started_at)}</span>
+                                </div>
+                                ${trace.timing_synthesis_ms ? `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">Duration: ${trace.timing_synthesis_ms}ms</div>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            ${trace.response_sent_at ? `
+                            <div style="position: relative; margin-bottom: 8px;">
+                                <div style="position: absolute; left: -20px; width: 12px; height: 12px; background: #238636; border-radius: 50%;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #c9d1d9; font-weight: 500;">📤 Response Sent</span>
+                                    <span style="color: #58a6ff; font-family: monospace;">${formatIST(trace.response_sent_at)}</span>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // Auth Details Section
+                if (trace.auth_method || trace.auth_user_email || trace.timing_auth_ms) {
+                    html += `
+                        <div class="trace-section" style="border-left: 3px solid #f0883e;">
+                            <h3>🔐 Authentication Details</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <label>Auth Method</label>
+                                    <div class="value">${trace.auth_method || 'Unknown'}</div>
+                                </div>
+                                ${trace.auth_user_email ? `
+                                <div class="info-item">
+                                    <label>User Email</label>
+                                    <div class="value">${trace.auth_user_email}</div>
+                                </div>
+                                ` : ''}
+                                ${trace.timing_auth_ms ? `
+                                <div class="info-item">
+                                    <label>Auth Duration</label>
+                                    <div class="value">${trace.timing_auth_ms}ms</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Circuit Breaker & Caches (if available)
+            if (trace.circuit_breaker_open !== undefined || trace.synthesis_cache_hit !== undefined) {
+                html += `
+                    <div class="trace-section" style="border-color: #58a6ff;">
+                        <h3>⚡ Circuit Breaker & Caches</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Circuit Breaker</label>
+                                <div class="value" style="color: ${trace.circuit_breaker_open ? '#f85149' : '#3fb950'}">
+                                    ${trace.circuit_breaker_open ? '🔴 OPEN' : '🟢 CLOSED'}
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <label>Avg Groq Latency</label>
+                                <div class="value">${trace.circuit_breaker_avg_latency_ms || 0}ms</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Agent Steps (if available)
+            if (trace.agent_steps?.length) {
+                html += `
+                    <div class="trace-section" style="border-color: #a371f7;">
+                        <h3>🤖 Agent Steps <span class="count">${trace.agent_steps.length}</span></h3>
+                `;
+                for (const step of trace.agent_steps) {
+                    html += `
+                        <div class="agent-step">
+                            <div class="step-header">
+                                <span>
+                                    <span class="step-num">#${step.step_number}</span>
+                                    <span class="step-action">${step.action}</span>
+                                    ${step.tool_name ? `<span style="color: #8b949e; font-size: 12px;"> → ${step.tool_name}</span>` : ''}
+                                </span>
+                                <span class="step-duration">${step.duration_ms}ms</span>
+                            </div>
+                            <div class="step-thought">${step.thought || ''}</div>
+                        </div>
+                    `;
+                }
+                html += `</div>`;
+            }
+            
+            // ===============================================================
+            // WORKER (Cloudflare) SECTION - PRIMARY PROCESSING
+            // ===============================================================
+            html += `<h2 style="color: #58a6ff; margin-top: 24px; margin-bottom: 16px; font-size: 16px;">☁️ Worker Processing (Cloudflare) - Primary Search Engine ${trace.request_received_at ? `<span style="font-size: 12px; font-weight: normal; color: #8b949e;">@ ${formatIST(trace.request_received_at)}</span>` : ''}</h2>`;
+            
+            // Query Info - Show original and corrected query
+            html += `
+                <div class="trace-section worker-section">
+                    <h3>🔍 Query Processing ${trace.tags_fetch_started_at ? `<span style="font-size: 11px; font-weight: normal; color: #6e7681; margin-left: 8px;">@ ${formatIST(trace.tags_fetch_started_at)}</span>` : ''}</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Original Query</label>
+                            <div class="value">${trace.query || 'N/A'}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Query Used</label>
+                            <div class="value ${trace.query_corrected && trace.query_corrected !== trace.query ? 'corrected' : ''}">${trace.query_corrected || trace.query || 'N/A'}</div>
+                        </div>
+                        <div class="info-item">
+                            <label>Spell Check</label>
+                            <div class="value" style="color: #8b949e;">
+                                ${trace.timing_spell_check_ms === 0 ? '⏸️ DISABLED' : (trace.query_corrected && trace.query_corrected !== trace.query ? '✅ Corrected' : '✓ No changes')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Timing Overview - Complete breakdown with descriptions
+            html += `
+                <div class="trace-section worker-section">
+                    <h3>⏱️ Detailed Timing Breakdown ${trace.embedding_started_at ? `<span style="font-size: 11px; font-weight: normal; color: #6e7681; margin-left: 8px;">Started @ ${formatIST(trace.embedding_started_at)}</span>` : ''}</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #30363d;">
+                                <th style="text-align: left; padding: 8px 0; color: #8b949e;">Step</th>
+                                <th style="text-align: right; padding: 8px 0; color: #8b949e;">Time</th>
+                                <th style="text-align: left; padding: 8px 12px; color: #8b949e;">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #21262d;">
+                                <td style="padding: 8px 0;">🏷️ Tags Fetch</td>
+                                <td style="text-align: right; padding: 8px 0; font-family: monospace; color: #58a6ff;">${trace.timing_tags_fetch_ms || 0}ms</td>
+                                <td style="padding: 8px 12px; color: #8b949e; font-size: 11px;">
+                                    ${trace.tags_cached ? '<span style="color:#3fb950;">✓ CACHED</span>' : 'Fetched from Supabase'} 
+                                    • ${trace.tags_available?.length || 0} tags available
+                                </td>
+                            </tr>
+                            ${trace.timing_intent_router_ms !== undefined ? `
+                            <tr style="border-bottom: 1px solid #21262d;">
+                                <td style="padding: 8px 0;">🧠 Intent Router</td>
+                                <td style="text-align: right; padding: 8px 0; font-family: monospace; color: #e3b341;">${trace.timing_intent_router_ms}ms</td>
+                                <td style="padding: 8px 12px; color: #8b949e; font-size: 11px;">
+                                    Groq LLaMA 3.1 8B
+                                    ${trace.intent_classification ? ` • <span style="color:${trace.intent_classification === 'CONTENT_SEARCH' ? '#58a6ff' : '#f0883e'};">${trace.intent_classification}</span>` : ''}
+                                    ${trace.intent_confidence ? ` (${trace.intent_confidence})` : ''}
+                                    ${trace.timing_intent_router_ms < 50 ? ' • <span style="color:#f85149;">⚠️ Possible Groq error</span>' : ''}
+                                </td>
+                            </tr>
+                            ` : ''}
+                            <tr style="border-bottom: 1px solid #21262d;">
+                                <td style="padding: 8px 0;">🧮 Embedding</td>
+                                <td style="text-align: right; padding: 8px 0; font-family: monospace; color: #58a6ff;">${trace.timing_embedding_ms || 0}ms</td>
+                                <td style="padding: 8px 12px; color: #8b949e; font-size: 11px;">
+                                    ${trace.embedding_cached ? '<span style="color:#3fb950;">✓ CACHED</span>' : '<span style="color:#f0883e;">Generated</span>'} 
+                                    • Cloudflare AI (BGE-base-en-v1.5)
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #21262d;">
+                                <td style="padding: 8px 0;">🔍 Vector + Keyword</td>
+                                <td style="text-align: right; padding: 8px 0; font-family: monospace; color: #58a6ff;">${trace.timing_vector_search_ms || 0}ms</td>
+                                <td style="padding: 8px 12px; color: #8b949e; font-size: 11px;">
+                                    Parallel search: Vectorize + Supabase FTS
+                                    ${trace.vector_count ? ` • Vec: ${trace.vector_count}` : ''}${trace.keyword_count ? ` • KW: ${trace.keyword_count}` : ''}
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #21262d;">
+                                <td style="padding: 8px 0;">📊 Reranking</td>
+                                <td style="text-align: right; padding: 8px 0; font-family: monospace; color: #58a6ff;">${trace.timing_rerank_ms || 0}ms</td>
+                                <td style="padding: 8px 12px; color: #8b949e; font-size: 11px;">
+                                    Jina Reranker v2 
+                                    ${trace.combined_count ? ` • ${trace.combined_count} candidates → ${trace.reranked_count || 0} passed` : ''}
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #21262d;">
+                                <td style="padding: 8px 0;">🤖 LLM Verification</td>
+                                <td style="text-align: right; padding: 8px 0; font-family: monospace; color: #58a6ff;">${trace.timing_relevance_check_ms || 0}ms</td>
+                                <td style="padding: 8px 12px; color: #8b949e; font-size: 11px;">
+                                    ${trace.timing_relevance_check_ms === 0 ? '<span style="color:#f0883e;">⏸️ SKIPPED</span> (LIST_ALL tag query)' : 
+                                      `Groq LLaMA 3.1 • ${trace.relevance_verified_count || 0} verified`}
+                                </td>
+                            </tr>
+                            ${trace.timing_synthesis_ms ? `
+                            <tr style="border-bottom: 1px solid #21262d;">
+                                <td style="padding: 8px 0;">✨ Synthesis</td>
+                                <td style="text-align: right; padding: 8px 0; font-family: monospace; color: #58a6ff;">${trace.timing_synthesis_ms}ms</td>
+                                <td style="padding: 8px 12px; color: #8b949e; font-size: 11px;">
+                                    ${trace.synthesis_cached ? '<span style="color:#3fb950;">✓ CACHED</span>' : 'Generated'} 
+                                    • Groq LLaMA 3.3 70B
+                                </td>
+                            </tr>
+                            ` : ''}
+                            <tr style="background: #21262d;">
+                                <td style="padding: 8px 0; font-weight: 600;">📍 Total</td>
+                                <td style="text-align: right; padding: 8px 0; font-family: monospace; color: #3fb950; font-weight: 600;">${trace.timing_total_ms || 0}ms</td>
+                                <td style="padding: 8px 12px; color: #8b949e; font-size: 11px;">
+                                    Worker processing complete
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Pipeline Flow - Updated with LLM Verification step and chunk grouping info
+            const chunkGroupingInfo = trace.chunks_before_grouping ? 
+                `${trace.chunks_before_grouping} chunks → ${trace.unique_documents || 0} docs → ${trace.chunks_after_grouping || 0} (top ${trace.chunks_per_doc_limit || 3}/doc)` : '';
+            const dedupInfo = trace.dedup_removed ? 
+                `(${trace.dedup_before_count} → ${trace.dedup_after_count}, removed ${trace.dedup_removed} duplicate chunks)` : '';
+            
+            // Only show pipeline flow for CONTENT_SEARCH (hybrid) paths that have vector/keyword data
+            const hasPipelineData = (trace.vector_count || 0) > 0 || (trace.keyword_count || 0) > 0 || trace.search_started_at;
+            
+            if (hasPipelineData) {
+            html += `
+                <div class="trace-section worker-section">
+                    <h3>🔄 Search Pipeline Flow ${trace.search_started_at ? `<span style="font-size: 11px; font-weight: normal; color: #6e7681; margin-left: 8px;">@ ${formatIST(trace.search_started_at)}</span>` : ''}</h3>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px;">
+                        <span style="background: #21262d; padding: 6px 12px; border-radius: 4px;">
+                            Vector: <strong>${trace.vector_count || 0}</strong>
+                        </span>
+                        <span style="color: #6e7681;">+</span>
+                        <span style="background: #21262d; padding: 6px 12px; border-radius: 4px;">
+                            Keyword: <strong>${trace.keyword_count || 0}</strong>
+                        </span>
+                        <span style="color: #6e7681;">→</span>
+                        <span style="background: #21262d; padding: 6px 12px; border-radius: 4px;" title="${chunkGroupingInfo || 'Top 3 chunks per document'}">
+                            Combined: <strong>${trace.combined_count || 0}</strong>
+                            ${trace.unique_documents ? `<small style="color:#8b949e;"> (${trace.unique_documents} docs)</small>` : ''}
+                        </span>
+                        <span style="color: #6e7681;">→</span>
+                        <span style="background: #21262d; padding: 6px 12px; border-radius: 4px;">
+                            Reranked: <strong>${trace.reranked_count || 0}</strong>
+                        </span>
+                        <span style="color: #6e7681;">→</span>
+                        <span style="background: #9333ea; padding: 6px 12px; border-radius: 4px; color: #fff;" title="LLM relevance verification">
+                            LLM Verified: <strong>${trace.relevance_verified_count || 0}</strong>
+                        </span>
+                        <span style="color: #6e7681;">→</span>
+                        <span style="background: #238636; padding: 6px 12px; border-radius: 4px; color: #fff;" title="${dedupInfo || 'After dedup by document'}">
+                            Final: <strong>${trace.final_count || 0}</strong>
+                            ${trace.dedup_removed ? `<small style="opacity:0.8;"> (-${trace.dedup_removed})</small>` : ''}
+                        </span>
+                    </div>
+                    ${chunkGroupingInfo ? `
+                    <div style="margin-top: 8px; font-size: 11px; color: #8b949e;">
+                        📊 Chunk Selection: ${chunkGroupingInfo}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            // Vector Candidates - timestamp is embedding_started_at (when vector search begins)
+            if (trace.vector_candidates?.length) {
+                html += renderCandidatesTable('🎯 Vector Search Candidates', trace.vector_candidates, [
+                    { key: 'title', label: 'Title' },
+                    { key: 'vector_score', label: 'Vector Score', isScore: true },
+                    { key: 'content', label: 'Content Preview', isPreview: true }
+                ], 'worker-section', trace.search_started_at);
+            }
+            
+            // Keyword Candidates - same timestamp as vector (parallel)
+            if (trace.keyword_candidates?.length) {
+                html += renderCandidatesTable('🔤 Keyword Search Candidates', trace.keyword_candidates, [
+                    { key: 'note_id', label: 'Note ID' },
+                    { key: 'keyword_score', label: 'Keyword Score', isScore: true }
+                ], 'worker-section', trace.search_started_at);
+            }
+            
+            // Combined Candidates
+            if (trace.combined_candidates?.length) {
+                html += renderCandidatesTable('🔀 Combined Candidates (Top 3 chunks/doc)', trace.combined_candidates, [
+                    { key: 'title', label: 'Title' },
+                    { key: 'vector_score', label: 'Vector', isScore: true },
+                    { key: 'keyword_score', label: 'Keyword', isScore: true },
+                    { key: 'combined_score', label: 'Combined', isScore: true }
+                ], 'worker-section', trace.search_started_at);
+            }
+            
+            // Reranked Candidates
+            if (trace.reranked_candidates?.length) {
+                html += renderCandidatesTable('🏆 Reranked Candidates', trace.reranked_candidates, [
+                    { key: 'title', label: 'Title' },
+                    { key: 'combined_score', label: 'Pre-Rerank', isScore: true },
+                    { key: 'rerank_score', label: 'Rerank Score', isScore: true },
+                    { key: 'passed_rerank_threshold', label: 'Passed', isBool: true }
+                ], 'worker-section', trace.rerank_started_at);
+            }
+            
+            // LLM Relevance Verification Candidates
+            if (trace.relevance_verified_candidates?.length) {
+                html += renderCandidatesTable('🧠 LLM Relevance Verification', trace.relevance_verified_candidates, [
+                    { key: 'title', label: 'Title' },
+                    { key: 'rerank_score', label: 'Rerank Score', isScore: true },
+                    { key: 'passed_verification', label: 'LLM Verified', isBool: true }
+                ], 'worker-section', trace.relevance_check_started_at);
+            }
+            
+            // Final Results
+            if (trace.final_results?.length) {
+                html += renderCandidatesTable('✅ Final Results (After Dedup)', trace.final_results, [
+                    { key: 'title', label: 'Title' },
+                    { key: 'rerank_score', label: 'Rerank Score', isScore: true },
+                    { key: 'similarity_score', label: 'Similarity', isScore: true }
+                ], 'worker-section', trace.synthesis_started_at);
+            }
+            
+            } // end hasPipelineData
+            
+            container.innerHTML = html;
+        }
+        
+        function renderCandidatesTable(title, candidates, columns, sectionClass = '', timestamp = null) {
+            // Format timestamp in IST if provided
+            let timestampStr = '';
+            if (timestamp) {
+                try {
+                    const dt = new Date(timestamp);
+                    timestampStr = ` <span class="timestamp-badge">@ ${dt.toLocaleString('en-IN', { 
+                        timeZone: 'Asia/Kolkata',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true
+                    })} IST</span>`;
+                } catch (e) {
+                    // Ignore timestamp formatting errors
+                }
+            }
+            let html = `
+                <div class="trace-section ${sectionClass}">
+                    <h3>${title}${timestampStr} <span class="count">${candidates.length}</span></h3>
+                    <table class="candidate-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                ${columns.map(c => `<th>${c.label}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            candidates.forEach((candidate, index) => {
+                const isFiltered = candidate.passed_rerank_threshold === false || candidate.passed_verification === false;
+                html += `<tr class="${isFiltered ? 'filtered' : ''}">`;
+                html += `<td>${index + 1}</td>`;
+                
+                columns.forEach(col => {
+                    const value = candidate[col.key];
+                    if (col.isScore) {
+                        const score = parseFloat(value) || 0;
+                        const scoreClass = score >= 0.7 ? 'high' : score >= 0.4 ? 'medium' : 'low';
+                        html += `<td class="score ${scoreClass}">${score.toFixed(3)}</td>`;
+                    } else if (col.isBool) {
+                        html += `<td>${value ? '✅' : '❌'}</td>`;
+                    } else if (col.isPreview) {
+                        const preview = (value || '').substring(0, 100);
+                        html += `<td class="content-preview" title="${escapeHtml(value || '')}">${escapeHtml(preview)}${preview.length < (value || '').length ? '...' : ''}</td>`;
+                    } else {
+                        html += `<td>${escapeHtml(String(value || ''))}</td>`;
+                    }
+                });
+                
+                html += '</tr>';
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        function renderFileLogs(container) {
+            const trace = currentActivity.traceLogs;
+            
+            if (!trace || !trace.logs || trace.logs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <p>No file logs found for this request</p>
+                        <p style="color: #6e7681; font-size: 12px;">
+                            Server logs rotate frequently.<br>
+                            Check the <strong>Metadata</strong> tab for activity details.
+                        </p>
+                        <button onclick="document.querySelector('[data-view=metadata]').click()" 
+                                style="margin-top: 16px; padding: 8px 16px; background: #238636; border: none; border-radius: 6px; color: #fff; cursor: pointer;">
+                            View Metadata →
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = trace.logs.map(log => `
+                <div class="log-entry ${log.level}">
+                    <span class="log-timestamp">${log.timestamp}</span>
+                    <span class="log-level">${log.level}</span>
+                    <span class="log-logger">${log.logger_name || ''}</span>
+                    <span class="log-message">${escapeHtml(log.message)}</span>
+                </div>
+            `).join('');
+        }
+        
+        function renderOperations(container) {
+            const dbLogs = currentActivity.dbLogs;
+            
+            if (!dbLogs || (!dbLogs.operations?.length && !dbLogs.errors?.length)) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">⚙️</div>
+                        <p>No operation logs found in database</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            if (dbLogs.operations?.length) {
+                html += '<h3 style="color: #58a6ff; margin: 16px 0 12px;">Operations</h3>';
+                dbLogs.operations.forEach(op => {
+                    html += `
+                        <div class="log-entry INFO">
+                            <strong>${op.service}</strong> → ${op.operation}
+                            <span style="color: ${op.status === 'success' ? '#3fb950' : '#f85149'}">
+                                [${op.status}]
+                            </span>
+                            ${op.duration_ms ? `<span style="color: #8b949e">${op.duration_ms}ms</span>` : ''}
+                            ${op.input_summary ? `<div class="json-viewer">${formatJson(op.input_summary)}</div>` : ''}
+                            ${op.output_summary ? `<div class="json-viewer">${formatJson(op.output_summary)}</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+            
+            if (dbLogs.errors?.length) {
+                html += '<h3 style="color: #f85149; margin: 16px 0 12px;">Errors</h3>';
+                dbLogs.errors.forEach(err => {
+                    html += `
+                        <div class="log-entry ERROR">
+                            <strong>${err.error_type || 'Error'}</strong>: ${escapeHtml(err.error_message)}
+                            ${err.stack_trace ? `<pre style="margin-top: 8px; font-size: 11px; color: #8b949e;">${escapeHtml(err.stack_trace)}</pre>` : ''}
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html || '<div class="empty-state"><p>No operation details available</p></div>';
+        }
+        
+        function renderMetadata(container) {
+            const activity = currentActivity;
+            const metadata = activity.metadata || {};
+            
+            // Build a human-readable view
+            let html = '<div class="detail-cards">';
+            
+            // Activity Overview Card
+            html += `
+                <div class="detail-card">
+                    <h3>📋 Activity Overview</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Action</span>
+                        <span class="detail-value">${formatAction(activity.action)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value status-${activity.status}">${activity.status}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Duration</span>
+                        <span class="detail-value">${activity.duration_ms || 0} ms</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Time</span>
+                        <span class="detail-value">${new Date(activity.created_at).toLocaleString()}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Correlation ID</span>
+                        <span class="detail-value mono">${activity.correlation_id}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Search-specific details
+            if (activity.action.includes('search')) {
+                html += `
+                    <div class="detail-card">
+                        <h3>🔍 Search Details</h3>
+                        ${metadata.query ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Query</span>
+                            <span class="detail-value highlight">"${escapeHtml(metadata.query)}"</span>
+                        </div>
+                        ` : ''}
+                        <div class="detail-row">
+                            <span class="detail-label">Results Found</span>
+                            <span class="detail-value">${metadata.results_count ?? metadata.result_count ?? 'N/A'}</span>
+                        </div>
+                        ${metadata.intent ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Intent</span>
+                            <span class="detail-value" style="color: #e3b341;">${metadata.intent}</span>
+                        </div>
+                        ` : ''}
+                        ${metadata.tool_invoked ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Tool Invoked</span>
+                            <span class="detail-value">${metadata.tool_invoked}</span>
+                        </div>
+                        ` : ''}
+                        ${metadata.path_taken ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Path Taken</span>
+                            <span class="detail-value">${metadata.path_taken}</span>
+                        </div>
+                        ` : ''}
+                        ${metadata.answer_generated ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Answer Generated</span>
+                            <span class="detail-value" style="color: #3fb950;">✅ Yes</span>
+                        </div>
+                        ` : ''}
+                        ${metadata.error_occurred ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Error</span>
+                            <span class="detail-value" style="color: #f85149;">❌ ${escapeHtml(metadata.error_message || 'Unknown error')}</span>
+                        </div>
+                        ` : ''}
+                        ${metadata.corrected_query ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Spell Corrected</span>
+                            <span class="detail-value">"${escapeHtml(metadata.corrected_query)}"</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            // Upload-specific details
+            if (activity.action.includes('upload') || activity.action.includes('create')) {
+                html += `
+                    <div class="detail-card">
+                        <h3>📤 Upload Details</h3>
+                        ${metadata.filename ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Filename</span>
+                            <span class="detail-value">${escapeHtml(metadata.filename)}</span>
+                        </div>
+                        ` : ''}
+                        ${metadata.chunks_created ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Chunks Created</span>
+                            <span class="detail-value">${metadata.chunks_created}</span>
+                        </div>
+                        ` : ''}
+                        ${activity.resource_id ? `
+                        <div class="detail-row">
+                            <span class="detail-label">Resource ID</span>
+                            <span class="detail-value mono">${activity.resource_id}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            // Raw metadata
+            if (Object.keys(metadata).length > 0) {
+                html += `
+                    <div class="detail-card">
+                        <h3>📊 All Metadata</h3>
+                        <div class="json-viewer">${formatJson(metadata)}</div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            // Add CSS for detail cards
+            container.innerHTML = `
+                <style>
+                    .detail-cards { display: flex; flex-direction: column; gap: 16px; }
+                    .detail-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+                    .detail-card h3 { color: #58a6ff; font-size: 14px; margin-bottom: 12px; }
+                    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #21262d; }
+                    .detail-row:last-child { border-bottom: none; }
+                    .detail-label { color: #8b949e; font-size: 13px; }
+                    .detail-value { color: #c9d1d9; font-size: 13px; font-weight: 500; }
+                    .detail-value.mono { font-family: monospace; font-size: 12px; }
+                    .detail-value.highlight { color: #58a6ff; }
+                    .detail-value.status-success { color: #3fb950; }
+                    .detail-value.status-error { color: #f85149; }
+                    .detail-value.status-pending { color: #d29922; }
+                </style>
+                ${html}
+            `;
+        }
+        
+        function formatJson(obj) {
+            if (!obj) return 'null';
+            
+            const json = JSON.stringify(obj, null, 2);
+            return json
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+                .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+                .replace(/: (\d+)/g, ': <span class="json-number">$1</span>')
+                .replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>')
+                .replace(/: null/g, ': <span class="json-null">null</span>');
+        }
+    </script>
+</body>
+</html>

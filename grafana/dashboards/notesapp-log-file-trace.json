@@ -1,0 +1,578 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "Detailed log file trace for a specific correlation_id - shows all DEBUG/INFO logs including scores, filtering decisions, etc.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "← Back to Search Deep-Dive",
+      "type": "link",
+      "url": "/d/notesapp-search-deepdive"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "# 📋 Log File Trace: `${correlation_id}`\n\nThis shows **all log entries** from `notesapp.log` for this request. ⚠️ **Note**: The log file only keeps recent logs. If you see 0 entries, the logs for this request may have been rotated out.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.0.0",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "description": "Shows a message if no logs were found",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "orange", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 2 },
+      "id": 20,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^message$/", "values": false },
+        "textMode": "value"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "",
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 0, "y": 4 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^total_lines$/", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "Total Log Lines",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 4, "y": 4 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^duration_ms$/", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "Request Duration",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "text", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 4 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^first_timestamp$/", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "Start Time",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-blue", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 3, "x": 12, "y": 4 },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^levels_summary.INFO$/", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "INFO",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-purple", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 3, "x": 15, "y": 4 },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^levels_summary.DEBUG$/", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "DEBUG",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "yellow", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 3, "x": 18, "y": 4 },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^levels_summary.WARNING$/", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "WARNING",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 3, "w": 3, "x": 21, "y": 4 },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "/^levels_summary.ERROR$/", "values": false },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "ERROR",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "${infinity_ds}"
+      },
+      "description": "All log entries from notesapp.log for this correlation_id, in chronological order",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "timestamp" },
+            "properties": [
+              { "id": "custom.width", "value": 180 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "level" },
+            "properties": [
+              { "id": "custom.width", "value": 70 },
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+              { "id": "mappings", "value": [
+                { "type": "value", "options": { "DEBUG": { "color": "semi-dark-purple", "index": 0, "text": "DEBUG" } } },
+                { "type": "value", "options": { "INFO": { "color": "semi-dark-blue", "index": 1, "text": "INFO" } } },
+                { "type": "value", "options": { "WARNING": { "color": "yellow", "index": 2, "text": "WARN" } } },
+                { "type": "value", "options": { "ERROR": { "color": "red", "index": 3, "text": "ERROR" } } }
+              ] }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "function" },
+            "properties": [
+              { "id": "custom.width", "value": 150 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "module" },
+            "properties": [
+              { "id": "custom.width", "value": 200 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "message" },
+            "properties": [
+              { "id": "custom.cellOptions", "value": { "type": "auto", "wrapText": true } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "line_number" },
+            "properties": [
+              { "id": "custom.width", "value": 60 },
+              { "id": "displayName", "value": "Line" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "correlation_id" },
+            "properties": [
+              { "id": "custom.hidden", "value": true }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "location" },
+            "properties": [
+              { "id": "custom.hidden", "value": true }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 20, "w": 24, "x": 0, "y": 7 },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": false, "displayName": "line_number" }]
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "columns": [
+            { "selector": "timestamp", "text": "timestamp", "type": "string" },
+            { "selector": "level", "text": "level", "type": "string" },
+            { "selector": "user_id", "text": "user_id", "type": "string" },
+            { "selector": "function", "text": "function", "type": "string" },
+            { "selector": "message", "text": "message", "type": "string" },
+            { "selector": "module", "text": "module", "type": "string" },
+            { "selector": "line_number", "text": "line_number", "type": "number" }
+          ],
+          "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "${infinity_ds}" },
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "refId": "A",
+          "root_selector": "logs",
+          "source": "url",
+          "type": "json",
+          "url": "${api_base_url}/api/v1/logs/file/trace/${correlation_id}?include_context=true",
+          "url_options": { "method": "GET" }
+        }
+      ],
+      "title": "📜 Detailed Log Entries (chronological order)",
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["notesapp", "logs", "trace", "drill-down"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "", "value": "" },
+        "description": "Correlation ID to view logs for",
+        "hide": 0,
+        "label": "Correlation ID",
+        "name": "correlation_id",
+        "options": [],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": { "selected": false, "text": "https://notesapp-search.fly.dev", "value": "https://notesapp-search.fly.dev" },
+        "description": "NotesApp API base URL",
+        "hide": 0,
+        "label": "API URL",
+        "name": "api_base_url",
+        "options": [
+          { "selected": true, "text": "https://notesapp-search.fly.dev", "value": "https://notesapp-search.fly.dev" },
+          { "selected": false, "text": "http://localhost:8000", "value": "http://localhost:8000" }
+        ],
+        "query": "https://notesapp-search.fly.dev",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {},
+        "description": "Infinity data source for API calls",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Infinity DS",
+        "multi": false,
+        "name": "infinity_ds",
+        "options": [],
+        "query": "yesoreyeram-infinity-datasource",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "NotesApp - Log File Trace",
+  "uid": "notesapp-log-file-trace",
+  "version": 1,
+  "weekStart": ""
+}

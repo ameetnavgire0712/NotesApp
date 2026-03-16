@@ -1,0 +1,65 @@
+﻿{
+    "query":  "show ananda cv",
+    "documents":  [
+                      {
+                          "note_id":  "52bcc117-5fba-4ded-9c39-6270337c28e2",
+                          "title":  "string",
+                          "content_preview":  "Ananda Kumar Bayyana \nJava Full Stack Lead \nMobile no: +91 â 9886704463 \nMail : ananda.bayyana@gmail.com \n\n### PROFILE SUMMARY\n* Overall 15+ years of professional experience in development, enhancements of web-based applications using JAVA/J2EE, Spring, Spring Boot, Spring Micro Services and Restful Webservices.\n* Having 2+ years of experience in Front End Technologies JavaScript, React.js.\n* Having strong knowledge and Experience in Java, Spring, Spring Boot, Spring Micro Services, REST APIâs a",
+                          "tag":  "Ananda CV",
+                          "file_type":  "uploaded_file",
+                          "similarity_score":  1.0,
+                          "source":  "tag",
+                          "metadata":  {
+                                           "original_filename":  "Ananda_Bayyana_FullStack (1).docx",
+                                           "created_at":  "2026-01-15T13:50:17.786525+00:00"
+                                       }
+                      }
+                  ],
+    "answer":  null,
+    "download_urls":  [
+                          {
+                              "note_id":  "52bcc117-5fba-4ded-9c39-6270337c28e2",
+                              "title":  "string",
+                              "download_url":  "https://rawnotesstorage.blob.core.windows.net/notes-storage/default_user/uploaded_file/20260115_135006_c05f7fc8.docx?se=2026-01-20T13%3A26%3A00Z\u0026sp=r\u0026sv=2026-02-06\u0026sr=b\u0026sig=SA4TqHcBNQRfSmwkX%2B03zpsYHmtHBltQk1A2ZLCm4X0%3D",
+                              "file_type":  "uploaded_file"
+                          }
+                      ],
+    "metadata":  {
+                     "analysis":  {
+                                      "intent":  "list",
+                                      "complexity":  "simple",
+                                      "max_iterations":  2,
+                                      "needs_synthesis":  false,
+                                      "detected_tags":  [
+                                                            "Ananda CV"
+                                                        ],
+                                      "keywords":  [
+                                                       "ananda"
+                                                   ],
+                                      "confidence":  0.9,
+                                      "temporal_sort":  "none",
+                                      "limit_to_one":  true
+                                  },
+                     "iterations_used":  0,
+                     "reasoning":  "Direct tag search (LLM skipped for efficiency)"
+                 },
+    "agent_steps":  [
+                        {
+                            "step_number":  1,
+                            "state":  "analyzing",
+                            "action":  "analyze_query",
+                            "tool_name":  null,
+                            "thought":  "Analyzing query to determine search strategy",
+                            "duration_ms":  1501
+                        },
+                        {
+                            "step_number":  2,
+                            "state":  "searching",
+                            "action":  "llm_skip_tag_search",
+                            "tool_name":  "search_by_tag",
+                            "thought":  "LLM skipped - direct tag search for: [\u0027Ananda CV\u0027]",
+                            "duration_ms":  773
+                        }
+                    ],
+    "total_duration_ms":  2680
+}

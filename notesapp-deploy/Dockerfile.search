@@ -1,0 +1,41 @@
+# =============================================================================
+# Dockerfile for Search Service
+# 
+# Uses existing requirements.txt to ensure all imports work
+# Skips loading ML models at runtime via environment variable
+# =============================================================================
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install from production requirements (lightweight, no ML models)
+COPY notesapp-deploy/requirements-search-production.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the existing app
+COPY app/ /app/app/
+
+# Copy wrapper code
+COPY notesapp-deploy/app-wrapper/ /app/app-wrapper/
+
+# Set Python path
+ENV PYTHONPATH="/app:/app/app-wrapper"
+
+# Skip heavy model loading - use Worker instead
+ENV SKIP_LOCAL_MODELS="true"
+
+# Number of uvicorn workers for concurrency
+ENV WEB_CONCURRENCY="4"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Run with multiple workers for high concurrency
+CMD ["python", "-m", "uvicorn", "app-wrapper.main_search:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "4"]

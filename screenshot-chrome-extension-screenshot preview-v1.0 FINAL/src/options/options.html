@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>infoSnap.ai - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <svg class="logo-icon-svg" width="34" height="34" viewBox="6 6 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="opt-g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="hsl(155, 70%, 50%)" />
+                <stop offset="100%" stop-color="hsl(165, 55%, 35%)" />
+              </linearGradient>
+              <linearGradient id="opt-g2" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="hsl(155, 65%, 42%)" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="hsl(160, 60%, 40%)" stop-opacity="0.8" />
+              </linearGradient>
+            </defs>
+            <rect x="10" y="10" width="28" height="28" rx="6" fill="url(#opt-g1)" />
+            <rect x="18" y="18" width="28" height="28" rx="6" fill="url(#opt-g2)" />
+          </svg>
+          <h1><span class="logo-text-main">info</span><span class="logo-text-accent">Snap</span><span class="logo-text-suffix">.ai</span></h1>
+        </div>
+        <p class="tagline">Settings & Account</p>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content">
+      <!-- Account Section -->
+      <section class="section account-section">
+        <h2 class="section-title">
+          <span class="section-icon">👤</span>
+          Account
+        </h2>
+        
+        <!-- Logged Out State -->
+        <div id="loggedOutState" class="account-state">
+          <p class="account-message">Sign in to sync your notes and screenshots to infoSnap.ai cloud.</p>
+          <button id="loginBtn" class="btn primary-btn">
+            <span class="btn-icon">🔐</span>
+            <span class="btn-text">Login with Google</span>
+          </button>
+        </div>
+
+        <!-- Logged In State -->
+        <div id="loggedInState" class="account-state" style="display: none;">
+          <div class="user-info">
+            <div class="user-avatar">
+              <span id="userInitial">U</span>
+            </div>
+            <div class="user-details">
+              <p class="user-email" id="userEmail">user@example.com</p>
+              <p class="login-status">✓ Connected</p>
+            </div>
+          </div>
+          <button id="logoutBtn" class="btn danger-btn">
+            <span class="btn-icon">🚪</span>
+            <span class="btn-text">Logout</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section class="section settings-section">
+        <h2 class="section-title">
+          <span class="section-icon">⚙️</span>
+          Preferences
+        </h2>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="defaultTag" class="setting-label">Default Tag</label>
+            <p class="setting-description">Automatically apply this tag to new items</p>
+          </div>
+          <input 
+            type="text" 
+            id="defaultTag" 
+            class="setting-input" 
+            placeholder="e.g., work, personal, ideas"
+          >
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="autoClose" class="setting-label">Auto-close popup after save</label>
+            <p class="setting-description">Automatically close the popup after saving content</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="autoClose" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="showNotifications" class="setting-label">Show notifications</label>
+            <p class="setting-description">Display success/error notifications</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="showNotifications" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label for="searchSuggestions" class="setting-label">Search suggestions</label>
+            <p class="setting-description">Show matching notes when you search on Google</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="searchSuggestions" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- API Section -->
+      <section class="section api-section">
+        <h2 class="section-title">
+          <span class="section-icon">🔗</span>
+          API Configuration
+        </h2>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <label class="setting-label">API Servers</label>
+            <p class="setting-description">Connected to infoSnap.ai cloud services</p>
+          </div>
+          <div class="server-info" style="font-size: 12px; color: #666; line-height: 1.6;">
+            <div>🔍 Gateway: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">notesapp-gateway.monocle0712.workers.dev</code></div>
+            <div>📤 Upload: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">notesapp-upload.fly.dev</code></div>
+          </div>
+        </div>
+
+        <div class="setting-item" id="apiKeySection" style="display: none;">
+          <div class="setting-info">
+            <label class="setting-label">API Key Status</label>
+            <p class="setting-description">Your authentication key</p>
+          </div>
+          <div class="api-key-display">
+            <span id="apiKeyMasked" class="api-key-masked">••••••••••••••••</span>
+            <button id="toggleApiKey" class="btn-small">Show</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Save Button -->
+      <div class="actions">
+        <button id="saveBtn" class="btn primary-btn save-btn">
+          <span class="btn-icon">💾</span>
+          <span class="btn-text">Save Settings</span>
+        </button>
+      </div>
+
+      <!-- Status Message -->
+      <div id="statusMessage" class="status-message hidden"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>infoSnap.ai v1.2.0</p>
+      <a href="https://infoSnap.ai" target="_blank" class="footer-link">
+        infoSnap.ai
+      </a>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

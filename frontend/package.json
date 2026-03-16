@@ -1,0 +1,15 @@
+{
+  "name": "secondbrain-frontend",
+  "version": "1.0.0",
+  "description": "SecondBrain - Personal Knowledge Hub Frontend",
+  "scripts": {
+    "dev": "npx serve . -l 3000",
+    "preview": "npx wrangler pages dev . --port 8788"
+  },
+  "keywords": ["secondbrain", "notes", "knowledge-hub"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

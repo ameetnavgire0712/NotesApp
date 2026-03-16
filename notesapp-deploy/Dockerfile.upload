@@ -1,0 +1,36 @@
+# =============================================================================
+# Dockerfile for Upload Service (Lightweight)
+# 
+# Uses Cloudflare Worker for embeddings (no local ML models)
+# Uses TensorLake for document parsing
+# =============================================================================
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libmagic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY notesapp-deploy/app-wrapper/requirements-upload-light.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the existing app (we import from it)
+COPY app/ /app/app/
+
+# Copy wrapper code
+COPY notesapp-deploy/app-wrapper/ /app/app-wrapper/
+
+# Set Python path
+ENV PYTHONPATH="/app:/app/app-wrapper"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Run the upload service
+CMD ["python", "-m", "uvicorn", "app-wrapper.main_upload:app", "--host", "0.0.0.0", "--port", "8080"]

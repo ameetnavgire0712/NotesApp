@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 20% 98%;
+    --foreground: 220 25% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 12%;
+
+    --primary: 220 20% 18%;
+    --primary-foreground: 40 20% 98%;
+
+    --secondary: 35 30% 95%;
+    --secondary-foreground: 220 20% 18%;
+
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 35 90% 55%;
+    --accent-foreground: 220 25% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 220 20% 18%;
+
+    --radius: 0.625rem;
+
+    --sidebar-background: 220 20% 18%;
+    --sidebar-foreground: 220 14% 80%;
+    --sidebar-primary: 35 90% 55%;
+    --sidebar-primary-foreground: 220 25% 12%;
+    --sidebar-accent: 220 18% 24%;
+    --sidebar-accent-foreground: 40 20% 98%;
+    --sidebar-border: 220 16% 26%;
+    --sidebar-ring: 35 90% 55%;
+
+    --chat-user: 220 20% 18%;
+    --chat-user-foreground: 40 20% 98%;
+    --chat-bot: 220 14% 94%;
+    --chat-bot-foreground: 220 25% 12%;
+
+    --grain-opacity: 0.03;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+/* Subtle grain texture overlay */
+.grain-texture::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: var(--grain-opacity);
+  pointer-events: none;
+  z-index: 50;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Chat scrollbar */
+.chat-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}

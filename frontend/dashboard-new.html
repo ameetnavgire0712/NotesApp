@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SecondBrain</title>
+    <link rel="stylesheet" href="dashboard-loveable.css?v=16">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-layout">
+        <!-- Left Sidebar - Dark -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">✨</div>
+                    <span class="logo-text">SecondBrain</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="chat">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-text">SnapBot</span>
+                </button>
+                <button class="nav-item" data-view="notes">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-text">My Snaps</span>
+                </button>
+                <button class="nav-item" data-view="profile">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">Profile</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div id="user-avatar" class="user-avatar">U</div>
+                    <span id="user-email" class="user-email">Loading...</span>
+                </div>
+                <button id="logout-btn" class="btn btn-sidebar-outline">Sign Out</button>
+            </div>
+        </aside>
+        
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Chat View -->
+            <div id="view-chat" class="view active">
+                <!-- Header -->
+                <header class="view-header">
+                    <h1>SnapBot</h1>
+                    <p class="view-subtitle">Ask questions about your saved notes and documents</p>
+                </header>
+                
+                <!-- Chat Messages -->
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Welcome State -->
+                    <div class="chat-welcome">
+                        <div class="welcome-logo">
+                            <svg class="logo-icon-svg" width="38" height="38" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="logo-g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="hsl(155, 70%, 50%)" />
+                                        <stop offset="100%" stop-color="hsl(165, 55%, 35%)" />
+                                    </linearGradient>
+                                    <linearGradient id="logo-g2" x1="0%" y1="100%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="hsl(155, 65%, 42%)" stop-opacity="0.4" />
+                                        <stop offset="100%" stop-color="hsl(160, 60%, 40%)" stop-opacity="0.8" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="10" y="10" width="28" height="28" rx="6" fill="url(#logo-g1)" />
+                                <rect x="18" y="18" width="28" height="28" rx="6" fill="url(#logo-g2)" />
+                            </svg>
+                        </div>
+                        <h2 class="welcome-brand"><span class="bi-main">Welcome to </span><span class="bi-accent">info</span><span class="bi-green">Snap</span><span class="bi-suffix">.ai</span></h2>
+                        <p>Your intelligent document assistant. Ask questions about your saved notes.</p>
+                        <div class="welcome-suggestions" id="welcome-suggestions"></div>
+                    </div>
+                </div>
+                
+                <!-- Chat Input -->
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <button class="btn-attach" title="Upload document">📎</button>
+                        <textarea 
+                            id="chat-input" 
+                            placeholder="Ask a question about your documents..." 
+                            rows="1"
+                        ></textarea>
+                        <button type="button" class="btn-send" onclick="sendMessage()">➤</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes View -->
+            <div id="view-notes" class="view">
+                <!-- Header -->
+                <header class="view-header">
+                    <h1>My Snaps</h1>
+                    <p class="view-subtitle">All your saved documents in one place</p>
+                </header>
+                
+                <!-- Toolbar -->
+                <div class="notes-toolbar">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="notes-search" placeholder="Search notes...">
+                    </div>
+                    <div class="view-toggle">
+                        <button class="toggle-btn active" data-view="date">📅 Date</button>
+                        <button class="toggle-btn" data-view="tags">🏷️ Tags</button>
+                    </div>
+                </div>
+                
+                <!-- Notes Grid -->
+                <div id="notes-grid" class="notes-grid-container">
+                    <div class="loading-skeleton">
+                        <div class="skeleton-group">
+                            <div class="skeleton-header"></div>
+                            <div class="skeleton-cards">
+                                <div class="skeleton-card"></div>
+                                <div class="skeleton-card"></div>
+                                <div class="skeleton-card"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile View -->
+            <div id="view-profile" class="view">
+                <header class="view-header">
+                    <h1>Profile</h1>
+                    <p class="view-subtitle">Manage your account and API keys</p>
+                </header>
+                
+                <div class="profile-content">
+                    <!-- User Info Card -->
+                    <div class="card">
+                        <h3>Account Information</h3>
+                        <div class="info-grid">
+                            <div class="info-row">
+                                <span class="info-label">Email</span>
+                                <span id="profile-email" class="info-value">Loading...</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">User ID</span>
+                                <span id="profile-user-id" class="info-value mono">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div id="stats-grid" class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-notes">-</div>
+                            <div class="stat-label">Notes Saved</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-searches">-</div>
+                            <div class="stat-label">Searches</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-this-month">-</div>
+                            <div class="stat-label">This Month</div>
+                        </div>
+                    </div>
+                    
+                    <!-- API Keys Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔑 API Keys</h3>
+                            <button class="btn btn-primary btn-sm" onclick="showCreateKeyModal()">+ Create Key</button>
+                        </div>
+                        <p class="card-description">API keys allow the Chrome Extension and other tools to access your notes securely.</p>
+                        <div id="api-keys-list" class="api-keys-list">
+                            <div class="loading">Loading API keys...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Create API Key Modal -->
+    <div id="modal-create-key" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-create-key')">&times;</button>
+            <h2>Create API Key</h2>
+            <p class="modal-subtitle">Give your key a name to identify it later.</p>
+            
+            <div class="form-group">
+                <label for="key-name-input">Key Name</label>
+                <input type="text" id="key-name-input" placeholder="e.g., Chrome Extension">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal('modal-create-key')">Cancel</button>
+                <button class="btn btn-primary" onclick="handleCreateKey()">Create Key</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API Key Created Modal -->
+    <div id="modal-key-created" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('modal-key-created')">&times;</button>
+            <div class="success-icon">✅</div>
+            <h2>API Key Created!</h2>
+            <p class="modal-subtitle">Copy this key now. For security, it won't be shown again.</p>
+            <div class="api-key-display">
+                <code></code>
+                <button class="btn-copy" onclick="copyApiKey()">Copy</button>
+            </div>
+            <button class="btn btn-primary btn-block" onclick="closeModal('modal-key-created')">Done</button>
+        </div>
+    </div>
+
+    <script src="auth.js?v=8"></script>
+    <script src="dashboard-chat-new.js?v=8"></script>
+</body>
+</html>

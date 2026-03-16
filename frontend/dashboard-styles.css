@@ -1,0 +1,1193 @@
+/* Dashboard Styles - Sidebar Layout and Chat Interface */
+
+/* =============================================================================
+   CSS Reset (since we don't use styles.css)
+   ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+a {
+    color: hsl(155, 70%, 45%);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+ul, ol {
+    margin-left: 1.5rem;
+}
+
+/* =============================================================================
+   CSS Variables for Dashboard (Dark Theme - Green Accent)
+   ============================================================================= */
+
+body.dashboard-body {
+    /* Dark theme colors - matching new homepage */
+    --bg-dark: hsl(160, 10%, 6%) !important;
+    --surface: hsl(160, 8%, 10%) !important;
+    --surface-light: hsl(160, 6%, 14%) !important;
+    --surface-hover: hsl(160, 6%, 18%) !important;
+    --border-color: hsl(160, 6%, 18%) !important;
+    
+    /* Text colors */
+    --text-primary: hsl(150, 15%, 90%) !important;
+    --text-secondary: hsl(155, 6%, 46%) !important;
+    --text-muted: hsl(155, 6%, 36%) !important;
+    
+    /* Accent colors - Green theme */
+    --primary: hsl(155, 70%, 45%) !important;
+    --primary-light: hsl(155, 70%, 55%) !important;
+    --primary-dark: hsl(155, 70%, 35%) !important;
+    --secondary: hsl(165, 60%, 35%) !important;
+    --danger: hsl(0, 72%, 55%) !important;
+    
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    background: hsl(160, 10%, 6%) !important;
+    background-color: hsl(160, 10%, 6%) !important;
+    color: hsl(150, 15%, 90%) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+/* =============================================================================
+   Layout
+   ============================================================================= */
+
+.dashboard-layout {
+    display: flex !important;
+    height: 100vh !important;
+    background: hsl(160, 10%, 6%) !important;
+}
+
+/* =============================================================================
+   Sidebar
+   ============================================================================= */
+
+.sidebar {
+    width: 260px !important;
+    background: hsl(160, 8%, 10%) !important;
+    border-right: 1px solid hsl(160, 6%, 18%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-shrink: 0 !important;
+}
+
+.sidebar-header {
+    padding: 1.25rem 1.5rem !important;
+    border-bottom: 1px solid hsl(160, 6%, 18%) !important;
+}
+
+.sidebar-header .logo {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.sidebar-header .logo-icon {
+    font-size: 1.75rem !important;
+}
+
+.sidebar-header .logo-text {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    background: linear-gradient(135deg, hsl(155, 70%, 45%) 0%, hsl(155, 70%, 55%) 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+.sidebar-nav {
+    flex: 1 !important;
+    padding: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+}
+
+.nav-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 8px !important;
+    border: none !important;
+    background: transparent !important;
+    color: hsl(155, 6%, 46%) !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    font-size: 0.95rem !important;
+    text-align: left !important;
+    width: 100% !important;
+}
+
+.nav-item:hover {
+    background: hsl(160, 6%, 18%) !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.nav-item.active {
+    background: hsl(155, 70%, 45%) !important;
+    color: white !important;
+}
+
+.nav-icon {
+    font-size: 1.25rem !important;
+}
+
+.sidebar-footer {
+    padding: 1rem !important;
+    border-top: 1px solid hsl(160, 6%, 18%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+}
+
+.user-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.user-avatar {
+    font-size: 1.25rem !important;
+}
+
+.user-email-small {
+    font-size: 0.85rem !important;
+    color: hsl(155, 6%, 46%) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 180px !important;
+}
+
+/* =============================================================================
+   Main Content
+   ============================================================================= */
+
+.main-content {
+    flex: 1 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: hsl(160, 10%, 6%) !important;
+}
+
+.view {
+    display: none !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+.view.active {
+    display: flex !important;
+}
+
+/* =============================================================================
+   Chat Container
+   ============================================================================= */
+
+.chat-container {
+    display: flex !important;
+    height: 100% !important;
+    flex: 1 !important;
+    background: hsl(160, 10%, 6%) !important;
+}
+
+.chat-panel {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+}
+
+.chat-header {
+    padding: 1.5rem !important;
+    border-bottom: 1px solid hsl(160, 6%, 18%) !important;
+    background: hsl(160, 8%, 10%) !important;
+}
+
+.chat-header h2 {
+    margin: 0 0 0.25rem 0 !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.chat-subtitle {
+    margin: 0 !important;
+    color: hsl(155, 6%, 46%) !important;
+    font-size: 0.9rem !important;
+}
+
+.chat-messages {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 1.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    background: hsl(160, 10%, 6%) !important;
+}
+
+.message {
+    display: flex !important;
+    gap: 0.75rem !important;
+    max-width: 85% !important;
+}
+
+.message.user {
+    flex-direction: row-reverse !important;
+    align-self: flex-end !important;
+}
+
+.message.assistant {
+    align-self: flex-start !important;
+}
+
+.message-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background: hsl(160, 8%, 10%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    flex-shrink: 0 !important;
+}
+
+.message.user .message-avatar {
+    background: hsl(155, 70%, 45%) !important;
+}
+
+.message-content {
+    background: hsl(160, 8%, 10%) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 12px !important;
+    color: hsl(150, 15%, 90%) !important;
+    line-height: 1.5 !important;
+}
+
+.message.user .message-content {
+    background: hsl(155, 70%, 45%) !important;
+    color: white !important;
+}
+
+.message-content p {
+    margin: 0 0 0.5rem 0 !important;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0 !important;
+}
+
+.message-content ul,
+.message-content ol {
+    margin: 0.5rem 0 !important;
+    padding-left: 1.5rem !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.message-content li {
+    margin: 0.25rem 0 !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.message-content code {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9em;
+}
+
+.message-content pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.75rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+}
+
+.message-content pre code {
+    background: none;
+    padding: 0;
+}
+
+.message-sources {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.sources-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.source-link {
+    font-size: 0.8rem;
+    color: var(--primary-light);
+    text-decoration: none;
+    background: var(--surface-light);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.source-link:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.typing-indicator {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.error-message {
+    color: var(--danger);
+}
+
+/* Chat Input */
+.chat-input-container {
+    padding: 1rem 1.5rem !important;
+    background: hsl(160, 8%, 10%) !important;
+    border-top: 1px solid hsl(160, 6%, 18%) !important;
+}
+
+.chat-input-wrapper {
+    display: flex !important;
+    gap: 0.75rem !important;
+    align-items: flex-end !important;
+}
+
+.chat-input-wrapper textarea {
+    flex: 1 !important;
+    padding: 0.75rem 1rem !important;
+    border: 1px solid hsl(160, 6%, 18%) !important;
+    border-radius: 8px !important;
+    background: hsl(160, 10%, 6%) !important;
+    color: hsl(150, 15%, 90%) !important;
+    font-size: 1rem !important;
+    resize: none !important;
+    max-height: 120px !important;
+    font-family: inherit !important;
+}
+
+.chat-input-wrapper textarea:focus {
+    outline: none !important;
+    border-color: hsl(155, 70%, 45%) !important;
+}
+
+.btn-send {
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+    background: hsl(155, 70%, 45%) !important;
+    color: white !important;
+    border: none !important;
+    cursor: pointer !important;
+}
+
+.btn-send:hover {
+    background: hsl(155, 70%, 35%) !important;
+}
+
+.send-icon {
+    font-size: 1.25rem !important;
+}
+
+.loading-dots {
+    animation: pulse 1s infinite !important;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+
+/* =============================================================================
+   Notes Panel
+   ============================================================================= */
+
+.notes-panel {
+    width: 320px !important;
+    background: hsl(160, 8%, 10%) !important;
+    border-left: 1px solid hsl(160, 6%, 18%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-shrink: 0 !important;
+}
+
+.notes-header {
+    padding: 1rem 1.25rem !important;
+    border-bottom: 1px solid hsl(160, 6%, 18%) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.notes-header h3 {
+    margin: 0 !important;
+    font-size: 1rem !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.notes-count {
+    font-size: 0.85rem !important;
+    color: hsl(155, 6%, 46%) !important;
+}
+
+/* Notes Search */
+.notes-search {
+    padding: 0.75rem 1rem !important;
+    border-bottom: 1px solid hsl(160, 6%, 18%) !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+    background: hsl(160, 8%, 10%) !important;
+}
+
+.notes-search input {
+    flex: 1 !important;
+    padding: 0.5rem 0.75rem !important;
+    border: 1px solid hsl(160, 6%, 18%) !important;
+    border-radius: 6px !important;
+    background: hsl(160, 10%, 6%) !important;
+    color: hsl(150, 15%, 90%) !important;
+    font-size: 0.85rem !important;
+}
+
+.notes-search input::placeholder {
+    color: hsl(155, 6%, 36%) !important;
+}
+
+.notes-search input:focus {
+    outline: none !important;
+    border-color: hsl(155, 70%, 45%) !important;
+}
+
+.notes-search-loading {
+    padding: 2rem !important;
+    text-align: center !important;
+    color: hsl(155, 6%, 46%) !important;
+}
+
+.notes-list {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 0.5rem !important;
+    background: hsl(160, 8%, 10%) !important;
+}
+
+.note-item {
+    display: flex !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    color: hsl(150, 15%, 90%) !important;
+    transition: background 0.2s !important;
+    background: transparent !important;
+}
+
+.note-item:hover {
+    background: hsl(160, 6%, 18%) !important;
+}
+
+.note-icon {
+    font-size: 1.25rem !important;
+    flex-shrink: 0 !important;
+}
+
+.note-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.note-title {
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.note-meta {
+    display: flex !important;
+    gap: 0.5rem !important;
+    margin-top: 0.25rem !important;
+}
+
+.note-tag {
+    font-size: 0.75rem !important;
+    color: #a5b4fc !important;
+    background: hsl(160, 6%, 18%) !important;
+    padding: 0.125rem 0.5rem !important;
+    border-radius: 4px !important;
+}
+
+.note-date {
+    font-size: 0.75rem !important;
+    color: hsl(155, 6%, 36%) !important;
+}
+
+/* Search Result Styling */
+.note-item.search-result {
+    background: hsl(160, 10%, 6%) !important;
+    margin-bottom: 0.5rem !important;
+    border: 1px solid hsl(160, 6%, 18%) !important;
+}
+
+.note-item.search-result:hover {
+    border-color: hsl(155, 70%, 45%) !important;
+}
+
+.note-rank {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: hsl(155, 70%, 45%) !important;
+    min-width: 2rem !important;
+}
+
+.note-preview {
+    font-size: 0.8rem !important;
+    color: hsl(155, 6%, 46%) !important;
+    margin-top: 0.25rem !important;
+    line-height: 1.4 !important;
+}
+
+.note-score {
+    font-size: 0.75rem !important;
+    color: #10b981 !important;
+}
+
+/* Spell Correction */
+.spell-correction {
+    font-size: 0.85rem !important;
+    color: #fbbf24 !important;
+    margin-top: 0.5rem !important;
+}
+
+/* Search Timing */
+.search-timing {
+    font-size: 0.75rem !important;
+    color: hsl(155, 6%, 36%) !important;
+    margin-top: 0.5rem !important;
+}
+
+/* Error Hint */
+.error-hint {
+    font-size: 0.85rem !important;
+    color: hsl(155, 6%, 46%) !important;
+    margin-top: 0.5rem !important;
+}
+
+.empty-notes {
+    text-align: center !important;
+    padding: 2rem 1rem !important;
+    color: hsl(155, 6%, 46%) !important;
+}
+
+.empty-notes p {
+    margin: 0.5rem 0 !important;
+}
+
+.empty-hint {
+    font-size: 0.85rem !important;
+    color: hsl(155, 6%, 36%) !important;
+}
+
+.load-more {
+    padding: 1rem !important;
+    text-align: center !important;
+}
+
+/* Loading state */
+.loading {
+    text-align: center !important;
+    padding: 2rem 1rem !important;
+    color: hsl(155, 6%, 46%) !important;
+}
+
+.loading-skeleton {
+    background: linear-gradient(90deg, hsl(160, 6%, 18%) 25%, hsl(160, 6%, 22%) 50%, hsl(160, 6%, 18%) 75%) !important;
+    background-size: 200% 100% !important;
+    animation: skeleton-loading 1.5s infinite !important;
+    border-radius: 6px !important;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.note-item-skeleton {
+    display: flex !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.note-icon-skeleton {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+}
+
+.note-info-skeleton {
+    flex: 1 !important;
+}
+
+.note-title-skeleton {
+    height: 16px !important;
+    width: 80% !important;
+    margin-bottom: 8px !important;
+}
+
+.note-meta-skeleton {
+    height: 12px !important;
+    width: 50% !important;
+}
+
+/* =============================================================================
+   Profile View
+   ============================================================================= */
+
+.profile-container {
+    padding: 2rem !important;
+    max-width: 900px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    overflow-y: auto !important;
+}
+
+.profile-header {
+    margin-bottom: 2rem !important;
+}
+
+.profile-header h1 {
+    margin: 0 0 0.5rem 0 !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.profile-subtitle {
+    color: hsl(155, 6%, 46%) !important;
+    margin: 0 !important;
+}
+
+.profile-card {
+    background: hsl(160, 8%, 10%) !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.profile-card h3 {
+    margin: 0 0 1rem 0 !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.profile-info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+}
+
+.info-row {
+    display: flex !important;
+    gap: 1rem !important;
+}
+
+.info-label {
+    color: hsl(155, 6%, 46%) !important;
+    min-width: 100px !important;
+}
+
+.info-value {
+    color: hsl(150, 15%, 90%) !important;
+    font-family: 'Fira Code', monospace !important;
+    font-size: 0.9rem !important;
+}
+
+.card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.card-header h3 {
+    margin: 0 !important;
+}
+
+.card-description {
+    color: hsl(155, 6%, 46%) !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 1rem !important;
+}
+
+/* =============================================================================
+   Stats Grid (Profile)
+   ============================================================================= */
+
+.stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+    gap: 1rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.stat-card {
+    background: hsl(160, 6%, 18%) !important;
+    border-radius: 12px !important;
+    padding: 1.25rem !important;
+    text-align: center !important;
+}
+
+.stat-value {
+    font-size: 2rem !important;
+    font-weight: 600 !important;
+    color: hsl(155, 70%, 45%) !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.stat-label {
+    font-size: 0.85rem !important;
+    color: hsl(155, 6%, 46%) !important;
+}
+
+/* =============================================================================
+   API Keys List (Profile)
+   ============================================================================= */
+
+.api-keys-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+}
+
+.api-key-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 1rem !important;
+    background: hsl(160, 6%, 18%) !important;
+    border-radius: 8px !important;
+}
+
+.key-info {
+    flex: 1 !important;
+}
+
+.key-name {
+    font-weight: 500 !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.key-meta {
+    display: flex !important;
+    gap: 1rem !important;
+    margin-top: 0.25rem !important;
+    font-size: 0.85rem !important;
+    color: hsl(155, 6%, 36%) !important;
+}
+
+.key-preview {
+    font-family: 'Fira Code', monospace !important;
+    color: hsl(155, 6%, 46%) !important;
+}
+
+.key-actions {
+    display: flex !important;
+    gap: 0.5rem !important;
+}
+
+/* =============================================================================
+   Responsive
+   ============================================================================= */
+
+@media (max-width: 1024px) {
+    .notes-panel {
+        width: 280px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-layout {
+        flex-direction: column !important;
+    }
+    
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        border-right: none !important;
+        border-bottom: 1px solid hsl(160, 6%, 18%) !important;
+    }
+    
+    .sidebar-nav {
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        padding: 0.5rem !important;
+    }
+    
+    .nav-item {
+        flex-shrink: 0 !important;
+    }
+    
+    .sidebar-footer {
+        display: none !important;
+    }
+    
+    .chat-container {
+        flex-direction: column !important;
+    }
+    
+    .notes-panel {
+        width: 100% !important;
+        height: 200px !important;
+        border-left: none !important;
+        border-top: 1px solid hsl(160, 6%, 18%) !important;
+    }
+    
+    .message {
+        max-width: 95% !important;
+    }
+}
+
+/* =============================================================================
+   Dashboard Button Overrides
+   ============================================================================= */
+
+.dashboard-body .btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    padding: 0.625rem 1.25rem !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    border: none !important;
+    text-decoration: none !important;
+}
+
+.dashboard-body .btn-primary {
+    background: hsl(155, 70%, 45%) !important;
+    color: white !important;
+}
+
+.dashboard-body .btn-primary:hover {
+    background: hsl(155, 70%, 35%) !important;
+}
+
+.dashboard-body .btn-outline {
+    background: transparent !important;
+    border: 1px solid hsl(160, 6%, 18%) !important;
+    color: hsl(155, 6%, 46%) !important;
+}
+
+.dashboard-body .btn-outline:hover {
+    background: hsl(160, 6%, 18%) !important;
+    color: hsl(150, 15%, 90%) !important;
+}
+
+.dashboard-body .btn-danger {
+    background: #ef4444 !important;
+    color: white !important;
+}
+
+.dashboard-body .btn-danger:hover {
+    background: #dc2626 !important;
+}
+
+.dashboard-body .btn-sm {
+    padding: 0.5rem 0.875rem !important;
+    font-size: 0.85rem !important;
+}
+
+.dashboard-body .btn-block {
+    width: 100% !important;
+}
+
+/* Form inputs for dashboard */
+.dashboard-body input[type="text"],
+.dashboard-body input[type="email"],
+.dashboard-body textarea {
+    background: hsl(160, 10%, 6%) !important;
+    border: 1px solid hsl(160, 6%, 18%) !important;
+    color: hsl(150, 15%, 90%) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 8px !important;
+    font-size: 0.95rem !important;
+    width: 100% !important;
+}
+
+.dashboard-body input:focus,
+.dashboard-body textarea:focus {
+    outline: none !important;
+    border-color: hsl(155, 70%, 45%) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+.dashboard-body .form-group {
+    margin-bottom: 1rem !important;
+}
+
+.dashboard-body .form-group label {
+    display: block !important;
+    margin-bottom: 0.5rem !important;
+    color: hsl(155, 6%, 46%) !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+}
+
+/* Modal styles for dashboard */
+.dashboard-body .modal {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 1000 !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+.dashboard-body .modal.active {
+    display: flex !important;
+}
+
+.dashboard-body .modal-content {
+    background: #fafafa !important;
+    border-radius: 16px !important;
+    padding: 0 !important;
+    max-width: 480px !important;
+    width: 90% !important;
+    position: relative !important;
+    border: 1px solid hsl(35, 30%, 85%) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    overflow: hidden !important;
+}
+
+/* Modal header (dark) */
+.dashboard-body .modal-content .confirm-icon {
+    background: hsl(220, 20%, 18%) !important;
+    color: hsl(35, 90%, 55%) !important;
+    padding: 1.5rem !important;
+    margin: 0 !important;
+    font-size: 2.5rem !important;
+    text-align: center !important;
+}
+
+/* Modal body with amber hexagon pattern */
+.dashboard-body .modal-content h2,
+.dashboard-body .modal-content .modal-subtitle,
+.dashboard-body .modal-content .modal-actions {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+
+.dashboard-body .modal-content h2 {
+    background: linear-gradient(
+        135deg,
+        rgba(251, 191, 36, 0.08) 0%,
+        rgba(251, 191, 36, 0.03) 50%,
+        rgba(251, 191, 36, 0.08) 100%
+    ) !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 0.75rem !important;
+    margin: 0 !important;
+    color: hsl(220, 25%, 15%) !important;
+    font-size: 1.25rem !important;
+}
+
+.dashboard-body .modal-content .modal-subtitle {
+    background: linear-gradient(
+        135deg,
+        rgba(251, 191, 36, 0.05) 0%,
+        rgba(251, 191, 36, 0.02) 50%,
+        rgba(251, 191, 36, 0.05) 100%
+    ) !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 1rem !important;
+    margin: 0 !important;
+    color: hsl(220, 10%, 35%) !important;
+    font-size: 0.95rem !important;
+    line-height: 1.6 !important;
+}
+
+.dashboard-body .modal-content .modal-actions {
+    background: #fafafa !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1.25rem !important;
+    margin: 0 !important;
+    border-top: 1px solid hsl(35, 30%, 90%) !important;
+}
+
+.dashboard-body .modal-sm {
+    max-width: 400px !important;
+}
+
+.dashboard-body .modal-close {
+    position: absolute !important;
+    top: 0.75rem !important;
+    right: 0.75rem !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: none !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 1.25rem !important;
+    cursor: pointer !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+    transition: all 0.2s !important;
+    z-index: 10 !important;
+}
+
+.dashboard-body .modal-close:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+}
+
+/* Override for confirm/alert dialogs h2 - already styled above */
+.dashboard-body #modal-confirm .modal-content h2,
+.dashboard-body #modal-alert .modal-content h2 {
+    /* Styles defined above */
+}
+
+.dashboard-body .auth-subtitle {
+    color: hsl(155, 6%, 46%) !important;
+    margin: 0 0 1.5rem 0 !important;
+}
+
+.dashboard-body .modal-actions {
+    display: flex !important;
+    gap: 0.75rem !important;
+    justify-content: flex-end !important;
+}
+
+/* API Key display */
+.dashboard-body .api-key-display {
+    display: flex !important;
+    gap: 0.5rem !important;
+    margin: 1rem 0 !important;
+    padding: 0.75rem !important;
+    background: hsl(160, 10%, 6%) !important;
+    border-radius: 8px !important;
+    border: 1px solid hsl(160, 6%, 18%) !important;
+}
+
+.dashboard-body .api-key-display code {
+    flex: 1 !important;
+    font-family: 'Fira Code', 'Monaco', monospace !important;
+    font-size: 0.85rem !important;
+    color: #a5b4fc !important;
+    word-break: break-all !important;
+}
+
+.dashboard-body .btn-copy {
+    background: hsl(160, 6%, 18%) !important;
+    border: none !important;
+    color: hsl(155, 6%, 46%) !important;
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 0.8rem !important;
+    transition: all 0.2s !important;
+}
+
+.dashboard-body .btn-copy:hover {
+    background: hsl(155, 70%, 45%) !important;
+    color: white !important;
+}
+
+/* Success and warning icons */
+.dashboard-body .success-icon,
+.dashboard-body .warning-icon {
+    font-size: 3rem !important;
+    text-align: center !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Confirm/Alert dialog specific overrides */
+.dashboard-body #modal-confirm .btn-outline,
+.dashboard-body #modal-alert .btn-outline {
+    background: white !important;
+    border: 1px solid hsl(220, 14%, 85%) !important;
+    color: hsl(220, 15%, 35%) !important;
+}
+
+.dashboard-body #modal-confirm .btn-outline:hover,
+.dashboard-body #modal-alert .btn-outline:hover {
+    background: hsl(220, 14%, 96%) !important;
+    border-color: hsl(220, 14%, 75%) !important;
+}
+
+.dashboard-body #modal-confirm .btn-primary,
+.dashboard-body #modal-alert .btn-primary {
+    background: hsl(35, 90%, 50%) !important;
+    color: hsl(220, 25%, 12%) !important;
+}
+
+.dashboard-body #modal-confirm .btn-primary:hover,
+.dashboard-body #modal-alert .btn-primary:hover {
+    background: hsl(35, 90%, 45%) !important;
+}
+
+/* Danger button for destructive actions */
+.dashboard-body .btn-danger {
+    background: hsl(0, 65%, 50%) !important;
+    border: none !important;
+    color: white !important;
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    transition: all 0.2s !important;
+}
+
+.dashboard-body .btn-danger:hover {
+    background: hsl(0, 70%, 45%) !important;
+    transform: translateY(-1px) !important;
+}
+
+.dashboard-body .btn-danger:disabled {
+    background: hsl(0, 20%, 35%) !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* Centered modal text */
+.dashboard-body .modal-sm .confirm-icon,
+.dashboard-body .modal-sm h2,
+.dashboard-body .modal-sm .modal-subtitle {
+    text-align: center !important;
+}
+
+.dashboard-body .modal-sm .modal-actions {
+    justify-content: center !important;

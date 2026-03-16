@@ -1,0 +1,87 @@
+name = "notesapp-vector-search"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Enable Logpush for workers_trace_events dataset
+# This is REQUIRED for trace events to be sent to Logpush destinations
+logpush = true
+
+# Observability settings - synced from Cloudflare Dashboard
+# Exports worker logs and trace events to Azure Blob Storage via Logpush
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1
+
+# Durable Objects for long-running upload processing
+[[durable_objects.bindings]]
+name = "UPLOAD_PROCESSOR"
+class_name = "UploadProcessor"
+
+# Durable Object migrations - required for first deployment
+# Using new_sqlite_classes for free plan support
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["UploadProcessor"]
+
+# Vectorize binding - connects to your existing index
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "notesapp-vectors"
+
+# KV namespace for embedding cache (1 hour TTL)
+[[kv_namespaces]]
+binding = "EMBEDDING_CACHE"
+id = "b6e0b04f45e243dfb27ba896f5d92973"
+
+# KV namespace for search results cache (5 min TTL)
+[[kv_namespaces]]
+binding = "SEARCH_CACHE"
+id = "1fc5e09eafdc4bebaa788077df8993fc"
+
+# KV namespace for user tags cache (5 min TTL)
+[[kv_namespaces]]
+binding = "TAGS_CACHE"
+id = "a3bd6fc0c12c43f7b5490a893001167a"
+
+# KV namespace for synthesis results cache (10 min TTL)
+[[kv_namespaces]]
+binding = "SYNTHESIS_CACHE"
+id = "64f5b64187e64348a985faefff69ba32"
+
+# Workers AI binding - for generating embeddings at the edge
+[ai]
+binding = "AI"
+
+# Environment variables (set via wrangler secret)
+# WORKER_API_KEY - API key to authenticate requests from your FastAPI app
+# VOYAGE_API_KEY - Voyage AI API key for reranking
+
+[vars]
+EMBEDDING_MODEL = "@cf/baai/bge-base-en-v1.5"
+# Enable logging to Supabase - set to "true" to send logs
+LOG_ENABLED = "true"
+# REMOVED: BACKEND_URL - no longer using Fly.io for logging
+# Logs go directly to Supabase search_traces table
+
+# The following secrets must be set via `wrangler secret put`:
+# wrangler secret put WORKER_API_KEY
+# wrangler secret put VOYAGE_API_KEY
+# wrangler secret put GROQ_API_KEY
+# wrangler secret put SUPABASE_URL
+# wrangler secret put SUPABASE_SERVICE_KEY
+# wrangler secret put SUPABASE_JWT_SECRET
+# wrangler secret put AZURE_STORAGE_CONNECTION_STRING
+# wrangler secret put AZURE_STORAGE_CONTAINER
+# wrangler secret put TENSORLAKE_API_KEY

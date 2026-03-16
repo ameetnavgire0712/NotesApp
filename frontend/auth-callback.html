@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authenticating... | infoSnap.ai</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --text-primary: #ffffff;
+      --text-secondary: #888888;
+      --accent: #7c3aed;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .auth-container {
+      text-align: center;
+      max-width: 400px;
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 24px;
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    
+    .status {
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(124, 58, 237, 0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 24px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error {
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+    
+    .error.visible {
+      display: block;
+    }
+    
+    .success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      display: none;
+    }
+    
+    .success.visible {
+      display: block;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#7c3aed"/>
+          <stop offset="100%" style="stop-color:#a855f7"/>
+        </linearGradient>
+      </defs>
+      <circle cx="50" cy="50" r="45" fill="url(#grad)" opacity="0.2"/>
+      <circle cx="50" cy="50" r="30" fill="url(#grad)" opacity="0.4"/>
+      <circle cx="50" cy="50" r="15" fill="url(#grad)"/>
+    </svg>
+    
+    <h1 id="title">Authenticating...</h1>
+    <p class="status" id="status">Please wait while we complete your sign-in</p>
+    
+    <div class="spinner" id="spinner"></div>
+    
+    <div class="success" id="success">
+      <p>✓ Authentication successful!</p>
+      <p style="margin-top: 8px; color: var(--text-secondary);">You can now close this window and return to the extension.</p>
+    </div>
+    
+    <div class="error" id="error">
+      <p id="errorMessage">Authentication failed. Please try again.</p>
+      <p style="margin-top: 8px;"><a href="/">Return to infoSnap.ai</a></p>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Auth Callback Handler
+     * This page handles the OAuth redirect from Supabase.
+     * It extracts tokens from the URL hash and displays status to the user.
+     * 
+     * The Chrome extension's chrome.identity.launchWebAuthFlow will capture
+     * the redirect URL automatically, but this page provides a fallback
+     * for other auth flows.
+     */
+    
+    (function() {
+      const titleEl = document.getElementById('title');
+      const statusEl = document.getElementById('status');
+      const spinnerEl = document.getElementById('spinner');
+      const successEl = document.getElementById('success');
+      const errorEl = document.getElementById('error');
+      const errorMessageEl = document.getElementById('errorMessage');
+      
+      function showSuccess() {
+        titleEl.textContent = 'Success!';
+        statusEl.classList.add('hidden');
+        spinnerEl.classList.add('hidden');
+        successEl.classList.add('visible');
+      }
+      
+      function showError(message) {
+        titleEl.textContent = 'Authentication Failed';
+        statusEl.classList.add('hidden');
+        spinnerEl.classList.add('hidden');
+        errorEl.classList.add('visible');
+        if (message) {
+          errorMessageEl.textContent = message;
+        }
+      }
+      
+      // Parse the URL hash for tokens
+      // Supabase returns tokens in the hash: #access_token=...&refresh_token=...&expires_in=...
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      const expiresIn = params.get('expires_in');
+      const errorCode = params.get('error');
+      const errorDescription = params.get('error_description');
+      
+      if (errorCode) {
+        // OAuth error
+        showError(errorDescription || `Error: ${errorCode}`);
+        return;
+      }
+      
+      if (accessToken && refreshToken) {
+        // Success! The extension's launchWebAuthFlow should have captured this,
+        // but show success message in case the user sees this page
+        showSuccess();
+        
+        // Clear the hash to avoid token leakage in history
+        if (history.replaceState) {
+          history.replaceState(null, '', window.location.pathname);
+        }
+        
+        // Auto-close after 3 seconds if opened by extension
+        setTimeout(() => {
+          window.close();
+        }, 3000);
+      } else {
+        // No tokens and no error - this might be a direct visit
+        // The page is primarily a redirect target for chrome.identity.launchWebAuthFlow
+        statusEl.textContent = 'This page handles authentication redirects for the infoSnap.ai extension.';
+        spinnerEl.classList.add('hidden');
+      }
+    })();
+  </script>
+</body>
+</html>

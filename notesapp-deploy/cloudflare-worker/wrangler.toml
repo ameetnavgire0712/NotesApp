@@ -1,0 +1,44 @@
+name = "notesapp-vector-search"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Vectorize binding - connects to your existing index
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "notesapp-vectors"
+
+# Workers AI binding - for generating embeddings at the edge
+[ai]
+binding = "AI"
+
+# Environment variables (set via wrangler secret)
+# WORKER_API_KEY - API key to authenticate requests from your FastAPI app
+# VOYAGE_API_KEY - Voyage AI API key for reranking
+
+[vars]
+EMBEDDING_MODEL = "@cf/baai/bge-base-en-v1.5"
+
+# Production settings
+[env.production]
+name = "notesapp-vector-search"
+route = "vectorize.notesapp.com/*"
+
+# The following secrets must be set via `wrangler secret put`:
+# wrangler secret put WORKER_API_KEY
+# wrangler secret put VOYAGE_API_KEY
+
+# Observability settings for Workers Logs and Traces
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1

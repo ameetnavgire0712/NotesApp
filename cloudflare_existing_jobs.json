@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1453570,
+    "dataset": "workers_trace_events",
+    "frequency": "high",
+    "kind": "",
+    "enabled": true,
+    "name": "Notesapp-vector-search-APPLOGS",
+    "logpull_options": null,
+    "output_options": {
+      "field_names": [
+        "CPUTimeMs",
+        "DispatchNamespace",
+        "Entrypoint",
+        "Event",
+        "EventTimestampMs",
+        "EventType",
+        "Exceptions",
+        "Logs",
+        "Outcome",
+        "ScriptName",
+        "ScriptTags",
+        "ScriptVersion",
+        "WallTimeMs"
+      ],
+      "timestamp_format": "rfc3339"
+    },
+    "destination_conf": "azure://rawnotesstorage.blob.core.windows.net/cloudflare-logs/{DATE}?st=2026-02-26T05%3A52%3A50Z&se=2031-02-25T06%3A52%3A50Z&sp=w&sv=2026-02-06&sr=c&sig=aDyv%2BAFnJa2IM2KkMvkPRkxhXt8ZoGZOLr%2BMVNkJhaU%3D",
+    "last_complete": null,
+    "last_error": null,
+    "error_message": null,
+    "time_created": "2026-02-26T07:20:28Z"
+  }
+]

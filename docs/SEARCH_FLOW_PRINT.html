@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotesApp Search Flow - Printable Version</title>
+    <style>
+        /* Base styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            font-size: 11pt;
+        }
+
+        h1 {
+            color: #1a1a1a;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+            font-size: 24pt;
+        }
+
+        h2 {
+            color: #0066cc;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+            margin-top: 30px;
+            font-size: 16pt;
+        }
+
+        h3 {
+            color: #333;
+            margin-top: 25px;
+            font-size: 13pt;
+        }
+
+        h4 {
+            color: #555;
+            margin-top: 20px;
+            font-size: 11pt;
+        }
+
+        /* Code blocks - ASCII diagrams */
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 9pt;
+            line-height: 1.4;
+        }
+
+        code {
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 10pt;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        /* Tables */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            font-size: 10pt;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0066cc;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Blockquotes */
+        blockquote {
+            border-left: 4px solid #0066cc;
+            margin: 15px 0;
+            padding: 10px 20px;
+            background-color: #f0f7ff;
+            font-style: italic;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin: 5px 0;
+        }
+
+        /* Horizontal rules */
+        hr {
+            border: none;
+            border-top: 2px solid #e0e0e0;
+            margin: 25px 0;
+        }
+
+        /* Section containers for print control */
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .diagram-container {
+            background-color: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .scenario-box {
+            border: 2px solid #0066cc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #f8fbff;
+        }
+
+        .toc {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .toc h2 {
+            margin-top: 0;
+            border-bottom: none;
+        }
+
+        .toc ol {
+            margin: 0;
+        }
+
+        .toc a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                font-size: 10pt;
+                padding: 0;
+                margin: 0;
+            }
+
+            h1 {
+                font-size: 20pt;
+            }
+
+            h2 {
+                font-size: 14pt;
+                page-break-after: avoid;
+            }
+
+            h3 {
+                font-size: 12pt;
+                page-break-after: avoid;
+            }
+
+            h4 {
+                page-break-after: avoid;
+            }
+
+            /* Keep diagrams together - CRITICAL */
+            pre {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                font-size: 7.5pt;
+                line-height: 1.3;
+                max-height: none;
+                overflow: visible;
+            }
+
+            .diagram-container {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .scenario-box {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* Keep tables together */
+            table {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                font-size: 9pt;
+            }
+
+            /* Major sections start on new page */
+            .page-break-before {
+                page-break-before: always !important;
+                break-before: page !important;
+            }
+
+            /* Keep heading with following content */
+            h2, h3 {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }
+
+            /* Keep paragraphs with their headings */
+            p {
+                orphans: 3;
+                widows: 3;
+            }
+
+            /* Hide non-essential for print */
+            .no-print {
+                display: none !important;
+            }
+
+            /* Ensure links are visible */
+            a {
+                color: #000;
+                text-decoration: underline;
+            }
+
+            /* Page margins */
+            @page {
+                margin: 1.5cm;
+                size: A4;
+            }
+
+            @page :first {
+                margin-top: 2cm;
+            }
+        }
+
+        /* Screen-only print button */
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .print-button:hover {
+            background-color: #0052a3;
+        }
+
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button no-print" onclick="window.print()">🖨️ Print Document</button>
+
+    <h1>NotesApp Search Flow</h1>
+    <p><strong>Complete Technical Documentation</strong></p>
+    <blockquote>Last Updated: January 27, 2026</blockquote>
+    <p>This document provides a comprehensive breakdown of what happens when a user searches for a query, from the moment the request hits the server until the response is returned.</p>
+
+    <hr>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ol>
+            <li><a href="#section-1">Architecture Overview</a></li>
+            <li><a href="#section-2">Server Startup &amp; Warmup</a></li>
+            <li><a href="#section-3">Authentication &amp; Caching</a></li>
+            <li><a href="#section-4">Query Processing Pipeline &amp; Search Scenarios</a></li>
+            <li><a href="#section-5">Retrieval Methods</a></li>
+            <li><a href="#section-6">Reranking</a></li>
+            <li><a href="#section-7">Models &amp; Configuration</a></li>
+            <li><a href="#section-8">Complete Flow Diagrams</a></li>
+        </ol>
+    </div>
+
+    <!-- ===== SECTION 1: ARCHITECTURE OVERVIEW ===== -->
+    <div class="section page-break-before" id="section-1">
+        <h2>1. Architecture Overview</h2>
+        
+        <div class="diagram-container">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           NotesApp Search Architecture                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Chrome Extension              FastAPI Backend                 External     │
+│   ┌──────────────┐              ┌──────────────┐              ┌──────────┐  │
+│   │  Content     │   API Call   │  /api/v1/    │   Embed      │  Groq    │  │
+│   │  Script      │─────────────▶│  search/     │─────────────▶│  LLM     │  │
+│   │  (Google)    │              │  query       │              │  API     │  │
+│   └──────────────┘              └──────────────┘              └──────────┘  │
+│                                        │                                     │
+│                                        │ Tool Calls                          │
+│                                        ▼                                     │
+│                              ┌──────────────────┐                            │
+│                              │ RetrievalTools   │                            │
+│                              │ - vector_search  │                            │
+│                              │ - hybrid_search  │                            │
+│                              │ - chunk_search   │                            │
+│                              │ - search_by_tag  │                            │
+│                              └──────────────────┘                            │
+│                                        │                                     │
+│                    ┌───────────────────┼───────────────────┐                 │
+│                    ▼                   ▼                   ▼                 │
+│            ┌──────────────┐    ┌──────────────┐    ┌──────────────┐         │
+│            │  Supabase    │    │    BGE       │    │Cross-Encoder │         │
+│            │  PostgreSQL  │    │  Embeddings  │    │  Reranker    │         │
+│            │  + pgvector  │    │  (768 dim)   │    │  (ms-marco)  │         │
+│            └──────────────┘    └──────────────┘    └──────────────┘         │
+│                    │                                                         │
+│                    ▼                                                         │
+│            ┌──────────────┐                                                  │
+│            │ Azure Blob   │                                                  │
+│            │ Storage      │                                                  │
+│            │ (Documents)  │                                                  │
+│            └──────────────┘                                                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+
+        <h3>Key Components</h3>
+        <table>
+            <tr>
+                <th>Component</th>
+                <th>Technology</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td><strong>API Server</strong></td>
+                <td>FastAPI + Uvicorn</td>
+                <td>REST API endpoints, authentication, request handling</td>
+            </tr>
+            <tr>
+                <td><strong>Database</strong></td>
+                <td>Supabase PostgreSQL + pgvector</td>
+                <td>Notes storage, vector similarity search, full-text search</td>
+            </tr>
+            <tr>
+                <td><strong>Embeddings</strong></td>
+                <td>BGE-base-en-v1.5 (768 dim)</td>
+                <td>Convert text to semantic vectors</td>
+            </tr>
+            <tr>
+                <td><strong>Reranker</strong></td>
+                <td>ms-marco-MiniLM-L-6-v2</td>
+                <td>Cross-encoder for precise relevance scoring</td>
+            </tr>
+            <tr>
+                <td><strong>LLM</strong></td>
+                <td>Groq (Llama 3.3 70B)</td>
+                <td>Query analysis, tool selection, answer synthesis</td>
+            </tr>
+            <tr>
+                <td><strong>Storage</strong></td>
+                <td>Azure Blob Storage</td>
+                <td>Document file storage with SAS URLs</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ===== SECTION 2: SERVER STARTUP ===== -->
+    <div class="section page-break-before" id="section-2">
+        <h2>2. Server Startup &amp; Warmup</h2>
+
+        <div class="diagram-container">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SERVER STARTUP SEQUENCE                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  t=0s     ┌─────────────────────────────────────────────────────────┐       │
+│           │ Uvicorn starts, loads app.main:app                      │       │
+│           │ • Environment variables loaded                          │       │
+│           │ • Logging configured                                    │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │                                         │
+│                                    ▼                                         │
+│  t=0.5s   ┌─────────────────────────────────────────────────────────┐       │
+│           │ @app.on_event("startup") triggered                      │       │
+│           │ • Initialize Supabase client                            │       │
+│           │ • Initialize Azure Blob client                          │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │                                         │
+│                                    ▼                                         │
+│  t=1s     ┌─────────────────────────────────────────────────────────┐       │
+│           │ Warmup BGE Embedding Model (CRITICAL)                   │       │
+│           │                                                          │       │
+│           │ from sentence_transformers import SentenceTransformer  │       │
+│           │ model = SentenceTransformer('BAAI/bge-base-en-v1.5')   │       │
+│           │                                                          │       │
+│           │ • Downloads model if not cached (~440MB)                │       │
+│           │ • Loads into GPU/CPU memory                             │       │
+│           │ • First inference warmup with dummy text                │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~5-15 seconds                           │
+│                                    ▼                                         │
+│  t=15s    ┌─────────────────────────────────────────────────────────┐       │
+│           │ Warmup Cross-Encoder Reranker                           │       │
+│           │                                                          │       │
+│           │ model = CrossEncoder('ms-marco-MiniLM-L-6-v2')         │       │
+│           │                                                          │       │
+│           │ • Loads reranker model (~80MB)                          │       │
+│           │ • First inference warmup                                │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~3-5 seconds                            │
+│                                    ▼                                         │
+│  t=20s    ┌─────────────────────────────────────────────────────────┐       │
+│           │ ✓ Server Ready                                          │       │
+│           │ Listening on http://0.0.0.0:8000                        │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  FIRST REQUEST PERFORMANCE:                                                  │
+│  • With warmup: ~400ms embedding generation                                 │
+│  • Without warmup: ~2000ms (model loading on first request)                 │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 3: AUTHENTICATION ===== -->
+    <div class="section page-break-before" id="section-3">
+        <h2>3. Authentication &amp; Caching</h2>
+
+        <div class="diagram-container">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         AUTHENTICATION FLOW                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Request arrives with header:                                               │
+│  Authorization: Bearer &lt;api_key&gt;                                           │
+│  X-API-Key: &lt;api_key&gt;                                                       │
+│                                                                              │
+│                    ┌─────────────────────────────────────────────┐          │
+│                    │ Check API Key Cache (In-Memory)             │          │
+│                    │ TTL: 5 minutes                              │          │
+│                    └─────────────────────────────────────────────┘          │
+│                                    │                                         │
+│                    ┌───────────────┴───────────────┐                        │
+│                    │                               │                        │
+│               CACHE HIT                       CACHE MISS                    │
+│                    │                               │                        │
+│                    ▼                               ▼                        │
+│         ┌─────────────────┐           ┌─────────────────────────┐          │
+│         │ Return cached   │           │ Query Supabase:         │          │
+│         │ user_id         │           │ user_api_keys table     │          │
+│         │ (~2ms)          │           │ (~1500ms first time)    │          │
+│         └─────────────────┘           └─────────────────────────┘          │
+│                    │                               │                        │
+│                    │                    ┌──────────┴──────────┐            │
+│                    │                    │                     │            │
+│                    │               KEY VALID            KEY INVALID        │
+│                    │                    │                     │            │
+│                    │                    ▼                     ▼            │
+│                    │         ┌─────────────────┐    ┌─────────────────┐   │
+│                    │         │ Cache key →     │    │ 401 Unauthorized│   │
+│                    │         │ user_id mapping │    └─────────────────┘   │
+│                    │         └─────────────────┘                          │
+│                    │                    │                                   │
+│                    └────────────────────┴───────────────────────────────   │
+│                                         │                                   │
+│                                         ▼                                   │
+│                              ┌─────────────────────┐                       │
+│                              │ Continue to Search  │                       │
+│                              │ with user_id        │                       │
+│                              └─────────────────────┘                       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 4: QUERY PROCESSING ===== -->
+    <div class="section page-break-before" id="section-4">
+        <h2>4. Query Processing Pipeline &amp; Search Scenarios</h2>
+        <p>This section provides a complete unified flow covering all search scenarios from query arrival to response.</p>
+
+        <h3>4.1 Master Flow Diagram</h3>
+        <div class="diagram-container">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    COMPLETE QUERY PROCESSING FLOW                            │
+│            (From Request Arrival to Response Delivery)                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                              User Query Arrives
+                    "find my pan card from personal docs"
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 1: AUTHENTICATION (~50ms)                                             │
+│  ─────────────────────────────────                                           │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ Check API Key Cache                                                  │    │
+│  │   → CACHE HIT: Extract user_id immediately (~2ms)                   │    │
+│  │   → CACHE MISS: Query Supabase user_api_keys (~1.5s)               │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 2: PARALLEL PREPROCESSING (~100ms)                                    │
+│  ─────────────────────────────────────────                                   │
+│  ┌────────────────────────────┐     ┌────────────────────────────────────┐  │
+│  │      Spell Check           │     │        Fetch All Tags              │  │
+│  │   (llama-3.1-8b-instant)   │     │      (from cache or DB)            │  │
+│  │        ~100ms              │     │          ~50ms                     │  │
+│  └────────────────────────────┘     └────────────────────────────────────┘  │
+│  Both run in parallel, wait for slower one                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 3: QUERY ANALYSIS (~50ms)                                             │
+│  ───────────────────────────────                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ Detect:                                                              │    │
+│  │   • Intent: RETRIEVE, LIST, ANSWER, COMPARE, SUMMARIZE, COUNT       │    │
+│  │   • Complexity: SIMPLE (2 iter), MODERATE (3), COMPLEX (5)          │    │
+│  │   • Tags: via exact match + fuzzy matching                          │    │
+│  │   • Keywords: top 10 after stopword removal                         │    │
+│  │   • Temporal: NEWEST, OLDEST, NONE                                  │    │
+│  │   • Limit to one: "the latest", "my newest"                         │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│  Output: intent=RETRIEVE, tag="personal docs", keywords=["pan","card"]      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PHASE 4: PATH SELECTION                                                     │
+│  ────────────────────────                                                    │
+│           ┌───────────────────────────────────────────────────────┐         │
+│           │              FAST PATH CHECK                          │         │
+│           │   Pattern: "show me", "list my", "get all"            │         │
+│           │   + No temporal keywords + No specific search terms   │         │
+│           └───────────────────────────────────────────────────────┘         │
+│                                      │                                       │
+│               ┌──────────────────────┼──────────────────────┐               │
+│               │ FAST PATH            │ TAG DETECTED         │ NO TAG       │
+│               ▼                      ▼                      ▼               │
+│      ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐     │
+│      │   SCENARIO A    │    │ TAG PATH        │    │   AGENT PATH    │     │
+│      │ Simple Discovery│    │ (Scenarios B,C) │    │ (Scenarios D,E) │     │
+│      │ ~700ms          │    │ ~480-980ms      │    │ ~1300-2600ms    │     │
+│      └─────────────────┘    └─────────────────┘    └─────────────────┘     │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SCENARIO A ===== -->
+    <div class="section page-break-before">
+        <h3>4.2 Scenario A: Simple Discovery Query (FAST PATH)</h3>
+        <p><strong>Example Queries:</strong> "show me my documents", "list my files", "get all my notes"</p>
+        <p><strong>Characteristics:</strong> No temporal keywords, no specific search terms, discovery intent</p>
+
+        <div class="scenario-box">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO A: SIMPLE DISCOVERY (FAST PATH)                                     │
+│ Query: "show me my documents"                                               │
+│ Total Time: ~700ms                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  t=0ms    ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 1: Auth Validation                                 │       │
+│           │ • Check API key cache → HIT (typical)                   │       │
+│           │ • Extract user_id                                       │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=50ms   ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 4: Fast Path Detection                             │       │
+│           │ • Pattern: "show me" ✓                                  │       │
+│           │ • No temporal keywords ✓                                │       │
+│           │ • No specific search terms ✓                            │       │
+│           │ → FAST PATH MATCH (skip LLM agent loop)                 │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~0ms (pattern match)                    │
+│                                    ▼                                         │
+│  t=50ms   ┌─────────────────────────────────────────────────────────┐       │
+│           │ EXECUTION: Direct vector_search                         │       │
+│           │  ┌─────────────────────────────────────────────────────┐│       │
+│           │  │ 1. Generate BGE embedding for query       (~200ms) ││       │
+│           │  │ 2. Supabase match_notes RPC (cosine sim)  (~200ms) ││       │
+│           │  │ 3. Rerank with cross-encoder              (~200ms) ││       │
+│           │  └─────────────────────────────────────────────────────┘│       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~600ms                                  │
+│                                    ▼                                         │
+│  t=650ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ FINALIZE: Generate download URLs                        │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=700ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ ✓ RESPONSE SENT                                         │       │
+│           │   { "answer": null, "documents": [...], "intent": "RETRIEVE" }  │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  ✅ TOTAL: ~700ms (No LLM agent overhead)                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SCENARIO B ===== -->
+    <div class="section page-break-before">
+        <h3>4.3 Scenario B: Tag-Based List (LIST_ALL)</h3>
+        <p><strong>Example Queries:</strong> "personal documents", "show me educational content", "my work files"</p>
+        <p><strong>Characteristics:</strong> Tag detected, no specific search terms beyond tag</p>
+
+        <div class="scenario-box">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO B: TAG-BASED LIST (LIST_ALL)                                       │
+│ Query: "personal documents"                                                  │
+│ Total Time: ~480ms (FASTEST PATH - no vector search!)                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  t=0ms    ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 1: Auth Validation (cache hit)                     │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=50ms   ┌──────────────────────┬────────────────────────────┐             │
+│           │ PHASE 2: Parallel Preprocessing                    │             │
+│           │ Spell Check (async)  │ Fetch Tags (async)          │             │
+│           │ LLM: 8B instant      │ Cache or DB                 │             │
+│           └──────────────────────┴────────────────────────────┘             │
+│                                    │ ~100ms (parallel)                       │
+│                                    ▼                                         │
+│  t=150ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 3: Query Analysis                                  │       │
+│           │ • Intent: LIST                                          │       │
+│           │ • Tag detection: "personal documents" → "personal docs" │       │
+│           │   (fuzzy match: "documents" → "docs")                   │       │
+│           │ • Keywords beyond tag: none                             │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=200ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 4: TAG PATH - Tag Intent Classification           │       │
+│           │ LLM: llama-3.1-8b-instant                               │       │
+│           │ Prompt: Does user want ALL docs or something SPECIFIC?  │       │
+│           │ Keywords beyond tag: none meaningful → Decision: LIST_ALL│       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~130ms                                  │
+│                                    ▼                                         │
+│  t=330ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ EXECUTION: search_by_tag("personal docs")               │       │
+│           │ • Query: SELECT * FROM notes WHERE tag = 'personal docs'│       │
+│           │ • Order by created_at DESC                              │       │
+│           │ • NO VECTOR SEARCH NEEDED!                              │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~100ms                                  │
+│                                    ▼                                         │
+│  t=430ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ FINALIZE: Generate download URLs                        │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=480ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ ✓ RESPONSE SENT                                         │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  ✅ TOTAL: ~480ms (Fastest possible - direct DB query)                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SCENARIO C ===== -->
+    <div class="section page-break-before">
+        <h3>4.4 Scenario C: Tag-Based Specific Search (SPECIFIC)</h3>
+        <p><strong>Example Queries:</strong> "find my pan card from personal docs", "get resume from work files"</p>
+        <p><strong>Characteristics:</strong> Tag detected + specific search terms beyond the tag</p>
+
+        <div class="scenario-box">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO C: TAG-BASED SPECIFIC SEARCH                                       │
+│ Query: "find my pan card from personal docs"                                │
+│ Total Time: ~980ms                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  t=0ms    ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 1-2: Auth + Preprocessing                         │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~150ms                                  │
+│                                    ▼                                         │
+│  t=150ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 3: Query Analysis                                  │       │
+│           │ • Intent: RETRIEVE                                      │       │
+│           │ • Tag detected: "personal docs"                         │       │
+│           │ • Keywords: ["pan", "card"] ← meaningful search terms   │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=200ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 4: TAG PATH - Tag Intent Classification           │       │
+│           │ Keywords beyond tag: "pan card" → Decision: SPECIFIC    │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~130ms                                  │
+│                                    ▼                                         │
+│  t=330ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ EXECUTION: hybrid_search("pan card", tag="personal docs")│       │
+│           │  ┌─────────────────────────────────────────────────────┐│       │
+│           │  │ 1. CHUNK SEARCH (Vector)                   ~300ms  ││       │
+│           │  │    • Generate BGE embedding                        ││       │
+│           │  │    • Query chunks WHERE tag='personal docs'        ││       │
+│           │  │    • Threshold: 0.45 similarity                    ││       │
+│           │  ├─────────────────────────────────────────────────────┤│       │
+│           │  │ 2. FULLTEXT SEARCH (Parallel)              ~100ms  ││       │
+│           │  │    • PostgreSQL FTS for "pan card"                 ││       │
+│           │  ├─────────────────────────────────────────────────────┤│       │
+│           │  │ 3. MERGE & SCORE                           ~10ms   ││       │
+│           │  │    • combined = 0.7 × vector + 0.3 × text_rank     ││       │
+│           │  ├─────────────────────────────────────────────────────┤│       │
+│           │  │ 4. RERANK (Cross-encoder)                  ~200ms  ││       │
+│           │  └─────────────────────────────────────────────────────┘│       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~600ms                                  │
+│                                    ▼                                         │
+│  t=930ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ FINALIZE: Generate download URLs                        │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=980ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ ✓ RESPONSE SENT                                         │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  ✅ TOTAL: ~980ms (Tag-scoped hybrid search)                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SCENARIO D ===== -->
+    <div class="section page-break-before">
+        <h3>4.5 Scenario D: Complex Query with Synthesis (AGENT PATH)</h3>
+        <p><strong>Example Queries:</strong> "What experience did I have at Centric Consulting?", "Summarize my ML projects"</p>
+        <p><strong>Characteristics:</strong> No tag, needs synthesis/answer, requires LLM reasoning</p>
+
+        <div class="scenario-box">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO D: COMPLEX QUERY WITH SYNTHESIS (AGENT PATH)                       │
+│ Query: "What experience did I have at Centric Consulting?"                  │
+│ Total Time: ~2600ms                                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  t=0ms    Auth + Preprocessing                              │ ~150ms        │
+│  t=150ms  Query Analysis (Intent: ANSWER, No tag)           │ ~50ms         │
+│  t=200ms  AGENT PATH Begins                                                 │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                         LLM AGENT LOOP (llama-3.3-70b)                │   │
+│  ├──────────────────────────────────────────────────────────────────────┤   │
+│  │  ITERATION 1: Tool Selection (~400ms)                                │   │
+│  │  ┌───────────────────────────────────────────────────────────────┐   │   │
+│  │  │ LLM Reasoning: "Centric Consulting is a company name.         │   │   │
+│  │  │ Proper nouns need keyword matching → use hybrid_search"       │   │   │
+│  │  │ → Tool: hybrid_search("Centric Consulting experience")        │   │   │
+│  │  └───────────────────────────────────────────────────────────────┘   │   │
+│  │                                                                       │   │
+│  │  Execute hybrid_search (~700ms)                                      │   │
+│  │  ┌───────────────────────────────────────────────────────────────┐   │   │
+│  │  │ Returns 3 candidates:                                          │   │   │
+│  │  │   1. Job Openings at Centric (score: 0.68)                    │   │   │
+│  │  │   2. Resume - Amit (score: 0.62)                              │   │   │
+│  │  │   3. Resume - Updated (score: 0.58)                           │   │   │
+│  │  └───────────────────────────────────────────────────────────────┘   │   │
+│  │                                                                       │   │
+│  │  ITERATION 2: Review Results (~400ms)                                │   │
+│  │  ┌───────────────────────────────────────────────────────────────┐   │   │
+│  │  │ LLM Reviews: "User asks for 'experience' → needs resumes      │   │   │
+│  │  │ Job posting ≠ user's experience → Filter out                  │   │   │
+│  │  │ → finalize_results with synthesis=true"                       │   │   │
+│  │  └───────────────────────────────────────────────────────────────┘   │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  t=1750ms SYNTHESIS PHASE (~800ms)                                          │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ • Fetch full content of selected documents                            │  │
+│  │ • Truncate to 8000 chars each (token limits)                          │  │
+│  │ • LLM generates synthesized answer                                    │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  t=2600ms ✓ RESPONSE with "answer" + "documents"                            │
+│                                                                              │
+│  ✅ TOTAL: ~2600ms (2-3 seconds for complex synthesis)                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SCENARIO E ===== -->
+    <div class="section page-break-before">
+        <h3>4.6 Scenario E: Temporal Query (AGENT PATH with Post-Processing)</h3>
+        <p><strong>Example Queries:</strong> "get my latest resume", "show me the oldest document"</p>
+        <p><strong>Characteristics:</strong> Temporal keyword detected, requires sorting + limiting</p>
+
+        <div class="scenario-box">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO E: TEMPORAL QUERY                                                   │
+│ Query: "get my latest resume"                                               │
+│ Total Time: ~1370ms                                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  t=0ms    Auth + Preprocessing                              │ ~150ms        │
+│  t=150ms  Query Analysis                                    │ ~50ms         │
+│           • Intent: RETRIEVE                                                │
+│           • Temporal: NEWEST ("latest" detected)                            │
+│           • Limit to one: TRUE ("my latest" = singular)                    │
+│           • Keywords: ["resume"]                                            │
+│                                                                              │
+│  t=200ms  AGENT PATH (Temporal requires agent)                              │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │  ITERATION 1: hybrid_search("resume") (~700ms)                       │   │
+│  │  Returns ALL matching resumes:                                       │   │
+│  │    1. Resume_v3.pdf (created: 2025-12-15)                           │   │
+│  │    2. Resume_v2.pdf (created: 2024-06-01)                           │   │
+│  │    3. Old_Resume.pdf (created: 2023-01-15)                          │   │
+│  │                                                                       │   │
+│  │  ITERATION 2: finalize_results (~400ms)                              │   │
+│  │  LLM includes ALL resume candidates (System handles sorting)         │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  t=1300ms POST-PROCESSING (System-level, not LLM)                           │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │ 1. Check query_analysis.temporal == NEWEST                            │  │
+│  │ 2. Sort documents by created_at DESC                                  │  │
+│  │ 3. Check query_analysis.limit_to_one == TRUE                          │  │
+│  │ 4. Return ONLY first document                                         │  │
+│  │ Result: [Resume_v3.pdf] (single newest document)                      │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                    │ ~20ms                                   │
+│                                    ▼                                         │
+│  t=1370ms ✓ RESPONSE (single newest resume)                                 │
+│                                                                              │
+│  ✅ TOTAL: ~1370ms                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SCENARIO F: INSTANT SEARCH ===== -->
+    <div class="section page-break-before">
+        <h3>4.8 Scenario F: Instant Search (Chrome Extension)</h3>
+        <p><strong>Endpoint:</strong> <code>GET /api/v1/search/instant?q=&lt;query&gt;&max_results=3</code></p>
+        <p><strong>Purpose:</strong> Fast, low-latency search for Chrome Extension integration. Triggers when user performs Google searches to suggest relevant existing notes.</p>
+        <p><strong>Characteristics:</strong> Optimized for speed (~500-800ms), returns direct Azure SAS URLs, uses reranking + LLM filtering</p>
+
+        <div class="scenario-box">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO F: INSTANT SEARCH (Chrome Extension)                               │
+│ Query: "pan card application"                                               │
+│ Total Time: ~500-800ms                                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  t=0ms    ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 1: Auth Validation                                 │       │
+│           │ • API key from Chrome Extension                         │       │
+│           │ • Scope: 'read' required                                │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=50ms   ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 2: Hybrid Search with Reranking                    │       │
+│           │                                                          │       │
+│           │ retrieval_tools.hybrid_search(                          │       │
+│           │   query=q,                                              │       │
+│           │   user_id=user_id,                                      │       │
+│           │   limit=max_results * 2,  # 6 candidates for 3          │       │
+│           │   rerank=True  # Cross-encoder reranking                │       │
+│           │ )                                                       │       │
+│           │                                                          │       │
+│           │ Steps: chunk_search + fulltext_search → Merge → Rerank  │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~400ms                                  │
+│                                    ▼                                         │
+│  t=450ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 3: LLM Filtering (if candidates > max_results)    │       │
+│           │                                                          │       │
+│           │ filter_results_with_llm(                                │       │
+│           │   query="pan card application",                         │       │
+│           │   candidates=[6 reranked docs],                         │       │
+│           │   max_results=3                                         │       │
+│           │ )                                                       │       │
+│           │ LLM: llama-3.1-8b-instant                               │       │
+│           │ Returns: indices of best matches                        │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~150ms (if LLM needed)                  │
+│                                    ▼                                         │
+│  t=600ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ PHASE 4: Generate Direct Azure SAS URLs                  │       │
+│           │ • Extract blob_name from blob_url                       │       │
+│           │ • Generate SAS URL with 10-year expiry                  │       │
+│           │ • Extension can open document directly                  │       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                    │ ~50ms                                   │
+│                                    ▼                                         │
+│  t=650ms  ┌─────────────────────────────────────────────────────────┐       │
+│           │ ✓ RESPONSE                                               │       │
+│           │   { "query": "...", "results": [...], "duration_ms": 650}│       │
+│           └─────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  ✅ TOTAL: ~500-800ms (optimized for extension popup)                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== KEYWORDS SYNC ===== -->
+    <div class="section page-break-before">
+        <h3>4.9 Keywords Sync Endpoint (Chrome Extension Cache)</h3>
+        <p><strong>Endpoint:</strong> <code>GET /api/v1/search/keywords</code></p>
+        <p><strong>Purpose:</strong> Returns keyword index for Chrome Extension to cache locally. Enables instant client-side matching without network calls for common queries.</p>
+
+        <div class="diagram-container">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ KEYWORDS SYNC (Chrome Extension Local Cache)                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Response Format:                                                           │
+│  {                                                                          │
+│    "keywords": {                                                            │
+│      "resume": [                                                            │
+│        {"id": "uuid1", "title": "Resume - Amit", "url": "sas..."},         │
+│        {"id": "uuid2", "title": "Resume - 2024", "url": "sas..."}          │
+│      ],                                                                     │
+│      "pan": [                                                               │
+│        {"id": "uuid3", "title": "PAN Card", "url": "sas..."}               │
+│      ],                                                                     │
+│      "personal docs": [                                                     │
+│        {"id": "uuid3", "title": "PAN Card", "url": "sas..."},              │
+│        {"id": "uuid4", "title": "Passport", "url": "sas..."}               │
+│      ],                                                                     │
+│      ...                                                                    │
+│    },                                                                       │
+│    "total_notes": 42,                                                       │
+│    "last_updated": "2026-01-27T10:30:00Z"                                  │
+│  }                                                                          │
+│                                                                              │
+│  Keyword Extraction Logic:                                                  │
+│    1. From titles: Split into words, filter stopwords, min 3 chars         │
+│    2. From tags: Add each tag as a keyword                                 │
+│    3. Dedup: Each note appears once per keyword                            │
+│                                                                              │
+│  Chrome Extension Usage:                                                    │
+│    1. On startup/periodic: Fetch /keywords and cache locally              │
+│    2. When user types in Google: Match against local cache                │
+│    3. Show instant suggestions (0ms latency)                               │
+│    4. If no local match: Fall back to /instant endpoint                   │
+│    5. Click opens document directly via SAS URL                            │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SCENARIO SUMMARY TABLE ===== -->
+    <div class="section page-break-before">
+        <h3>4.10 Scenario Summary Table</h3>
+
+        <table>
+            <tr>
+                <th>Scenario</th>
+                <th>Example Query</th>
+                <th>Path</th>
+                <th>Key Steps</th>
+                <th>Latency</th>
+            </tr>
+            <tr>
+                <td><strong>A: Simple Discovery</strong></td>
+                <td>"show me my documents"</td>
+                <td>Fast Path</td>
+                <td>Skip LLM → vector_search → rerank</td>
+                <td>~700ms</td>
+            </tr>
+            <tr>
+                <td><strong>B: Tag List (LIST_ALL)</strong></td>
+                <td>"personal documents"</td>
+                <td>Tag Path</td>
+                <td>LLM intent → search_by_tag (no vectors)</td>
+                <td>~480ms</td>
+            </tr>
+            <tr>
+                <td><strong>C: Tag Specific</strong></td>
+                <td>"pan card from personal docs"</td>
+                <td>Tag Path</td>
+                <td>LLM intent → hybrid_search with tag filter</td>
+                <td>~980ms</td>
+            </tr>
+            <tr>
+                <td><strong>D: Complex/Synthesis</strong></td>
+                <td>"What experience at Centric?"</td>
+                <td>Agent Path</td>
+                <td>LLM loop → hybrid_search → synthesis</td>
+                <td>~2600ms</td>
+            </tr>
+            <tr>
+                <td><strong>E: Temporal</strong></td>
+                <td>"get my latest resume"</td>
+                <td>Agent Path</td>
+                <td>LLM loop → hybrid_search → temporal sort</td>
+                <td>~1370ms</td>
+            </tr>
+            <tr>
+                <td><strong>F: Instant Search</strong></td>
+                <td>Chrome Extension trigger</td>
+                <td>Instant Path</td>
+                <td>hybrid_search → rerank → LLM filter → SAS URLs</td>
+                <td>~500-800ms</td>
+            </tr>
+        </table>
+
+        <h3>4.7 Decision Tree Quick Reference</h3>
+        <div class="diagram-container">
+<pre>
+                                    Query Arrives
+                                         │
+                    ┌────────────────────┼────────────────────┐
+                    │                    │                    │
+              Chrome Extension?     Fast Path?          No Fast Path
+              (/instant endpoint)   (discovery only)         │
+                    │                    │                    │
+                    ▼                    ▼                    ▼
+             ┌─────────────┐      ┌─────────────┐     ┌─────────────┐
+             │ SCENARIO F  │      │ SCENARIO A  │     │ Tag Detected?│
+             │   ~500-800ms│      │   ~700ms    │     └─────────────┘
+             └─────────────┘      └─────────────┘           │
+                                              ┌─────────────┴─────────────┐
+                                              │                           │
+                                             YES                          NO
+                                              │                           │
+                                              ▼                           ▼
+                                      ┌─────────────┐            ┌─────────────┐
+                                      │Tag Intent   │            │ AGENT PATH  │
+                                      │Classification│            │ (LLM Loop)  │
+                                      └─────────────┘            └─────────────┘
+                                              │                           │
+                                    ┌─────────┴─────────┐                │
+                                    │                   │                │
+                                LIST_ALL            SPECIFIC             │
+                                    │                   │                │
+                                    ▼                   ▼                ▼
+                             ┌─────────────┐    ┌─────────────┐   ┌─────────────┐
+                             │ SCENARIO B  │    │ SCENARIO C  │   │SCENARIO D/E │
+                             │   ~480ms    │    │   ~980ms    │   │ ~1300-2600ms│
+                             └─────────────┘    └─────────────┘   └─────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 5: RETRIEVAL METHODS ===== -->
+    <div class="section page-break-before" id="section-5">
+        <h2>5. Retrieval Methods</h2>
+
+        <h3>Method Comparison</h3>
+        <div class="diagram-container">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          RETRIEVAL METHODS                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         vector_search                                │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │ USE WHEN: Conceptual/semantic queries, broad topics                 │    │
+│  │ EXAMPLE: "documents about machine learning"                         │    │
+│  │ FLOW: Query → BGE Embedding → match_notes RPC → Rerank → Results   │    │
+│  │ THRESHOLD: 0.25 similarity | TIMING: ~400-600ms                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         hybrid_search                                │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │ USE WHEN: Specific names, company names, proper nouns               │    │
+│  │ EXAMPLE: "Centric Consulting job openings"                          │    │
+│  │ FLOW: Query → chunk_search + fulltext_search → Merge → Rerank      │    │
+│  │ SCORE: combined = 0.7*vector + 0.3*text_rank                        │    │
+│  │ THRESHOLD: 0.15 combined | TIMING: ~600-900ms                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         chunk_search                                 │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │ USE WHEN: Specific facts, dates, numbers buried in documents        │    │
+│  │ EXAMPLE: "when did I join Centric?", "what was my role at MSC?"    │    │
+│  │ FLOW: Query → BGE Embedding → search_chunks RPC → Group → Rerank   │    │
+│  │ THRESHOLD: 0.45 similarity | TIMING: ~500-800ms                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         search_by_tag                                │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │ USE WHEN: Category-based retrieval, user specifies tag             │    │
+│  │ EXAMPLE: "personal documents", "show me educational content"        │    │
+│  │ FLOW: Tag → Supabase WHERE tag = X → Order by created_at DESC      │    │
+│  │ THRESHOLD: Exact match | TIMING: ~100-200ms (FASTEST)              │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 6: RERANKING ===== -->
+    <div class="section page-break-before" id="section-6">
+        <h2>6. Reranking</h2>
+
+        <h3>Cross-Encoder Reranking Pipeline</h3>
+        <div class="diagram-container">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        RERANKING PIPELINE                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  INPUT: 6 candidate documents from hybrid_search                            │
+│  MODEL: cross-encoder/ms-marco-MiniLM-L-6-v2                               │
+│                                                                              │
+│  STEP 1: Text Preparation                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ For each document:                                                   │    │
+│  │   title_text = title × 2 (repeated for weight)                      │    │
+│  │   content = first_200_words + " ... " + last_100_words              │    │
+│  │   doc_text = title_text + content                                   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  STEP 2: Cross-Encoder Scoring                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ pairs = [(query, doc1_text), (query, doc2_text), ...]               │    │
+│  │ scores = model.predict(pairs)                                        │    │
+│  │                                                                      │    │
+│  │ Results:                                                             │    │
+│  │   Doc 1 (Job Openings): +1.04                                       │    │
+│  │   Doc 2 (Resume PDF):   -0.41                                       │    │
+│  │   Doc 3 (Resume DOCX):  -2.10                                       │    │
+│  │   Doc 4 (Other):        -5.50  ✗ (gap too large)                   │    │
+│  │   Doc 5 (Other):        -7.20  ✗ (gap too large)                   │    │
+│  │   Doc 6 (Other):        -9.30  ✗ (below threshold)                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  STEP 3: Filtering                                                          │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ THRESHOLD: -8.0 (absolute minimum)                                   │    │
+│  │ MAX_GAP: 5.0 (from top score)                                       │    │
+│  │                                                                      │    │
+│  │ Top score = 1.04 → Max allowed = 1.04 - 5.0 = -3.96                │    │
+│  │ ✓ Doc 1: +1.04 (passes) | ✓ Doc 2: -0.41 | ✓ Doc 3: -2.10         │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  OUTPUT: 3 documents passed reranking                                       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </div>
+
+    <!-- ===== SECTION 7: MODELS ===== -->
+    <div class="section page-break-before" id="section-7">
+        <h2>7. Models &amp; Configuration</h2>
+
+        <h3>Model Summary</h3>
+        <table>
+            <tr>
+                <th>Model</th>
+                <th>Purpose</th>
+                <th>Latency</th>
+                <th>Notes</th>
+            </tr>
+            <tr>
+                <td><strong>BGE-base-en-v1.5</strong></td>
+                <td>Text embeddings (768 dim)</td>
+                <td>~200ms</td>
+                <td>Loaded at startup, runs locally</td>
+            </tr>
+            <tr>
+                <td><strong>ms-marco-MiniLM-L-6-v2</strong></td>
+                <td>Cross-encoder reranking</td>
+                <td>~200ms for 6 docs</td>
+                <td>Loaded at startup, runs locally</td>
+            </tr>
+            <tr>
+                <td><strong>llama-3.1-8b-instant</strong></td>
+                <td>Spell check, tag intent, LLM filtering</td>
+                <td>~100-150ms</td>
+                <td>Groq API, fast inference</td>
+            </tr>
+            <tr>
+                <td><strong>llama-3.3-70b-versatile</strong></td>
+                <td>Agent tool selection, synthesis</td>
+                <td>~400-800ms</td>
+                <td>Groq API, high quality reasoning</td>
+            </tr>
+        </table>
+
+        <h3>Key Thresholds</h3>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+                <th>Purpose</th>
+            </tr>
+            <tr>
+                <td>Vector similarity (notes)</td>
+                <td>0.25</td>
+                <td>Minimum for document-level search</td>
+            </tr>
+            <tr>
+                <td>Chunk similarity</td>
+                <td>0.45</td>
+                <td>Minimum for chunk-level search</td>
+            </tr>
+            <tr>
+                <td>Hybrid combined</td>
+                <td>0.15</td>
+                <td>Minimum for hybrid search</td>
+            </tr>
+            <tr>
+                <td>Rerank absolute</td>
+                <td>-8.0</td>
+                <td>Minimum cross-encoder score</td>
+            </tr>
+            <tr>
+                <td>Rerank gap</td>
+                <td>5.0</td>
+                <td>Max gap from top score</td>
+            </tr>
+            <tr>
+                <td>Hybrid weights</td>
+                <td>0.7v + 0.3t</td>
+                <td>Vector vs text rank weight</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ===== SECTION 8: COMPLETE FLOW ===== -->
+    <div class="section page-break-before" id="section-8">
+        <h2>8. Complete Flow Diagrams</h2>
+
+        <h3>End-to-End Latency Breakdown</h3>
+        <table>
+            <tr>
+                <th>Stage</th>
+                <th>Fast Path</th>
+                <th>Tag Path</th>
+                <th>Agent Path</th>
+                <th>Instant Search</th>
+            </tr>
+            <tr>
+                <td>Auth</td>
+                <td>50ms</td>
+                <td>50ms</td>
+                <td>50ms</td>
+                <td>50ms</td>
+            </tr>
+            <tr>
+                <td>Preprocessing</td>
+                <td>-</td>
+                <td>100ms</td>
+                <td>100ms</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Query Analysis</td>
+                <td>-</td>
+                <td>50ms</td>
+                <td>50ms</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Tag Intent</td>
+                <td>-</td>
+                <td>130ms</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>LLM Agent Loop</td>
+                <td>-</td>
+                <td>-</td>
+                <td>~1500ms</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Search Execution</td>
+                <td>600ms</td>
+                <td>100-600ms</td>
+                <td>700ms</td>
+                <td>400ms</td>
+            </tr>
+            <tr>
+                <td>LLM Filtering</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>~150ms</td>
+            </tr>
+            <tr>
+                <td>Synthesis</td>
+                <td>-</td>
+                <td>-</td>
+                <td>~800ms</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>URL Generation</td>
+                <td>50ms</td>
+                <td>50ms</td>
+                <td>50ms</td>
+                <td>50ms</td>
+            </tr>
+            <tr style="font-weight: bold; background-color: #e8f4ff;">
+                <td><strong>TOTAL</strong></td>
+                <td><strong>~700ms</strong></td>
+                <td><strong>~480-980ms</strong></td>
+                <td><strong>~2600ms</strong></td>
+                <td><strong>~500-800ms</strong></td>
+            </tr>
+        </table>
+    </div>
+
+    <hr>
+    <p style="text-align: center; color: #666; margin-top: 40px;">
+        <em>End of Document</em><br>
+        NotesApp Search Flow Documentation v2.0<br>
+        Last Updated: January 27, 2026
+    </p>
+
+</body>
+</html>
