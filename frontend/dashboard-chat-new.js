@@ -91,7 +91,13 @@ function renderWelcomeSuggestions() {
 // Initialize
 // =============================================================================
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[Dashboard] DOMContentLoaded fired');
     initElements();
+    console.log('[Dashboard] initElements done, navItems:', elements.navItems?.length);
+    
+    // Setup event listeners FIRST so navigation works even if auth fails
+    setupEventListeners();
+    console.log('[Dashboard] setupEventListeners done');
     
     // Wait for auth.js to initialize supabaseClient (up to 3 seconds)
     let waitCount = 0;
@@ -104,8 +110,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         waitCount++;
     }
     
-    await checkAuth();
-    setupEventListeners();
+    try {
+        await checkAuth();
+    } catch (err) {
+        console.error('[Dashboard] checkAuth error:', err);
+    }
+    console.log('[Dashboard] Initialization complete');
 });
 
 function initElements() {
@@ -944,14 +954,16 @@ function useSuggestion(text) {
 // Navigation
 // =============================================================================
 function setupEventListeners() {
+    console.log('[Dashboard] Setting up event listeners');
     // Navigation
     elements.navItems.forEach(item => {
         item.addEventListener('click', () => {
             const view = item.dataset.view;
+            console.log('[Dashboard] Nav click:', view);
             switchView(view);
-        renderWelcomeSuggestions();
         });
     });
+    console.log('[Dashboard] Nav listeners attached to', elements.navItems?.length, 'items');
     
     // Chat input
     if (elements.chatInput) {
