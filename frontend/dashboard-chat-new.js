@@ -1,6 +1,6 @@
 // =============================================================================
 // Dashboard New - JavaScript (Loveable Design)
-// v7: 2026-02-24 - Added fetchWithAuth helper for automatic token refresh on 401
+// v11: 2026-03-18 - Fixed initialization order, nav buttons work now
 // =============================================================================
 
 // Debug logger that persists across page navigations
