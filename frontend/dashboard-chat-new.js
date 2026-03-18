@@ -1,6 +1,6 @@
 // =============================================================================
 // Dashboard New - JavaScript (Loveable Design)
-// v11: 2026-03-18 - Fixed initialization order, nav buttons work now
+// v12: 2026-03-18 - Fixed initialization order, nav buttons work now
 // =============================================================================
 
 // Debug logger that persists across page navigations
