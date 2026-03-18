@@ -54,23 +54,6 @@ const elements = {
     logoutBtn: null,
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
-// Initialize
-// =============================================================================
-document.addEventListener('DOMContentLoaded', async () => {
-    initElements();
-    
-    // Wait for auth.js to initialize supabaseClient (up to 3 seconds)
-    let waitCount = 0;
-    while (typeof supabaseClient === 'undefined' || !supabaseClient) {
-        if (waitCount >= 30) {
-            console.warn('Timeout waiting for supabaseClient, proceeding anyway');
-            break;
-        }
-        await new Promise(r => setTimeout(r, 100));
-    renderWelcomeSuggestions();
-});
-
 // Generate dynamic suggestions based on user's notes
 function renderWelcomeSuggestions() {
     const el = document.getElementById('welcome-suggestions');
@@ -103,6 +86,21 @@ function renderWelcomeSuggestions() {
     }
     el.innerHTML = html;
 }
+
+// =============================================================================
+// Initialize
+// =============================================================================
+document.addEventListener('DOMContentLoaded', async () => {
+    initElements();
+    
+    // Wait for auth.js to initialize supabaseClient (up to 3 seconds)
+    let waitCount = 0;
+    while (typeof supabaseClient === 'undefined' || !supabaseClient) {
+        if (waitCount >= 30) {
+            console.warn('Timeout waiting for supabaseClient, proceeding anyway');
+            break;
+        }
+        await new Promise(r => setTimeout(r, 100));
         waitCount++;
     }
     
