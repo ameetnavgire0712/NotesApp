@@ -25,7 +25,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy frontend --project-name=notesapp-frontend --commit-dirty=true
+          command: pages deploy frontend --project-name=notesapp-frontend --branch=production --commit-dirty=true
 
       - name: Deployment Summary
         run: |
