@@ -2036,6 +2036,12 @@
                             <label>Query Used</label>
                             <div class="value ${trace.query_corrected && trace.query_corrected !== trace.query ? 'corrected' : ''}">${trace.query_corrected || trace.query || 'N/A'}</div>
                         </div>
+                        ${trace.query_rewritten ? `
+                        <div class="info-item">
+                            <label>Rewritten Query</label>
+                            <div class="value" style="color: #d2a8ff;">${trace.query_rewritten}</div>
+                        </div>
+                        ` : ''}
                         <div class="info-item">
                             <label>Spell Check</label>
                             <div class="value" style="color: #8b949e;">
