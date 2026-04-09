@@ -6,10 +6,19 @@
 }
 .welcome-brand {
     font-family: 'Space Grotesk', 'Inter', sans-serif;
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 600;
     letter-spacing: -0.01em;
     margin-bottom: 0.25rem;
+    color: var(--sidebar-accent-foreground);
+}
+.welcome-tagline {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin-bottom: 1rem;
+    color: hsl(155, 70%, 45%);
 }
 .bi-main {
     color: var(--sidebar-accent-foreground);
@@ -401,6 +410,48 @@ h1, h2, h3 {
     width: 100%;
 }
 
+.tips-section {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.tips-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: hsl(220, 8%, 55%);
+    margin-bottom: 0.5rem;
+}
+
+.tips-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.tip-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: hsl(0, 0%, 100%);
+    border: 1px solid hsl(150, 10%, 88%);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    text-align: left;
+}
+
+.tip-card strong {
+    color: hsl(220, 15%, 20%);
+    font-size: 0.8rem;
+}
+
+.tip-card span {
+    color: hsl(220, 8%, 55%);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
 .suggestion {
     background: hsl(0, 0%, 100%);
     border: 1px solid hsl(150, 10%, 88%);
@@ -519,6 +570,30 @@ h1, h2, h3 {
     font-size: 0.85em;
 }
 
+/* Document links in LLM answers (markdown [title](url) rendered as links) */
+.formatted-answer a.doc-link,
+.formatted-answer a[target="_blank"] {
+    color: hsl(155, 60%, 32%);
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1.5px solid hsl(155, 50%, 70%);
+    padding-bottom: 1px;
+    transition: all 0.2s ease;
+}
+
+.formatted-answer a.doc-link:hover,
+.formatted-answer a[target="_blank"]:hover {
+    color: hsl(155, 70%, 25%);
+    border-bottom-color: hsl(155, 70%, 45%);
+    background: hsl(155, 40%, 95%);
+    border-radius: 2px;
+    padding: 1px 3px;
+}
+
+.formatted-answer a.doc-link:visited {
+    color: hsl(155, 40%, 40%);
+}
+
 .formatted-answer pre {
     background: hsl(150, 10%, 92%);
     padding: 0.75rem;
@@ -601,6 +676,100 @@ h1, h2, h3 {
 .typing-indicator {
     color: var(--muted-foreground);
     font-style: italic;
+}
+
+/* Chat Tag Filter */
+.chat-tag-filter {
+    padding: 0.5rem 2rem;
+    background: hsl(150, 15%, 97%);
+    border-top: 1px solid hsl(150, 10%, 88%);
+}
+
+.tag-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+    flex-wrap: nowrap;
+}
+
+.tag-filter-label {
+    font-size: 0.75rem;
+    color: hsl(220, 8%, 50%);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.tag-selected-count {
+    font-size: 0.7rem;
+    color: hsl(155, 70%, 35%);
+    background: hsl(155, 70%, 92%);
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.tag-chip {
+    padding: 0.3rem 0.6rem;
+    border-radius: 1rem;
+    border: 1px solid hsl(150, 10%, 80%);
+    background: hsl(0, 0%, 100%);
+    color: hsl(220, 15%, 30%);
+    font-size: 0.75rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.tag-chip:hover {
+    border-color: hsl(155, 70%, 45%);
+    background: hsl(155, 70%, 95%);
+}
+
+.tag-chip.active {
+    background: hsl(155, 70%, 45%);
+    border-color: hsl(155, 70%, 45%);
+    color: white;
+    font-weight: 500;
+}
+
+/* Tag overflow dropdown */
+.tag-overflow-wrapper {
+    position: relative;
+}
+
+.tag-overflow-btn {
+    color: hsl(155, 70%, 40%);
+    font-weight: 500;
+}
+
+.tag-overflow-dropdown {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 0.5rem;
+    background: white;
+    border: 1px solid hsl(150, 10%, 85%);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem;
+    z-index: 100;
+    min-width: 200px;
+    max-width: 300px;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.tag-overflow-dropdown.show {
+    display: flex;
+}
+
+.tag-overflow-dropdown .tag-chip {
+    flex-shrink: 0;
 }
 
 /* Chat Input */
@@ -771,15 +940,56 @@ h1, h2, h3 {
 }
 
 .notes-grid-container::-webkit-scrollbar {
-    width: 4px;
+    width: 10px;
+}
+
+.notes-grid-container::-webkit-scrollbar-track {
+    background: hsl(150, 10%, 95%);
+    border-radius: 5px;
 }
 
 .notes-grid-container::-webkit-scrollbar-thumb {
-    background: hsl(150, 10%, 82%);
-    border-radius: 4px;
+    background: hsl(150, 20%, 65%);
+    border-radius: 5px;
+    border: 2px solid hsl(150, 10%, 95%);
+}
+
+.notes-grid-container::-webkit-scrollbar-thumb:hover {
+    background: hsl(150, 25%, 55%);
+}
+
+/* Firefox scrollbar */
+.notes-grid-container {
+    scrollbar-width: auto;
+    scrollbar-color: hsl(150, 20%, 65%) hsl(150, 10%, 95%);
 }
 
 /* Notes Group */
+/* Group Controls */
+.notes-group-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    justify-content: flex-end;
+}
+
+.group-control-btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: hsl(220, 8%, 45%);
+    background: hsl(150, 10%, 96%);
+    border: 1px solid hsl(150, 10%, 88%);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.group-control-btn:hover {
+    background: hsl(150, 10%, 92%);
+    color: hsl(220, 15%, 25%);
+}
+
 .notes-group {
     margin-bottom: 2rem;
 }
@@ -789,6 +999,23 @@ h1, h2, h3 {
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.notes-group-header:hover {
+    opacity: 0.8;
+}
+
+.group-toggle {
+    font-size: 0.75rem;
+    color: hsl(220, 8%, 50%);
+    transition: transform 0.2s;
+    width: 12px;
+}
+
+.group-toggle.collapsed {
+    color: hsl(220, 8%, 60%);
 }
 
 .group-dot {
@@ -821,6 +1048,10 @@ h1, h2, h3 {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1rem;
+}
+
+.notes-cards.collapsed {
+    display: none;
 }
 
 /* Note Card */
@@ -911,12 +1142,10 @@ h1, h2, h3 {
     text-transform: uppercase;
 }
 
-/* Note Delete Button */
+/* Note Action Buttons (Preview & Delete) */
 
+.note-preview-btn,
 .note-delete-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
     width: 28px;
     height: 28px;
     border-radius: 6px;
@@ -927,9 +1156,12 @@ h1, h2, h3 {
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 1;
     transition: all 0.2s;
-    z-index: 10;
+}
+
+.note-preview-btn:hover {
+    background: hsl(142, 76%, 95%);
+    color: var(--accent);
 }
 
 .note-delete-btn:hover {
@@ -1128,6 +1360,36 @@ h1, h2, h3 {
     color: hsl(220, 10%, 30%);
 }
 
+/* Loading Spinner */
+.notes-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    min-height: 300px;
+}
+
+.notes-loading p {
+    color: hsl(220, 8%, 50%);
+    margin-top: 1rem;
+    font-size: 16px;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid hsl(150, 20%, 85%);
+    border-top-color: hsl(150, 60%, 45%);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Loading Skeleton */
 .loading-skeleton {
     padding: 1rem 0;
@@ -1182,6 +1444,52 @@ h1, h2, h3 {
 
 .notes-empty p {
     color: hsl(220, 8%, 50%);
+}
+
+/* Load More Button */
+.notes-load-more {
+    display: flex;
+    justify-content: center;
+    padding: 1.5rem 0;
+    margin-top: 1rem;
+}
+
+.load-more-btn {
+    background: hsl(143, 72%, 94%);
+    color: hsl(142, 71%, 45%);
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.load-more-btn:hover {
+    background: hsl(143, 72%, 88%);
+    transform: translateY(-1px);
+}
+
+.load-more-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: hsl(220, 8%, 50%);
+    font-size: 0.9rem;
+}
+
+.load-more-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid hsl(143, 72%, 94%);
+    border-top-color: hsl(142, 71%, 45%);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 /* =============================================================================
@@ -1879,4 +2187,290 @@ h1, h2, h3 {
     .stats-grid {
         grid-template-columns: 1fr;
     }
+}
+/* =============================================================================
+   Selection Mode - Multi-Select Delete
+   ============================================================================= */
+
+/* Checkbox styling */
+.note-checkbox {
+    display: none;
+    position: relative;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.note-checkbox.visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.note-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    width: 0;
+    height: 0;
+}
+
+.note-checkbox .checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid hsl(150, 10%, 70%);
+    border-radius: 4px;
+    background: hsl(0, 0%, 100%);
+    transition: all 0.2s ease;
+}
+
+.note-checkbox:hover .checkmark {
+    border-color: var(--primary);
+}
+
+.note-checkbox input:checked ~ .checkmark {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.note-checkbox input:checked ~ .checkmark::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Hide elements in selection mode */
+.note-icon.hidden,
+.note-delete-btn.hidden,
+.hidden {
+    display: none !important;
+}
+
+/* Selected card styling */
+.note-card.selected {
+    border-color: var(--primary);
+    background: hsl(155, 30%, 97%);
+    box-shadow: 0 0 0 2px hsla(155, 70%, 45%, 0.2);
+}
+
+/* Selection toolbar */
+.selection-toolbar {
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: hsl(160, 8%, 10%);
+    border-bottom: 1px solid hsl(160, 6%, 18%);
+    animation: slideDown 0.2s ease;
+}
+
+.selection-toolbar.visible {
+    display: flex;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.selection-toolbar .btn-cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: hsl(160, 6%, 18%);
+    color: hsl(150, 15%, 90%);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.selection-toolbar .btn-cancel:hover {
+    background: hsl(160, 6%, 25%);
+}
+
+.selection-toolbar .selection-count {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: hsl(150, 15%, 90%);
+}
+
+.selection-toolbar .btn-select-all {
+    padding: 0.5rem 1rem;
+    border: 1px solid hsl(160, 6%, 25%);
+    background: transparent;
+    color: hsl(150, 15%, 90%);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.selection-toolbar .btn-select-all:hover {
+    background: hsl(160, 6%, 18%);
+}
+
+.selection-toolbar .btn-delete-selected {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: hsl(0, 72%, 51%);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.selection-toolbar .btn-delete-selected:hover:not(:disabled) {
+    background: hsl(0, 72%, 45%);
+}
+
+.selection-toolbar .btn-delete-selected:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Bulk delete modal */
+#bulk-delete-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: hsla(0, 0%, 0%, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+#bulk-delete-modal.show {
+    display: flex;
+}
+
+#bulk-delete-modal .modal-content {
+    background: hsl(160, 8%, 10%);
+    border: 1px solid hsl(160, 6%, 18%);
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    animation: modalIn 0.2s ease;
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#bulk-delete-modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid hsl(160, 6%, 18%);
+}
+
+#bulk-delete-modal .modal-header h3 {
+    font-size: 1.1rem;
+    color: hsl(150, 15%, 90%);
+    margin: 0;
+}
+
+#bulk-delete-modal .modal-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: hsl(155, 6%, 60%);
+    font-size: 1.25rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+#bulk-delete-modal .modal-close:hover {
+    background: hsl(160, 6%, 18%);
+    color: hsl(150, 15%, 90%);
+}
+
+#bulk-delete-modal .modal-body {
+    padding: 1.25rem;
+}
+
+#bulk-delete-modal .modal-body p {
+    color: hsl(150, 10%, 75%);
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+}
+
+#bulk-delete-modal .delete-warning {
+    color: hsl(0, 72%, 60%);
+    font-size: 0.8rem;
+}
+
+#bulk-delete-modal .modal-footer {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid hsl(160, 6%, 18%);
+}
+
+#bulk-delete-modal .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#bulk-delete-modal .btn-outline {
+    background: transparent;
+    border: 1px solid hsl(160, 6%, 25%);
+    color: hsl(150, 15%, 90%);
+}
+
+#bulk-delete-modal .btn-outline:hover {
+    background: hsl(160, 6%, 18%);
+}
+
+#bulk-delete-modal .btn-danger {
+    background: hsl(0, 72%, 51%);
+    border: none;
+    color: white;
+}
+
+#bulk-delete-modal .btn-danger:hover:not(:disabled) {
+    background: hsl(0, 72%, 45%);
+}
+
+#bulk-delete-modal .btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }

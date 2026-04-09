@@ -1,11 +1,10 @@
-/**
+﻿/**
  * NotesApp Vector Search Worker - Enhanced with Voyage AI Reranking
  * 
  * Runs at Cloudflare edge for low-latency vector operations.
  * - /mcp: MCP (Model Context Protocol) server for Claude Desktop
  * - /rag-search-auth: Full RAG pipeline with JWT/API key auth (for frontend direct calls)
  * - /rag-search: Full RAG pipeline (spell check + tags + hybrid search + synthesis)
- * - /hybrid: Combined embed + search + rerank (single call - FASTEST)
  * - /search: Query vectors with optional filters
  * - /rerank: Rerank documents using Voyage AI
  * - /embed: Generate embedding for text
@@ -15,7 +14,7 @@
  * - /health: Health check
  */
 
-import { handleRagSearch, RagSearchEnv } from './rag-search';
+import { handleRagSearch, handleRagSearchContinue, RagSearchEnv } from './rag-search';
 import { handleMCP, MCPEnv } from './mcp-server';
 import { validateAuth, AuthResult, AuthEnv } from './auth';
 import {
@@ -29,6 +28,7 @@ import {
   handleListTags,
   handleGetViewToken,
   handleDeleteNote,
+  handleBulkDeleteNotes,
   ApiEnv,
   ApiEnvWithVectorize,
 } from './api-endpoints';
@@ -56,6 +56,7 @@ import {
   handleUploadFileWithDO,
   handleUploadScreenshotWithDO,
   handleUploadQuickNoteWithDO,
+  handleUploadWebpageWithDO,
   handleUploadStatus,
   handleUploadQuota,
   handleCancelUpload,
@@ -86,6 +87,7 @@ export interface Env {
   AZURE_STORAGE_CONTAINER?: string;  // Azure blob container name
   TENSORLAKE_API_KEY?: string;  // TensorLake document conversion API key
   UPLOAD_PROCESSOR: DurableObjectNamespace;  // Durable Object for long-running uploads
+  CHAT_SESSIONS: KVNamespace;  // KV namespace for chat conversation memory
 }
 
 interface SearchRequest {
@@ -134,9 +136,12 @@ interface HybridSearchRequest {
   tag?: string;            // Filter by tag
   limit?: number;          // Final results to return (default 10)
   rerank?: boolean;        // Enable reranking (default true)
-  rerank_top_k?: number;   // How many to fetch for reranking (default 20)
+  rerank_top_k?: number;   // How many to rerank per batch (default 50)
+  rerank_offset?: number;  // Skip first N chunks before reranking (for pagination)
+  retrieval_limit?: number; // How many chunks to retrieve before filtering (default 500)
   debug?: boolean;         // Return intermediate data for debugging
   correlation_id?: string; // Backend correlation ID for trace linking
+  seen_doc_ids?: string[]; // Document IDs already seen (for continuation filtering)
 }
 
 interface VoyageRerankResponse {
@@ -330,6 +335,15 @@ async function sendSearchTraceToBackend(trace: SearchTraceEntry, env: Env, ctx: 
   );
 }
 
+// Short hash for compact chunk_ids (6-char base36, ~2.1B unique values)
+function shortHash(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(36).padStart(6, '0').slice(0, 6);
+}
+
 // Validate API key
 function validateApiKey(request: Request, env: Env): boolean {
   const apiKey = request.headers.get("X-API-Key") || 
@@ -339,7 +353,7 @@ function validateApiKey(request: Request, env: Env): boolean {
 
 // Validate user API key (na_* format) against Supabase
 async function validateUserApiKey(apiKey: string, env: Env): Promise<{ valid: boolean; user_id?: string }> {
-  if (!apiKey || !apiKey.startsWith('na_')) {
+  if (!apiKey || !(apiKey.startsWith('na_') || apiKey.startsWith('ina_'))) {
     return { valid: false };
   }
   
@@ -394,9 +408,9 @@ async function handleExtensionTiming(request: Request, env: Env, ctx: ExecutionC
     );
   }
   
-  // Check if it's a user API key (na_*) or worker API key
+  // Check if it's a user API key (na_* or ina_*) or worker API key
   let isAuthorized = false;
-  if (apiKey.startsWith('na_')) {
+  if (apiKey.startsWith('na_') || apiKey.startsWith('ina_')) {
     const validation = await validateUserApiKey(apiKey, env);
     isAuthorized = validation.valid;
   } else {
@@ -784,32 +798,57 @@ async function rerank(
   return { results, time_ms };
 }
 
-// Supabase keyword search interface
-interface SupabaseKeywordResult {
-  id: string;
-  title: string;
-  tag: string;
+// Supabase chunk-level keyword search interface
+interface SupabaseChunkKeywordResult {
+  note_id: string;
+  chunk_index: number;      // -1 for title match, -2 for description match, 0+ for chunk match
+  chunk_content: string;
   text_rank: number;
+  match_source: 'chunk' | 'title' | 'description';  // Where the match was found
 }
 
-// Call Supabase RPC for full-text keyword search
+// Title/description match with content for injection
+interface TitleDescMatch {
+  score: number;
+  content: string;
+}
+
+interface KeywordSearchResults {
+  // note-level scores (max chunk score per note) - for backward compat in score combination
+  results: Map<string, number>;
+  // chunk-level results grouped by note_id
+  chunks: Map<string, SupabaseChunkKeywordResult[]>;
+  // title/description matches WITH CONTENT for injection into results
+  titleMatches: Map<string, TitleDescMatch>;       // note_id -> {score, content}
+  descriptionMatches: Map<string, TitleDescMatch>; // note_id -> {score, content}
+  time_ms: number;
+}
+
+// Call Supabase RPC for chunk-level full-text keyword search
 async function keywordSearch(
   query: string,
   userId: string,
   env: Env,
   tag?: string,
-  limit: number = 20
-): Promise<{ results: Map<string, number>, time_ms: number }> {
+  limit: number = 50
+): Promise<KeywordSearchResults> {
   const start = Date.now();
+  const empty: KeywordSearchResults = { 
+    results: new Map(), 
+    chunks: new Map(), 
+    titleMatches: new Map(),
+    descriptionMatches: new Map(),
+    time_ms: 0 
+  };
   
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
     console.log("Supabase credentials not configured, skipping keyword search");
-    return { results: new Map(), time_ms: 0 };
+    return empty;
   }
   
   try {
     const response = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/rpc/search_notes_fulltext`,
+      `${env.SUPABASE_URL}/rest/v1/rpc/search_chunks_fulltext`,
       {
         method: "POST",
         headers: {
@@ -828,25 +867,64 @@ async function keywordSearch(
     
     if (!response.ok) {
       const error = await response.text();
-      console.error(`Supabase keyword search failed: ${response.status} - ${error}`);
-      return { results: new Map(), time_ms: Date.now() - start };
+      console.error(`Supabase chunk keyword search failed: ${response.status} - ${error}`);
+      return { ...empty, time_ms: Date.now() - start };
     }
     
-    const data: SupabaseKeywordResult[] = await response.json();
+    const data: SupabaseChunkKeywordResult[] = await response.json();
     const time_ms = Date.now() - start;
     
-    // Convert to Map<note_id, text_rank>
+    // Build note-level scores (max chunk score per note)
     const results = new Map<string, number>();
-    for (const doc of data) {
-      results.set(doc.id, doc.text_rank);
+    // Build chunk-level results grouped by note_id (only actual chunks, not title/description)
+    const chunks = new Map<string, SupabaseChunkKeywordResult[]>();
+    // Track title and description matches WITH CONTENT for injection
+    const titleMatches = new Map<string, TitleDescMatch>();
+    const descriptionMatches = new Map<string, TitleDescMatch>();
+    
+    let titleMatchCount = 0;
+    let descMatchCount = 0;
+    let chunkMatchCount = 0;
+    
+    for (const row of data) {
+      // Note-level: keep max score (from any source)
+      const existing = results.get(row.note_id);
+      if (!existing || row.text_rank > existing) {
+        results.set(row.note_id, row.text_rank);
+      }
+      
+      // Handle based on match_source (chunk_index: -1=title, -2=description, 0+=chunk)
+      const matchSource = row.match_source || (row.chunk_index === -1 ? 'title' : row.chunk_index === -2 ? 'description' : 'chunk');
+      
+      if (matchSource === 'title' || row.chunk_index === -1) {
+        // Title match - store with content for potential injection
+        const existingTitle = titleMatches.get(row.note_id);
+        if (!existingTitle || row.text_rank > existingTitle.score) {
+          titleMatches.set(row.note_id, { score: row.text_rank, content: row.chunk_content || '' });
+        }
+        titleMatchCount++;
+      } else if (matchSource === 'description' || row.chunk_index === -2) {
+        // Description match - store with content for potential injection
+        const existingDesc = descriptionMatches.get(row.note_id);
+        if (!existingDesc || row.text_rank > existingDesc.score) {
+          descriptionMatches.set(row.note_id, { score: row.text_rank, content: row.chunk_content || '' });
+        }
+        descMatchCount++;
+      } else {
+        // Actual chunk match - add to chunks for injection
+        const noteChunks = chunks.get(row.note_id) || [];
+        noteChunks.push(row);
+        chunks.set(row.note_id, noteChunks);
+        chunkMatchCount++;
+      }
     }
     
-    console.log(`Keyword search: ${results.size} matches in ${time_ms}ms`);
-    return { results, time_ms };
+    console.log(`Chunk keyword search: ${results.size} notes (${titleMatchCount} title, ${descMatchCount} desc, ${chunkMatchCount} chunk matches) in ${time_ms}ms`);
+    return { results, chunks, titleMatches, descriptionMatches, time_ms };
     
   } catch (error) {
     console.error("Keyword search error:", error);
-    return { results: new Map(), time_ms: Date.now() - start };
+    return { ...empty, time_ms: Date.now() - start };
   }
 }
 
@@ -1226,500 +1304,6 @@ async function handleRerank(request: Request, env: Env, ctx: ExecutionContext, r
   }
 }
 
-// Handle hybrid search - combines embed + vector search + keyword search + rerank in single call
-async function handleHybridSearch(request: Request, env: Env, ctx: ExecutionContext, requestId: string): Promise<Response> {
-  const start = Date.now();
-  const timing: Record<string, number> = {};
-  let userId: string | undefined;
-  let queryText: string | undefined;
-  
-  // Timestamp tracking for detailed trace logging
-  const timestamps: {
-    request_received_at: string;
-    auth_started_at?: string;
-    auth_completed_at?: string;
-    embedding_started_at?: string;
-    search_started_at?: string;
-    rerank_started_at?: string;
-    response_sent_at?: string;
-  } = {
-    request_received_at: new Date(start).toISOString(),
-  };
-  
-  // Auth info tracking
-  let authMethod: string | undefined;
-  let authUserEmail: string | undefined;
-  let authDurationMs: number | undefined;
-  
-  // Trace data containers - ALWAYS captured for persistent logging
-  const traceData: {
-    vector_candidates: Array<Record<string, any>>;
-    keyword_candidates: Array<Record<string, any>>;
-    combined_candidates: Array<Record<string, any>>;
-    reranked_candidates: Array<Record<string, any>>;
-    final_results: Array<Record<string, any>>;
-  } = {
-    vector_candidates: [],
-    keyword_candidates: [],
-    combined_candidates: [],
-    reranked_candidates: [],
-    final_results: [],
-  };
-  
-  // Correlation ID for trace linking - use backend's ID if provided, else Worker's requestId
-  let traceCorrelationId = requestId;
-  
-  // Thresholds defined at top for use throughout the function
-  const MIN_VECTOR_SIMILARITY = 0.15;
-  const MIN_RERANK_SCORE = 0.5;
-  
-  try {
-    const parseStart = Date.now();
-    const body: HybridSearchRequest = await request.json();
-    timing.parse_ms = Date.now() - parseStart;
-    
-    queryText = body.query;
-    userId = body.user_id;
-    const debugMode = body.debug === true;
-    
-    // Use backend correlation_id if provided for trace linking
-    if (body.correlation_id) {
-      traceCorrelationId = body.correlation_id;
-    }
-    
-    if (!body.query) {
-      return new Response(
-        JSON.stringify({ error: "Must provide 'query'" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-    
-    const limit = body.limit || 10;
-    const doRerank = body.rerank !== false; // Default true
-    const rerankTopK = body.rerank_top_k || 20;
-    
-    // STEP 0: Check search results cache (if user_id provided) - SKIP cache for debug mode
-    if (userId && !debugMode) {
-      const cachedSearch = await getCachedSearchResultsVersioned(body.query, userId, limit, body.tag, env);
-      if (cachedSearch) {
-        timing.total_ms = Date.now() - start;
-        timing.search_cache_hit = 1;
-        console.log(`[${requestId}] Search cache HIT, returning cached results from ${new Date(cachedSearch.cached_at).toISOString()}`);
-        
-        // Log cache hit
-        sendLogToBackend({
-          request_id: requestId,
-          timestamp: new Date().toISOString(),
-          endpoint: "/hybrid",
-          method: "POST",
-          user_id: userId,
-          query: queryText,
-          timing,
-          result: { 
-            match_count: cachedSearch.results.matches?.length || 0,
-            search_cache_hit: true,
-            cached_at: cachedSearch.cached_at
-          },
-        }, env, ctx);
-        
-        // Send search trace for cache hit (to link with backend correlation_id)
-        if (queryText) {
-          // Extract cached timing and count info
-          const cachedTiming = cachedSearch.results.timing || {};
-          sendSearchTraceToBackend({
-            correlation_id: traceCorrelationId,  // Use backend's correlation_id if provided
-            user_id: userId,
-            query: queryText,
-            timing_total_ms: timing.total_ms,
-            timing_embedding_ms: cachedTiming.embedding_ms || 0,
-            timing_vector_search_ms: cachedTiming.parallel_search_ms || cachedTiming.vector_search_ms || 0,
-            timing_keyword_search_ms: cachedTiming.keyword_ms || 0,
-            timing_rerank_ms: cachedTiming.rerank_ms || 0,
-            timing_worker_ms: timing.total_ms,
-            embedding_cached: true,  // Assume true for cached results
-            search_cached: true,
-            // For cached results, we don't have the detailed candidate lists
-            vector_candidates: [],
-            keyword_candidates: [],
-            combined_candidates: [],
-            reranked_candidates: [],
-            final_results: cachedSearch.results.matches?.map((m: any) => ({
-              chunk_id: m.chunk_id,
-              doc_id: m.doc_id,
-              score: m.score,
-              title: m.title,
-            })) || [],
-            vector_count: cachedSearch.results.matches?.length || 0,
-            keyword_count: 0,
-            combined_count: cachedSearch.results.matches?.length || 0,
-            reranked_count: cachedSearch.results.matches?.length || 0,
-            final_count: cachedSearch.results.matches?.length || 0,
-            min_vector_threshold: MIN_VECTOR_SIMILARITY,
-            min_rerank_threshold: MIN_RERANK_SCORE,
-            source_worker: "cloudflare-worker",
-            request_path: "/hybrid",
-          }, env, ctx);
-        }
-        
-        return new Response(
-          JSON.stringify({
-            ...cachedSearch.results,
-            request_id: requestId,
-            timing: {
-              ...cachedSearch.results.timing,
-              search_cache_hit: true,
-              cached_at: cachedSearch.cached_at,
-              total_ms: timing.total_ms,
-            },
-          }),
-          { 
-            status: 200, 
-            headers: { "Content-Type": "application/json", ...corsHeaders } 
-          }
-        );
-      }
-    }
-    
-    // STEP 1: Generate embedding (with cache)
-    timestamps.embedding_started_at = new Date().toISOString();
-    const embedStart = Date.now();
-    const { embedding: queryVector, time_ms: embedTime, cached } = await generateEmbeddingCached(
-      body.query, 
-      env, 
-      ctx
-    );
-    timing.embedding_ms = embedTime;
-    timing.embedding_cached = cached ? 1 : 0;
-    
-    // STEP 2: Run vector search and keyword search in PARALLEL
-    timestamps.search_started_at = new Date().toISOString();
-    const filter: VectorizeVectorMetadataFilter = {};
-    if (body.user_id) {
-      filter["user_id"] = { $eq: body.user_id };
-    }
-    if (body.tag) {
-      filter["tag"] = { $eq: body.tag };
-    }
-    
-    const searchLimit = doRerank ? rerankTopK : limit;
-    const parallelStart = Date.now();
-    
-    // Run both searches in parallel
-    const [vectorResults, keywordResults] = await Promise.all([
-      env.VECTORIZE.query(queryVector, {
-        topK: Math.min(searchLimit, 50),
-        returnMetadata: "all",
-        filter: Object.keys(filter).length > 0 ? filter : undefined,
-      }),
-      // Keyword search (if user_id provided)
-      userId ? keywordSearch(body.query, userId, env, body.tag, searchLimit) : Promise.resolve({ results: new Map<string, number>(), time_ms: 0 }),
-    ]);
-    
-    timing.parallel_search_ms = Date.now() - parallelStart;
-    timing.keyword_ms = keywordResults.time_ms;
-    
-    console.log(`[${requestId}] Parallel search: vector=${vectorResults.matches.length}, keyword=${keywordResults.results.size} in ${timing.parallel_search_ms}ms`);
-    
-    // ALWAYS capture trace data for persistent logging (not just debug mode)
-    traceData.vector_candidates = vectorResults.matches.map((match) => ({
-      chunk_id: match.id,
-      note_id: String(match.metadata?.note_id || ""),
-      title: String(match.metadata?.title || ""),
-      tag: match.metadata?.tag as string | undefined,
-      vector_score: match.score,
-      content: String(match.metadata?.content || "").substring(0, 300),
-    }));
-    
-    // Capture keyword candidates
-    keywordResults.results.forEach((score, noteId) => {
-      traceData.keyword_candidates.push({
-        note_id: noteId,
-        keyword_score: score,
-      });
-      });
-    
-    // Transform results and add keyword scores
-    let allChunks: Array<Record<string, any>> = vectorResults.matches
-      .filter((match) => match.score >= MIN_VECTOR_SIMILARITY)
-      .map((match) => {
-        const noteId = String(match.metadata?.note_id || "");
-        const keywordScore = keywordResults.results.get(noteId) || 0;
-        // Combined score: 70% vector + 30% keyword (weighted average)
-        const combinedScore = keywordScore > 0
-          ? (match.score * 0.7) + (keywordScore * 0.3)
-          : match.score;
-        return {
-          chunk_id: match.id,
-          similarity: match.score,
-          combined_score: combinedScore,
-          keyword_score: keywordScore,
-          ...match.metadata,
-        };
-      });
-    
-    console.log(`[${requestId}] Vector search: ${vectorResults.matches.length} raw, ${allChunks.length} after threshold ${MIN_VECTOR_SIMILARITY}`);
-    
-    // STEP 3: Keep TOP 3 CHUNKS per document for reranking (not just 1)
-    // This allows reranker to evaluate multiple relevant sections per document
-    const TOP_CHUNKS_PER_DOC = 3;
-    const chunksPerNote = new Map<string, Array<typeof allChunks[0]>>();
-    
-    // Group chunks by note_id
-    for (const chunk of allChunks) {
-      const noteId = String(chunk.note_id || "");
-      const existing = chunksPerNote.get(noteId) || [];
-      existing.push(chunk);
-      chunksPerNote.set(noteId, existing);
-    }
-    
-    // Keep top N chunks per document (sorted by combined_score)
-    let matches: Array<typeof allChunks[0]> = [];
-    for (const [noteId, chunks] of chunksPerNote) {
-      chunks.sort((a, b) => (b.combined_score || b.similarity) - (a.combined_score || a.similarity));
-      matches.push(...chunks.slice(0, TOP_CHUNKS_PER_DOC));
-    }
-    
-    // Sort all selected chunks by combined score
-    matches.sort((a, b) => (b.combined_score || b.similarity) - (a.combined_score || a.similarity));
-    
-    console.log(`[${requestId}] Top-${TOP_CHUNKS_PER_DOC} chunks: ${allChunks.length} chunks → ${matches.length} (from ${chunksPerNote.size} documents)`);
-    
-    // ALWAYS capture combined candidates for trace logging
-    traceData.combined_candidates = matches.map((m) => ({
-      note_id: String(m.note_id || ""),
-      title: String(m.title || ""),
-      tag: m.tag as string | undefined,
-      vector_score: m.similarity,
-      keyword_score: m.keyword_score || 0,
-      combined_score: m.combined_score,
-      content: String(m.content || "").substring(0, 300),
-      passed_threshold: true,  // Already passed MIN_VECTOR_SIMILARITY
-    }));
-    
-    // Thresholds for debug response
-    const thresholds = {
-      min_vector_similarity: MIN_VECTOR_SIMILARITY,
-      min_rerank_score: MIN_RERANK_SCORE,
-      vector_weight: 0.7,
-      keyword_weight: 0.3,
-    };
-    
-    // STEP 4: Rerank if enabled and we have results
-    if (doRerank && matches.length > 0) {
-      timestamps.rerank_started_at = new Date().toISOString();
-      const rerankStart = Date.now();
-      
-      // Limit candidates sent to reranker (max 30 to control costs/latency)
-      const MAX_RERANK_CANDIDATES = 30;
-      const matchesToRerank = matches.slice(0, MAX_RERANK_CANDIDATES);
-      
-      // Prepare documents for reranking (use content from metadata)
-      const documents = matchesToRerank.map(m => 
-        String(m.content || m.title || "")
-      ).filter(d => d.length > 0);
-      
-      console.log(`[${requestId}] Rerank: sending ${documents.length}/${matches.length} candidates (max ${MAX_RERANK_CANDIDATES})`);
-      
-      if (documents.length > 0) {
-        try {
-          const { results: reranked, time_ms: rerankTime } = await rerank(
-            body.query,
-            documents,
-            env,
-            "rerank-2.5",
-            limit
-          );
-          timing.rerank_ms = rerankTime;
-          
-          // ALWAYS capture reranked candidates for trace logging (before threshold filtering)
-          traceData.reranked_candidates = reranked.map((r) => ({
-            note_id: String(matchesToRerank[r.index]?.note_id || ""),
-            title: String(matchesToRerank[r.index]?.title || ""),
-            tag: matchesToRerank[r.index]?.tag as string | undefined,
-            combined_score: matchesToRerank[r.index]?.combined_score || 0,
-            rerank_score: r.score,
-            passed_rerank_threshold: r.score >= MIN_RERANK_SCORE,
-            content: String(matchesToRerank[r.index]?.content || "").substring(0, 300),
-          }));
-          
-          // Reorder matches based on rerank scores and filter by threshold
-          const rerankedMatches = reranked
-            .filter(r => r.score >= MIN_RERANK_SCORE)
-            .map(r => ({
-              ...matchesToRerank[r.index],
-              rerank_score: r.score,
-              original_similarity: matchesToRerank[r.index].similarity,
-              similarity: r.score, // Use rerank score as final score
-            }));
-          
-          const filteredCount = reranked.length - rerankedMatches.length;
-          if (filteredCount > 0) {
-            console.log(`[${requestId}] Rerank: filtered ${filteredCount}/${reranked.length} results below threshold ${MIN_RERANK_SCORE}`);
-          }
-          
-          matches = rerankedMatches;
-        } catch (rerankError) {
-          console.error("Rerank failed, returning unreranked results:", rerankError);
-          timing.rerank_error = 1;
-          matches = matches.slice(0, limit);
-        }
-      }
-    } else {
-      matches = matches.slice(0, limit);
-    }
-    
-    timing.total_ms = Date.now() - start;
-    
-    console.log(`[${requestId}] Hybrid: ${matches.length} results, embed=${timing.embedding_ms}ms (cached=${cached}), parallel=${timing.parallel_search_ms}ms, keyword=${timing.keyword_ms}ms, rerank=${timing.rerank_ms || 0}ms, total=${timing.total_ms}ms`);
-    
-    // Capture final results for trace logging
-    traceData.final_results = matches.map((m) => ({
-      note_id: String(m.note_id || ""),
-      title: String(m.title || ""),
-      tag: m.tag as string | undefined,
-      final_score: m.similarity || m.rerank_score || m.combined_score,
-      rerank_score: m.rerank_score,
-      original_similarity: m.original_similarity,
-      content: String(m.content || "").substring(0, 300),
-    }));
-    
-    // Build response data
-    const responseData: Record<string, any> = {
-      success: true,
-      matches,
-      request_id: requestId,
-      timing: {
-        embedding_ms: timing.embedding_ms,
-        embedding_cached: cached,
-        parallel_search_ms: timing.parallel_search_ms,
-        keyword_ms: timing.keyword_ms,
-        rerank_ms: timing.rerank_ms || 0,
-        total_ms: timing.total_ms,
-      },
-      // Always include trace_data for visibility into pipeline
-      trace_data: {
-        vector_candidates: traceData.vector_candidates,
-        keyword_candidates: traceData.keyword_candidates,
-        combined_candidates: traceData.combined_candidates,
-        reranked_candidates: traceData.reranked_candidates,
-        chunks_before_grouping: allChunks.length,
-        chunks_after_grouping: matches.length,
-        unique_documents: chunksPerNote.size,
-      },
-    };
-    
-    // Add full debug data and thresholds if debug mode
-    if (debugMode) {
-      responseData.debug = traceData;
-      responseData.thresholds = thresholds;
-    }
-    
-    // STEP 5: Cache the search results (if user_id provided) - SKIP cache for debug mode
-    if (userId && matches.length > 0 && !debugMode) {
-      setCachedSearchResultsVersioned(body.query, userId, limit, body.tag, responseData, env, ctx);
-    }
-    
-    // Log to backend
-    sendLogToBackend({
-      request_id: requestId,
-      timestamp: new Date().toISOString(),
-      endpoint: "/hybrid",
-      method: "POST",
-      user_id: userId,
-      query: queryText,
-      timing,
-      result: { 
-        match_count: matches.length, 
-        vector_count: vectorResults.matches.length,
-        keyword_count: keywordResults.results.size,
-        embedding_cached: cached,
-        reranked: doRerank,
-        debug_mode: debugMode
-      },
-    }, env, ctx);
-    
-    // Send detailed search trace for persistent logging (if user_id provided)
-    timestamps.response_sent_at = new Date().toISOString();
-    if (userId && queryText) {
-      sendSearchTraceToBackend({
-        correlation_id: traceCorrelationId,  // Use backend's correlation_id if provided
-        user_id: userId,
-        query: queryText,
-        // Timestamps for each phase
-        request_received_at: timestamps.request_received_at,
-        auth_started_at: timestamps.auth_started_at,
-        auth_completed_at: timestamps.auth_completed_at,
-        embedding_started_at: timestamps.embedding_started_at,
-        search_started_at: timestamps.search_started_at,
-        rerank_started_at: timestamps.rerank_started_at,
-        response_sent_at: timestamps.response_sent_at,
-        // Timing durations
-        timing_total_ms: timing.total_ms,
-        timing_auth_ms: authDurationMs,
-        timing_embedding_ms: timing.embedding_ms,
-        timing_vector_search_ms: timing.parallel_search_ms,
-        timing_keyword_search_ms: timing.keyword_ms,
-        timing_rerank_ms: timing.rerank_ms || 0,
-        timing_worker_ms: timing.total_ms,
-        // Auth details
-        auth_method: authMethod,
-        auth_user_email: authUserEmail,
-        // Cache status
-        embedding_cached: cached,
-        search_cached: false,
-        // Candidates
-        vector_candidates: traceData.vector_candidates,
-        keyword_candidates: traceData.keyword_candidates,
-        combined_candidates: traceData.combined_candidates,
-        reranked_candidates: traceData.reranked_candidates,
-        final_results: traceData.final_results,
-        // Counts
-        vector_count: traceData.vector_candidates.length,
-        keyword_count: traceData.keyword_candidates.length,
-        combined_count: traceData.combined_candidates.length,
-        reranked_count: traceData.reranked_candidates.length,
-        final_count: traceData.final_results.length,
-        // Thresholds
-        min_vector_threshold: MIN_VECTOR_SIMILARITY,
-        min_rerank_threshold: MIN_RERANK_SCORE,
-        source_worker: "cloudflare-worker",
-        request_path: "/hybrid",
-      }, env, ctx);
-    }
-    
-    return new Response(
-      JSON.stringify(responseData),
-      { 
-        status: 200, 
-        headers: { "Content-Type": "application/json", ...corsHeaders } 
-      }
-    );
-    
-  } catch (error) {
-    timing.total_ms = Date.now() - start;
-    const errorMsg = String(error);
-    console.error(`[${requestId}] Hybrid error:`, error);
-    
-    // Log the error
-    sendLogToBackend({
-      request_id: requestId,
-      timestamp: new Date().toISOString(),
-      endpoint: "/hybrid",
-      method: "POST",
-      user_id: userId,
-      query: queryText,
-      timing,
-      result: {},
-      error: errorMsg,
-    }, env, ctx);
-    
-    return new Response(
-      JSON.stringify({ error: errorMsg, request_id: requestId }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  }
-}
-
 // Handle delete requests
 async function handleDelete(request: Request, env: Env): Promise<Response> {
   const start = Date.now();
@@ -1981,7 +1565,7 @@ async function handleNoteView(noteId: string, token: string | null, env: Env): P
     id: string;
     title: string;
     blob_url?: string;
-    metadata?: { blob_name?: string };
+    metadata?: { blob_name?: string; source_url?: string };
     user_id: string;
     file_type?: string;
     content_markdown?: string;
@@ -1996,6 +1580,19 @@ async function handleNoteView(noteId: string, token: string | null, env: Env): P
   
   const note = notes[0];
   
+  // For saved webpages with source_url, redirect to the original URL
+  // This provides a better viewing experience than serving raw HTML blob
+  if (note.metadata?.source_url) {
+    console.log(`ðŸ“„ Webpage view: redirecting to source URL for note ${noteId.slice(0, 8)}...`);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        "Location": note.metadata.source_url,
+        ...corsHeaders
+      }
+    });
+  }
+  
   // For quick_notes without a blob, return the note content as HTML
   if (note.file_type === 'quick_note' && !note.blob_url) {
     const htmlContent = `<!DOCTYPE html>
@@ -2004,7 +1601,7 @@ async function handleNoteView(noteId: string, token: string | null, env: Env): P
 h1{font-size:1.5rem;border-bottom:2px solid #e5e7eb;padding-bottom:12px;margin-bottom:20px;}
 .note-content{background:white;border-radius:8px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1);white-space:pre-wrap;}
 .meta{color:#6b7280;font-size:0.85rem;margin-top:16px;}</style></head>
-<body><h1>📝 ${note.title || 'Quick Note'}</h1>
+<body><h1>ðŸ“ ${note.title || 'Quick Note'}</h1>
 <div class="note-content">${note.content_markdown || ''}</div>
 <div class="meta">Type: Quick Note</div></body></html>`;
     
@@ -2042,7 +1639,7 @@ h1{font-size:1.5rem;border-bottom:2px solid #e5e7eb;padding-bottom:12px;margin-b
     );
   }
   
-  console.log(`📄 Document view: note=${noteId.slice(0, 8)}... user=${userId.slice(0, 8)}...`);
+  console.log(`ðŸ“„ Document view: note=${noteId.slice(0, 8)}... user=${userId.slice(0, 8)}...`);
   
   // Redirect to Azure blob
   return new Response(null, {
@@ -2076,7 +1673,7 @@ async function handleHealth(env: Env): Promise<Response> {
         search_cache: "enabled",
         tags_cache: "enabled",
         synthesis_cache: "enabled",
-        endpoints: ["/health", "/rag-search", "/hybrid", "/search", "/rerank", "/embed", "/embed-batch", "/upsert", "/delete", "/cache/invalidate"],
+        endpoints: ["/health", "/rag-search", "/search", "/rerank", "/embed", "/embed-batch", "/upsert", "/delete", "/cache/invalidate"],
       }),
       { 
         status: 200, 
@@ -2161,10 +1758,13 @@ async function handleCacheInvalidate(request: Request, env: Env, requestId: stri
 
 interface HybridSearchParams {
   query: string;
+  originalQuery?: string;  // Pre-rewrite query for keyword search fallback
   user_id: string;
   tag?: string;
   limit: number;
   rerank: boolean;
+  retrieval_limit?: number;  // How many vectors to retrieve (before filtering)
+  exclude_note_ids?: string[];  // Exclude these note_ids from vector search (for "search deeper")
 }
 
 interface HybridSearchResult {
@@ -2176,12 +1776,15 @@ interface HybridSearchResult {
     rerank_ms: number;
   };
   embedding_cached: boolean;
+  total_candidates?: number;  // Total candidates before reranking (for progressive search)
   // Candidate data for trace logging
   trace_data?: {
     vector_candidates: Array<Record<string, any>>;
     keyword_candidates: Array<Record<string, any>>;
     combined_candidates: Array<Record<string, any>>;
     reranked_candidates: Array<Record<string, any>>;
+    chunks_before_grouping?: number;
+    unique_documents?: number;
   };
 }
 
@@ -2218,75 +1821,390 @@ async function performHybridSearch(
   );
   timing.embedding_ms = embedTime;
 
-  // STEP 2: Run vector search and keyword search in PARALLEL
-  const filter: VectorizeVectorMetadataFilter = {};
+  // STEP 2: Run vector search and keyword search
+  // Single Vectorize query (topK: 50 with returnMetadata: "all")
+  // Use $nin note_id to exclude already-seen documents for "search deeper" iterations
+  const MIN_VECTOR_SIMILARITY = 0.15;
+  const VECTORIZE_TOP_K = 50;  // Max with returnMetadata: "all"
+  const KEYWORD_SEARCH_LIMIT = 200;
+  
+  const vectorFilter: VectorizeVectorMetadataFilter = {};
   if (params.user_id) {
-    filter["user_id"] = { $eq: params.user_id };
+    vectorFilter["user_id"] = { $eq: params.user_id };
   }
   if (params.tag) {
-    filter["tag"] = { $eq: params.tag };
+    vectorFilter["tag"] = { $eq: params.tag };
+  }
+  // Exclude already-seen documents for "search deeper" iterations
+  if (params.exclude_note_ids && params.exclude_note_ids.length > 0) {
+    vectorFilter["note_id"] = { $nin: params.exclude_note_ids };
+    console.log(`[performHybridSearch] Excluding ${params.exclude_note_ids.length} note_ids via $nin`);
   }
 
-  // Fetch more candidates - let threshold filtering determine quality, not arbitrary limits
-  const VECTOR_SEARCH_LIMIT = 50;  // Get enough candidates for threshold filtering
-  const KEYWORD_SEARCH_LIMIT = 30; // Keyword search is cheaper
   const parallelStart = Date.now();
+  
+  // Single vector search query
+  const queryResult = await env.VECTORIZE.query(queryVector, {
+    topK: VECTORIZE_TOP_K,
+    returnMetadata: "all",
+    filter: Object.keys(vectorFilter).length > 0 ? vectorFilter : undefined,
+  });
+  
+  const allVectorMatches = queryResult.matches.filter(m => {
+    if (m.score < MIN_VECTOR_SIMILARITY) return false;
+    // Server-side dedup fallback: filter out excluded note_ids in case $nin didn't work
+    if (params.exclude_note_ids && params.exclude_note_ids.length > 0) {
+      const noteId = String(m.metadata?.note_id || "");
+      if (params.exclude_note_ids.includes(noteId)) {
+        return false;
+      }
+    }
+    return true;
+  });
+  if (params.exclude_note_ids && params.exclude_note_ids.length > 0) {
+    console.log(`[performHybridSearch] After dedup filter: ${allVectorMatches.length} vectors (excluded ${queryResult.matches.length - allVectorMatches.length} dupes)`);
+  }
 
-  const [vectorResults, keywordResults] = await Promise.all([
-    env.VECTORIZE.query(queryVector, {
-      topK: VECTOR_SEARCH_LIMIT,
-      returnMetadata: "all",
-      filter: Object.keys(filter).length > 0 ? filter : undefined,
-    }),
-    params.user_id
-      ? keywordSearch(params.query, params.user_id, env, params.tag, KEYWORD_SEARCH_LIMIT)
-      : Promise.resolve({ results: new Map<string, number>(), time_ms: 0 }),
-  ]);
+  // Run keyword search (with both rewritten and original queries if they differ)
+  const keywordResults: KeywordSearchResults = params.user_id
+    ? await keywordSearch(params.query, params.user_id, env, params.tag, KEYWORD_SEARCH_LIMIT)
+    : { results: new Map<string, number>(), chunks: new Map<string, SupabaseChunkKeywordResult[]>(), titleMatches: new Map<string, TitleDescMatch>(), descriptionMatches: new Map<string, TitleDescMatch>(), time_ms: 0 };
+
+  // If query was rewritten, also run keyword search with original query and merge results
+  if (params.originalQuery && params.originalQuery.toLowerCase() !== params.query.toLowerCase() && params.user_id) {
+    const originalKeywordResults = await keywordSearch(params.originalQuery, params.user_id, env, params.tag, KEYWORD_SEARCH_LIMIT);
+    // Merge note-level scores: keep the higher score for each note_id
+    originalKeywordResults.results.forEach((score, noteId) => {
+      const existing = keywordResults.results.get(noteId);
+      if (!existing || score > existing) {
+        keywordResults.results.set(noteId, score);
+      }
+    });
+    // Merge chunk-level results: combine chunks, keep higher score per (note_id, chunk_index)
+    originalKeywordResults.chunks.forEach((origChunks, noteId) => {
+      const existingChunks = keywordResults.chunks.get(noteId) || [];
+      const chunkMap = new Map<number, SupabaseChunkKeywordResult>();
+      for (const c of existingChunks) chunkMap.set(c.chunk_index, c);
+      for (const c of origChunks) {
+        const existing = chunkMap.get(c.chunk_index);
+        if (!existing || c.text_rank > existing.text_rank) {
+          chunkMap.set(c.chunk_index, c);
+        }
+      }
+      keywordResults.chunks.set(noteId, Array.from(chunkMap.values()));
+    });
+    // Merge title matches: keep higher score (now with content)
+    originalKeywordResults.titleMatches.forEach((match, noteId) => {
+      const existing = keywordResults.titleMatches.get(noteId);
+      if (!existing || match.score > existing.score) {
+        keywordResults.titleMatches.set(noteId, match);
+      }
+    });
+    // Merge description matches: keep higher score (now with content)
+    originalKeywordResults.descriptionMatches.forEach((match, noteId) => {
+      const existing = keywordResults.descriptionMatches.get(noteId);
+      if (!existing || match.score > existing.score) {
+        keywordResults.descriptionMatches.set(noteId, match);
+      }
+    });
+    keywordResults.time_ms += originalKeywordResults.time_ms;
+    console.log(`[performHybridSearch] Original query keyword search: ${originalKeywordResults.results.size} matches for "${params.originalQuery}" (merged with rewritten query results)`);
+  }
+
+  // Filter excluded note IDs from keyword results (for "search deeper")
+  if (params.exclude_note_ids && params.exclude_note_ids.length > 0) {
+    const excludeSet = new Set(params.exclude_note_ids);
+    let removedCount = 0;
+    for (const noteId of keywordResults.results.keys()) {
+      if (excludeSet.has(noteId)) {
+        keywordResults.results.delete(noteId);
+        keywordResults.chunks.delete(noteId);
+        keywordResults.titleMatches.delete(noteId);
+        keywordResults.descriptionMatches.delete(noteId);
+        removedCount++;
+      }
+    }
+    if (removedCount > 0) {
+      console.log(`[performHybridSearch] Excluded ${removedCount} keyword matches (search deeper)`);
+    }
+  }
 
   timing.parallel_search_ms = Date.now() - parallelStart;
   timing.keyword_ms = keywordResults.time_ms;
 
   // Capture vector candidates for trace
-  trace_data.vector_candidates = vectorResults.matches.map((match) => ({
+  trace_data.vector_candidates = allVectorMatches.map((match) => ({
     chunk_id: match.id,
     note_id: String(match.metadata?.note_id || ""),
     title: String(match.metadata?.title || ""),
     tag: match.metadata?.tag as string | undefined,
     vector_score: match.score,
-    content: String(match.metadata?.content || "").substring(0, 300),
+    content: String(match.metadata?.chunk_text || "").substring(0, 300),
   }));
 
-  // Capture keyword candidates for trace
+  // Capture keyword candidates for trace (with chunk info)
   keywordResults.results.forEach((score, noteId) => {
+    const noteChunks = keywordResults.chunks.get(noteId) || [];
     trace_data.keyword_candidates.push({
       note_id: noteId,
       keyword_score: score,
+      matched_chunks: noteChunks.map(c => c.chunk_index),
     });
   });
 
   // Transform and combine results
-  const MIN_VECTOR_SIMILARITY = 0.15;
-  let allChunks: Array<Record<string, any>> = vectorResults.matches
-    .filter((match) => match.score >= MIN_VECTOR_SIMILARITY)
+  // Track which (note_id, chunk_index) pairs are already from vector search
+  const vectorChunkKeys = new Set<string>();
+  let allChunks: Array<Record<string, any>> = allVectorMatches
     .map((match) => {
       const noteId = String(match.metadata?.note_id || "");
+      const chunkIndex = Number(match.metadata?.chunk_index ?? -1);
+      vectorChunkKeys.add(`${noteId}_${chunkIndex}`);
       const keywordScore = keywordResults.results.get(noteId) || 0;
+      // Get title/description match boosts (already factored into RPC score via 1.5x/1.2x multiplier)
+      const hasTitle = keywordResults.titleMatches.has(noteId);
+      const hasDesc = keywordResults.descriptionMatches.has(noteId);
+      // Apply title/description match as additional score boost for vector results
+      const titleBoost = hasTitle ? 0.08 : 0;
+      const descBoost = hasDesc ? 0.04 : 0;
       const combinedScore = keywordScore > 0
-        ? (match.score * 0.7) + (keywordScore * 0.3)
+        ? (match.score * 0.7) + (keywordScore * 0.3) + titleBoost + descBoost
         : match.score;
       return {
         chunk_id: match.id,
         similarity: match.score,
         combined_score: combinedScore,
         keyword_score: keywordScore,
+        has_title_match: hasTitle,
+        has_description_match: hasDesc,
         ...match.metadata,
       };
     });
+
+  // CHUNK-LEVEL KEYWORD INJECTION: Add keyword-matched chunks that vector search missed
+  // This handles multiple cases:
+  // 1. Notes found ONLY by keyword chunk (not in vector results at all) - "keyword_only"
+  // 2. Notes in BOTH but the specific keyword-matching chunk wasn't in vector results - "keyword_chunk"
+  // 3. Notes matching on title/description ONLY (no chunk match) - "title_only" / "description_only"
+  // 4. Notes matching on title AND content - inject title pseudo-chunk - "title_with_content"
+  // 5. Notes matching on description AND content - inject description pseudo-chunk - "desc_with_content"
+  const vectorNoteIds = new Set(allChunks.map(c => String(c.note_id || "")));
+  const keywordOnlyNoteIds: string[] = [];
+  let keywordChunkInjectedCount = 0;
+  let titleOnlyInjectedCount = 0;
+  let descOnlyInjectedCount = 0;
+  let titleWithContentInjectedCount = 0;
+  let descWithContentInjectedCount = 0;
+  
+  // Track which notes have had title/desc pseudo-chunks injected (to avoid duplicates)
+  const notesWithTitlePseudoChunk = new Set<string>();
+  const notesWithDescPseudoChunk = new Set<string>();
+
+  // First, inject chunk matches
+  keywordResults.chunks.forEach((chunkResults, noteId) => {
+    const isKeywordOnly = !vectorNoteIds.has(noteId);
+    if (isKeywordOnly) {
+      keywordOnlyNoteIds.push(noteId);
+    }
+
+    // Get title/description match info for this note
+    const titleMatch = keywordResults.titleMatches.get(noteId);
+    const descMatch = keywordResults.descriptionMatches.get(noteId);
+    const titleBoost = titleMatch ? 0.08 : 0;
+    const descBoost = descMatch ? 0.04 : 0;
+
+    for (const chunk of chunkResults) {
+      const chunkKey = `${noteId}_${chunk.chunk_index}`;
+      if (!vectorChunkKeys.has(chunkKey)) {
+        // This keyword-matched chunk is NOT in vector results — inject it
+        const kwScore = chunk.text_rank;
+        const scaledScore = Math.min(kwScore * 0.5, 0.8) + titleBoost + descBoost;
+        allChunks.push({
+          chunk_id: `${noteId}_chunk_${chunk.chunk_index}`,
+          similarity: 0,
+          combined_score: scaledScore,
+          keyword_score: kwScore,
+          has_title_match: !!titleMatch,
+          has_description_match: !!descMatch,
+          note_id: noteId,
+          chunk_type: 'chunk',
+          chunk_index: chunk.chunk_index,
+          content: chunk.chunk_content,
+          chunk_text: chunk.chunk_content.substring(0, 500),
+          source: isKeywordOnly ? "keyword_only" : "keyword_chunk",
+        });
+        vectorChunkKeys.add(chunkKey); // prevent duplicate injection
+        keywordChunkInjectedCount++;
+      }
+    }
+    
+    // NEW: If title also matched for this note with chunk content, inject title as pseudo-chunk
+    // This ensures the reranker/LLM sees the title text explicitly
+    if (titleMatch && !notesWithTitlePseudoChunk.has(noteId)) {
+      const kwScore = titleMatch.score;
+      const scaledScore = Math.min(kwScore * 0.55, 0.82); // Slightly higher than pure title-only
+      const content = `[TITLE+CONTENT MATCH] Title: "${titleMatch.content}"`;
+      
+      allChunks.push({
+        chunk_id: `${noteId}_title_with_content`,
+        similarity: 0,
+        combined_score: scaledScore,
+        keyword_score: kwScore,
+        has_title_match: true,
+        has_description_match: !!descMatch,
+        note_id: noteId,
+        chunk_type: 'title',
+        chunk_index: -1,
+        content: content,
+        chunk_text: content,
+        title: titleMatch.content,
+        source: "title_with_content",
+      });
+      notesWithTitlePseudoChunk.add(noteId);
+      titleWithContentInjectedCount++;
+    }
+    
+    // NEW: If description also matched for this note with chunk content, inject description as pseudo-chunk
+    if (descMatch && !notesWithDescPseudoChunk.has(noteId)) {
+      const kwScore = descMatch.score;
+      const scaledScore = Math.min(kwScore * 0.48, 0.72); // Slightly higher than pure desc-only
+      const content = `[DESCRIPTION+CONTENT MATCH] Description: "${descMatch.content}"`;
+      
+      allChunks.push({
+        chunk_id: `${noteId}_desc_with_content`,
+        similarity: 0,
+        combined_score: scaledScore,
+        keyword_score: kwScore,
+        has_title_match: !!titleMatch,
+        has_description_match: true,
+        note_id: noteId,
+        chunk_type: 'description',
+        chunk_index: -2,
+        content: content,
+        chunk_text: content,
+        source: "desc_with_content",
+      });
+      notesWithDescPseudoChunk.add(noteId);
+      descWithContentInjectedCount++;
+    }
+  });
+
+  // Second, inject title-only matches (notes that matched on title but NO chunks)
+  // This ensures notes found by title search get to reranker/LLM
+  keywordResults.titleMatches.forEach((titleMatch, noteId) => {
+    const hasChunkMatch = keywordResults.chunks.has(noteId);
+    const hasVectorMatch = vectorNoteIds.has(noteId);
+    
+    // Only inject if this note has NO other representation in results
+    if (!hasChunkMatch && !hasVectorMatch) {
+      const descMatch = keywordResults.descriptionMatches.get(noteId);
+      const kwScore = titleMatch.score;
+      // Title-only gets a good score since title matches are most important
+      const scaledScore = Math.min(kwScore * 0.6, 0.85);
+      
+      // Combine title + description content if both match
+      let content = `[TITLE MATCH] ${titleMatch.content}`;
+      if (descMatch) {
+        content += `\n[DESCRIPTION] ${descMatch.content}`;
+      }
+      
+      allChunks.push({
+        chunk_id: `${noteId}_title_match`,
+        similarity: 0,
+        combined_score: scaledScore,
+        keyword_score: kwScore,
+        has_title_match: true,
+        has_description_match: !!descMatch,
+        note_id: noteId,
+        chunk_type: 'title',
+        chunk_index: -1,  // Special index for title
+        content: content,
+        chunk_text: content.substring(0, 500),
+        title: titleMatch.content,  // The title itself
+        source: "title_only",
+      });
+      keywordOnlyNoteIds.push(noteId);
+      titleOnlyInjectedCount++;
+      notesWithTitlePseudoChunk.add(noteId);
+      if (descMatch) notesWithDescPseudoChunk.add(noteId);
+    }
+  });
+
+  // Third, inject description-only matches (notes that matched on description but NO title, NO chunks)
+  keywordResults.descriptionMatches.forEach((descMatch, noteId) => {
+    const hasChunkMatch = keywordResults.chunks.has(noteId);
+    const hasVectorMatch = vectorNoteIds.has(noteId);
+    const hasTitleMatch = keywordResults.titleMatches.has(noteId);
+    
+    // Only inject if this note has NO other representation AND wasn't already added via title
+    if (!hasChunkMatch && !hasVectorMatch && !hasTitleMatch) {
+      const kwScore = descMatch.score;
+      const scaledScore = Math.min(kwScore * 0.5, 0.75);
+      const content = `[DESCRIPTION MATCH] ${descMatch.content}`;
+      
+      allChunks.push({
+        chunk_id: `${noteId}_desc_match`,
+        similarity: 0,
+        combined_score: scaledScore,
+        keyword_score: kwScore,
+        has_title_match: false,
+        has_description_match: true,
+        note_id: noteId,
+        chunk_type: 'description',
+        chunk_index: -2,  // Special index for description
+        content: content,
+        chunk_text: content.substring(0, 500),
+        source: "description_only",
+      });
+      keywordOnlyNoteIds.push(noteId);
+      descOnlyInjectedCount++;
+      notesWithDescPseudoChunk.add(noteId);
+    }
+  });
+
+  if (keywordOnlyNoteIds.length > 0 || keywordChunkInjectedCount > 0) {
+    console.log(`[performHybridSearch] Keyword chunk injection: ${keywordOnlyNoteIds.length} keyword-only notes, ${keywordChunkInjectedCount} chunks injected`);
+  }
+  if (titleOnlyInjectedCount > 0 || descOnlyInjectedCount > 0) {
+    console.log(`[performHybridSearch] Title/desc-only injection: ${titleOnlyInjectedCount} title-only, ${descOnlyInjectedCount} desc-only`);
+  }
+  if (titleWithContentInjectedCount > 0 || descWithContentInjectedCount > 0) {
+    console.log(`[performHybridSearch] Title/desc WITH content injection: ${titleWithContentInjectedCount} title+content, ${descWithContentInjectedCount} desc+content`);
+  }
+  if (keywordResults.titleMatches.size > 0 || keywordResults.descriptionMatches.size > 0) {
+    console.log(`[performHybridSearch] Title/description matches: ${keywordResults.titleMatches.size} title, ${keywordResults.descriptionMatches.size} description`);
+  }
+
+  (trace_data as any).keyword_only_injected = keywordOnlyNoteIds.length;
+  (trace_data as any).keyword_chunks_injected = keywordChunkInjectedCount;
+  (trace_data as any).title_only_injected = titleOnlyInjectedCount;
+  (trace_data as any).desc_only_injected = descOnlyInjectedCount;
+  (trace_data as any).title_with_content_injected = titleWithContentInjectedCount;
+  (trace_data as any).desc_with_content_injected = descWithContentInjectedCount;
+  (trace_data as any).title_match_count = keywordResults.titleMatches.size;
+  (trace_data as any).description_match_count = keywordResults.descriptionMatches.size;
+
+  // Enrich keyword candidates with titles from allChunks
+  const chunkTitleMap = new Map<string, string>();
+  for (const chunk of allChunks) {
+    const nid = String(chunk.note_id || "");
+    if (nid && chunk.title && !chunkTitleMap.has(nid)) {
+      chunkTitleMap.set(nid, String(chunk.title));
+    }
+  }
+  trace_data.keyword_candidates = trace_data.keyword_candidates.map((kc: any) => ({
+    ...kc,
+    title: chunkTitleMap.get(kc.note_id) || undefined,
+    source: keywordOnlyNoteIds.includes(kc.note_id) ? "keyword_only" : "keyword+vector",
+    has_title_match: keywordResults.titleMatches.has(kc.note_id),
+    has_description_match: keywordResults.descriptionMatches.has(kc.note_id),
+  }));
 
   // Keep TOP 3 CHUNKS per document for reranking (not just 1)
   // This allows multiple relevant chunks from the same document to be considered for reranking
   const TOP_CHUNKS_PER_DOC = 3;
   const chunksPerNote = new Map<string, Array<typeof allChunks[0]>>();
+  
   for (const chunk of allChunks) {
     const noteId = String(chunk.note_id || "");
     const chunks = chunksPerNote.get(noteId) || [];
@@ -2352,13 +2270,20 @@ async function performHybridSearch(
         }));
 
         // Reorder and filter by threshold
+        // Keyword-matched results get a moderately lower rerank threshold since they have confirmed text matches
+        const KEYWORD_MATCH_RERANK_SCORE = 0.2;
         const rerankedMatches = reranked
-          .filter(r => r.score >= MIN_RERANK_SCORE)
+          .filter(r => {
+            const match = matches[r.index];
+            const hasKeywordMatch = (match?.keyword_score || 0) > 0;
+            const threshold = hasKeywordMatch ? KEYWORD_MATCH_RERANK_SCORE : MIN_RERANK_SCORE;
+            return r.score >= threshold;
+          })
           .map(r => ({
             ...matches[r.index],
             rerank_score: r.score,
             original_similarity: matches[r.index].similarity,
-            similarity: r.score,
+            // Keep original vector similarity — don't overwrite with rerank score
           }));
 
         matches = rerankedMatches;
@@ -2369,13 +2294,161 @@ async function performHybridSearch(
     }
   }
   // No artificial limit - threshold filtering already applied
+  
+  // Track total candidates before any batching/pagination
+  const totalCandidatesBeforeRerank = (trace_data as any).chunks_after_grouping || matches.length;
 
   return {
     matches,
     timing,
     embedding_cached: cached,
+    total_candidates: totalCandidatesBeforeRerank,
     trace_data,
   };
+}
+
+// =========================================================================
+// Migrate chunk_ids to short hashes for a user's vectors
+// =========================================================================
+async function handleMigrateChunkIds(request: Request, env: Env): Promise<Response> {
+  const body = await request.json() as { user_id?: string; reindex?: boolean };
+  const userId = body.user_id;
+  const reindex = body.reindex === true; // Re-upsert ALL vectors to rebuild metadata indexes
+  if (!userId) {
+    return new Response(JSON.stringify({ error: "user_id is required" }), {
+      status: 400, headers: { "Content-Type": "application/json", ...corsHeaders }
+    });
+  }
+
+  console.log(`[migrate-chunk-ids] Starting migration for user ${userId.slice(0, 8)}...`);
+
+  // Step 1: Get all note IDs from Supabase for this user
+  const notesUrl = new URL(`${env.SUPABASE_URL}/rest/v1/notes`);
+  notesUrl.searchParams.set('select', 'id,metadata');
+  notesUrl.searchParams.set('user_id', `eq.${userId}`);
+  notesUrl.searchParams.set('status', 'eq.active');
+
+  const notesResp = await fetch(notesUrl.toString(), {
+    headers: {
+      'apikey': env.SUPABASE_SERVICE_KEY,
+      'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+    }
+  });
+
+  if (!notesResp.ok) {
+    return new Response(JSON.stringify({ error: "Failed to fetch notes from Supabase", status: notesResp.status }), {
+      status: 500, headers: { "Content-Type": "application/json", ...corsHeaders }
+    });
+  }
+
+  const notes = await notesResp.json() as Array<{ id: string; metadata?: { chunk_count?: number } }>;
+  console.log(`[migrate-chunk-ids] Found ${notes.length} notes for user`);
+
+  if (notes.length === 0) {
+    return new Response(JSON.stringify({ migrated: 0, skipped: 0, notes: 0, message: "No notes found" }), {
+      status: 200, headers: { "Content-Type": "application/json", ...corsHeaders }
+    });
+  }
+
+  // Step 2: Build list of all possible vector IDs for each note
+  const allVectorIds: string[] = [];
+  for (const note of notes) {
+    allVectorIds.push(`${note.id}_doc`);
+    const chunkCount = note.metadata?.chunk_count || 0;
+    // Use stored chunk_count, or check up to 5 if unknown
+    const maxChunks = chunkCount > 0 ? chunkCount : 5;
+    for (let i = 0; i < maxChunks; i++) {
+      allVectorIds.push(`${note.id}_chunk_${i}`);
+    }
+  }
+
+  console.log(`[migrate-chunk-ids] Checking ${allVectorIds.length} possible vector IDs`);
+
+  // Step 3: Fetch vectors in batches of 100 using getByIds
+  let migrated = 0;
+  let skipped = 0;
+  let notFound = 0;
+  const BATCH_SIZE = 20;  // Vectorize getByIds limit is 20
+
+  for (let i = 0; i < allVectorIds.length; i += BATCH_SIZE) {
+    const batchIds = allVectorIds.slice(i, i + BATCH_SIZE);
+    
+    let vectors: VectorizeVector[];
+    try {
+      vectors = (await env.VECTORIZE.getByIds(batchIds)) as VectorizeVector[];
+    } catch (err) {
+      console.error(`[migrate-chunk-ids] getByIds error at batch ${Math.floor(i / BATCH_SIZE)}:`, err);
+      continue;
+    }
+
+    if (!vectors || vectors.length === 0) {
+      notFound += batchIds.length;
+      continue;
+    }
+
+    notFound += batchIds.length - vectors.length;
+
+    // Filter to vectors that need migration (or all if reindex mode)
+    const toUpsert: VectorizeVector[] = [];
+    for (const vec of vectors) {
+      if (reindex) {
+        // Re-upsert with same metadata to rebuild indexes
+        toUpsert.push({
+          id: vec.id,
+          values: vec.values as number[],
+          metadata: vec.metadata as Record<string, VectorizeVectorMetadata> || {},
+        });
+      } else {
+        const currentChunkId = String(vec.metadata?.chunk_id || '');
+        if (currentChunkId.length > 8) {
+          // Old-style long chunk_id — needs migration to short hash
+          const newChunkId = shortHash(vec.id);
+          const updatedMetadata = { ...(vec.metadata || {}), chunk_id: newChunkId };
+          toUpsert.push({
+            id: vec.id,
+            values: vec.values as number[],
+            metadata: updatedMetadata,
+          });
+        } else if (currentChunkId.length === 0) {
+          // No chunk_id at all — add short hash
+          const newChunkId = shortHash(vec.id);
+          const updatedMetadata = { ...(vec.metadata || {}), chunk_id: newChunkId };
+          toUpsert.push({
+            id: vec.id,
+            values: vec.values as number[],
+            metadata: updatedMetadata,
+          });
+        } else {
+          // Already has a short chunk_id
+          skipped++;
+        }
+      }
+    }
+
+    if (toUpsert.length > 0) {
+      try {
+        await env.VECTORIZE.upsert(toUpsert);
+        migrated += toUpsert.length;
+        console.log(`[migrate-chunk-ids] Upserted batch: ${toUpsert.length} vectors (batch ${Math.floor(i / BATCH_SIZE) + 1})`);
+      } catch (err) {
+        console.error(`[migrate-chunk-ids] Upsert error at batch ${Math.floor(i / BATCH_SIZE)}:`, err);
+      }
+    }
+  }
+
+  const result = {
+    migrated,
+    skipped,
+    not_found: notFound,
+    total_notes: notes.length,
+    total_vector_ids_checked: allVectorIds.length,
+    message: `Migrated ${migrated} vectors to short chunk_ids, ${skipped} already had short ids`,
+  };
+  console.log(`[migrate-chunk-ids] Done:`, JSON.stringify(result));
+
+  return new Response(JSON.stringify(result), {
+    status: 200, headers: { "Content-Type": "application/json", ...corsHeaders }
+  });
 }
 
 // Main request handler
@@ -2487,6 +2560,21 @@ export default {
       }
       const authResult = await validateAuth(request, env as AuthEnv);
       return handleKpiUploadErrorDetails(request, authResult, env as AdminEnv);
+    }
+
+    // =========================================================================
+    // Migrate chunk_ids to short hashes
+    // POST /api/v1/admin/migrate-chunk-ids { user_id: string }
+    // Requires WORKER_API_KEY. Re-upserts all vectors for a user with short chunk_ids.
+    // =========================================================================
+    if (path === "/api/v1/admin/migrate-chunk-ids") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      if (!validateApiKey(request, env)) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } });
+      }
+      return handleMigrateChunkIds(request, env);
     }
     
     // =========================================================================
@@ -2608,6 +2696,12 @@ export default {
       return handleGetViewToken(viewTokenMatch[1], authResult, env as ApiEnv);
     }
     
+    // DELETE /api/v1/notes/bulk - Delete multiple notes at once
+    if (path === "/api/v1/notes/bulk" && request.method === "DELETE") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleBulkDeleteNotes(request, authResult, env as ApiEnvWithVectorize);
+    }
+    
     // DELETE /api/v1/notes/:id - Delete a note (soft delete)
     const deleteNoteMatch = path.match(/^\/api\/v1\/notes\/([a-f0-9-]+)$/);
     if (deleteNoteMatch && request.method === "DELETE") {
@@ -2657,6 +2751,14 @@ export default {
       return handleUploadQuickNoteWithDO(request, authResult, env as unknown as UploadEnv);
     }
     
+    if (path === "/api/v1/upload/webpage") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleUploadWebpageWithDO(request, authResult, env as unknown as UploadEnv);
+    }
+    
     // POST /api/v1/upload/cancel/:trace_id - Cancel an upload
     const uploadCancelMatch = path.match(/^\/api\/v1\/upload\/cancel\/(.+)$/);
     if (uploadCancelMatch) {
@@ -2696,19 +2798,19 @@ export default {
     // =========================================================================
     const noteViewMatch = path.match(/^(\/api\/v1)?\/notes\/([a-f0-9-]+)\/view$/);
     if (noteViewMatch) {
-      console.log(`📄 Note view request: path="${path}"`);
+      console.log(`ðŸ“„ Note view request: path="${path}"`);
       if (request.method !== "GET") {
         return new Response("Method not allowed", { status: 405, headers: corsHeaders });
       }
       const noteId = noteViewMatch[2]; // Group 2 is the note ID now
       const token = url.searchParams.get('token');
-      console.log(`📄 Note view: noteId=${noteId.slice(0,8)}..., hasToken=${!!token}`);
+      console.log(`ðŸ“„ Note view: noteId=${noteId.slice(0,8)}..., hasToken=${!!token}`);
       return handleNoteView(noteId, token, env);
     }
     
     // Also check for /view/ path (some links might have trailing content)
     if (path.startsWith('/notes/') && path.includes('/view')) {
-      console.log(`📄 Unmatched notes/view path: path="${path}"`);
+      console.log(`ðŸ“„ Unmatched notes/view path: path="${path}"`);
     }
     
     // =========================================================================
@@ -2747,7 +2849,7 @@ export default {
       }
       
       // Clone request to read body (can only read once)
-      const body = await request.json() as { query?: string; user_id?: string; max_results?: number; debug?: boolean; client_source?: string };
+      const body = await request.json() as { query?: string; user_id?: string; max_results?: number; debug?: boolean; client_source?: string; tag_filter?: string | string[]; new_session?: boolean; exclude_note_ids?: string[] };
       
       // Get user_id from auth or body
       let userId = authResult.user_id;
@@ -2783,6 +2885,9 @@ export default {
           max_results: body.max_results,
           debug: body.debug,
           client_source: body.client_source,  // Forward client_source to handleRagSearch
+          tag_filter: body.tag_filter,  // Forward explicit tag filter
+          new_session: body.new_session,  // Forward new session flag to clear stale KV
+          exclude_note_ids: body.exclude_note_ids,  // Forward for "search deeper"
           // Pass auth timing data to handleRagSearch
           _auth_timing: {
             auth_started_at: authStartedAt,
@@ -2795,6 +2900,62 @@ export default {
       });
       
       return handleRagSearch(
+        modifiedRequest,
+        env as unknown as RagSearchEnv,
+        ctx,
+        requestId,
+        performHybridSearch
+      );
+    }
+
+    // =========================================================================
+    // Authenticated RAG search continue endpoint for progressive search
+    // Supports: JWT (Authorization: Bearer), API Key (X-API-Key na_*), Worker Key
+    // =========================================================================
+    if (path === "/rag-search-continue-auth") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      
+      // Validate auth (JWT, user API key, or worker API key)
+      const authResult = await validateAuth(request, env as AuthEnv);
+      
+      if (!authResult.authenticated) {
+        return new Response(
+          JSON.stringify({ error: authResult.error || "Unauthorized" }),
+          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      
+      // Clone request to read body
+      const body = await request.json() as { query?: string; user_id?: string; remaining_note_ids?: string[]; query_type?: string };
+      
+      // Get user_id from auth or body
+      let userId = authResult.user_id;
+      if (authResult.auth_method === 'worker_key') {
+        userId = body.user_id;
+      }
+      
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: "user_id required - either in JWT or request body" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      
+      console.log(`[${requestId}] RAG continue auth: method=${authResult.auth_method}, user=${userId.slice(0, 8)}`);
+      
+      // Create modified request with user_id from auth
+      const modifiedRequest = new Request(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body: JSON.stringify({
+          ...body,
+          user_id: userId,
+        }),
+      });
+      
+      return handleRagSearchContinue(
         modifiedRequest,
         env as unknown as RagSearchEnv,
         ctx,
@@ -2824,12 +2985,18 @@ export default {
           requestId,
           performHybridSearch
         );
-        
-      case "/hybrid":
+
+      case "/rag-search-continue":
         if (request.method !== "POST") {
           return new Response("Method not allowed", { status: 405, headers: corsHeaders });
         }
-        return handleHybridSearch(request, env, ctx, requestId);
+        return handleRagSearchContinue(
+          request,
+          env as unknown as RagSearchEnv,
+          ctx,
+          requestId,
+          performHybridSearch
+        );
         
       case "/search":
         if (request.method !== "POST") {
@@ -2877,7 +3044,7 @@ export default {
         return new Response(
           JSON.stringify({ 
             error: "Not found",
-            endpoints: ["/health", "/rag-search", "/hybrid", "/search", "/rerank", "/embed", "/embed-batch", "/upsert", "/delete", "/cache/invalidate", "/api/v1/upload/file", "/api/v1/upload/screenshot", "/api/v1/upload/quick-note", "/api/v1/upload/status/:id", "/api/v1/upload/quota"],
+            endpoints: ["/health", "/rag-search", "/search", "/rerank", "/embed", "/embed-batch", "/upsert", "/delete", "/cache/invalidate", "/api/v1/upload/file", "/api/v1/upload/screenshot", "/api/v1/upload/quick-note", "/api/v1/upload/status/:id", "/api/v1/upload/quota"],
           }),
           { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );

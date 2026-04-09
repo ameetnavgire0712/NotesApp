@@ -123,6 +123,7 @@ export async function handleAuthMe(
   const response = {
     user_id: authResult.user_id,
     email: authResult.email || null,
+    name: authResult.name || null,  // User's name from Google OAuth
     is_admin: false, // TODO: Check admin status if needed
     auth_method: authResult.auth_method,
     scopes: ['read', 'write'], // Default scopes
@@ -434,35 +435,92 @@ export async function handleListNotes(
   const url = new URL(request.url);
   const tag = url.searchParams.get('tag');
   const fileType = url.searchParams.get('file_type');
-  const limit = parseInt(url.searchParams.get('limit') || '50');
-  const offset = parseInt(url.searchParams.get('offset') || '0');
+  const search = url.searchParams.get('search');
+  const sortBy = url.searchParams.get('sort'); // 'tag' for alphabetical tag sorting
+  const limit = parseInt(url.searchParams.get('limit') || '10000', 10);
+  const offset = parseInt(url.searchParams.get('offset') || '0', 10);
   
-  // Build filters
-  const filters: Record<string, string> = {
-    'user_id': `eq.${authResult.user_id}`,
-  };
-  if (tag) filters['tag'] = `eq.${tag}`;
-  if (fileType) filters['file_type'] = `eq.${fileType}`;
+  // Build Supabase REST URL directly for search support
+  // Exclude heavy fields like embedding, content_markdown, content_tsv
+  // Note: source_url, source_domain, word_count, thumbnail_url are in metadata, not top-level columns
+  let apiUrl = `${env.SUPABASE_URL}/rest/v1/notes?select=id,user_id,title,tag,file_type,original_filename,blob_url,metadata,created_at,updated_at,status,description`;
+  apiUrl += `&user_id=eq.${authResult.user_id}`;
+  apiUrl += `&status=eq.active`; // Only active notes
+  if (tag) apiUrl += `&tag=eq.${encodeURIComponent(tag)}`;
+  if (fileType) apiUrl += `&file_type=eq.${encodeURIComponent(fileType)}`;
   
-  const { data, error } = await supabaseQuery(env, 'notes', {
-    select: '*',
-    filters,
-    order: { column: 'created_at', ascending: false },
-    limit,
-    offset,
-  });
+  // Add search filter (searches title and content_markdown)
+  if (search) {
+    const searchTerm = search.trim();
+    // Use Supabase's or filter with ilike for case-insensitive partial match
+    // Note: The * wildcards should NOT be encoded, only the search term itself
+    const encodedTerm = encodeURIComponent(searchTerm);
+    apiUrl += `&or=(title.ilike.*${encodedTerm}*,content_markdown.ilike.*${encodedTerm}*)`;
+  }
   
-  if (error) {
+  // For tag sorting, we need to fetch all and sort case-insensitively in the worker
+  // because Supabase REST API doesn't support LOWER() in ORDER BY
+  const needsClientSideSort = sortBy === 'tag';
+  
+  if (needsClientSideSort) {
+    // Fetch all notes, we'll sort and paginate client-side
+    apiUrl += `&order=created_at.desc`; // Default order from DB
+    apiUrl += `&limit=10000`; // Fetch all for sorting
+  } else {
+    // Default: sort by created_at descending (most recent first)
+    apiUrl += `&order=created_at.desc`;
+    apiUrl += `&limit=${limit}`;
+    apiUrl += `&offset=${offset}`;
+  }
+  
+  try {
+    console.log('[ListNotes] User ID:', authResult.user_id);
+    console.log('[ListNotes] Query URL:', apiUrl.replace(env.SUPABASE_URL, 'SUPABASE_URL'));
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'apikey': env.SUPABASE_SERVICE_KEY,
+        'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      },
+    });
+    
+    if (!response.ok) {
+      const text = await response.text();
+      console.log('[ListNotes] Error response:', response.status, text);
+      return new Response(
+        JSON.stringify({ error: `Supabase error: ${response.status} - ${text}` }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+    
+    let data = await response.json() as any[];
+    console.log('[ListNotes] Result count:', data?.length || 0);
+    
+    // Case-insensitive sort by tag, then apply pagination
+    if (needsClientSideSort && data) {
+      data.sort((a, b) => {
+        const tagA = (a.tag || '').toLowerCase();
+        const tagB = (b.tag || '').toLowerCase();
+        if (tagA < tagB) return -1;
+        if (tagA > tagB) return 1;
+        // Same tag: sort by created_at desc
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      // Apply pagination after sorting
+      data = data.slice(offset, offset + limit);
+    }
+    
     return new Response(
-      JSON.stringify({ error }),
+      JSON.stringify({ notes: data || [], hasMore: (data?.length || 0) >= limit }),
+      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: String(e) }),
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
-  
-  return new Response(
-    JSON.stringify(data || []),
-    { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-  );
 }
 
 // ============================================================================
@@ -817,4 +875,187 @@ export async function handleDeleteNote(
       { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
+}
+
+// ============================================================================
+// DELETE /api/v1/notes/bulk - Delete multiple notes (soft delete)
+// Accepts { ids: string[] } and deletes all specified notes
+// ============================================================================
+export async function handleBulkDeleteNotes(
+  request: Request,
+  authResult: AuthResult,
+  env: ApiEnvWithVectorize
+): Promise<Response> {
+  if (!authResult.authenticated || !authResult.user_id) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  }
+  
+  const userId = authResult.user_id;
+  
+  // Parse request body
+  let body: { ids?: string[] };
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(
+      JSON.stringify({ error: 'Invalid JSON body' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  }
+  
+  const noteIds = body.ids;
+  if (!noteIds || !Array.isArray(noteIds) || noteIds.length === 0) {
+    return new Response(
+      JSON.stringify({ error: 'ids array is required and must not be empty' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  }
+  
+  // Limit bulk delete to 100 notes at a time
+  if (noteIds.length > 100) {
+    return new Response(
+      JSON.stringify({ error: 'Cannot delete more than 100 notes at once' }),
+      { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  }
+  
+  console.log(`[BulkDelete] Starting bulk delete of ${noteIds.length} notes by user ${userId}`);
+  
+  const results: { success: string[]; failed: { id: string; error: string }[] } = {
+    success: [],
+    failed: [],
+  };
+  
+  // Process each note deletion
+  for (const noteId of noteIds) {
+    try {
+      // Validate noteId format
+      if (!/^[a-f0-9-]+$/.test(noteId)) {
+        results.failed.push({ id: noteId, error: 'Invalid note ID format' });
+        continue;
+      }
+      
+      // Step 1: Fetch the note to verify ownership and get data
+      const noteResponse = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/notes?id=eq.${noteId}&user_id=eq.${userId}&select=id,user_id,title,content_markdown,tag,file_type,original_filename,blob_url,metadata,created_at`,
+        {
+          headers: {
+            'apikey': env.SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+          },
+        }
+      );
+      
+      if (!noteResponse.ok) {
+        results.failed.push({ id: noteId, error: 'Failed to fetch note' });
+        continue;
+      }
+      
+      const notes = await noteResponse.json() as Array<Record<string, any>>;
+      if (!notes || notes.length === 0) {
+        results.failed.push({ id: noteId, error: 'Note not found or not owned by user' });
+        continue;
+      }
+      
+      const note = notes[0];
+      const chunkCount = note.metadata?.chunk_count || 0;
+      
+      // Step 2: Insert into notes_deleted
+      const deletedNote = {
+        original_note_id: note.id,
+        user_id: note.user_id,
+        title: note.title,
+        content_markdown: note.content_markdown,
+        tag: note.tag || 'General',
+        file_type: note.file_type,
+        original_filename: note.original_filename,
+        blob_url: note.blob_url,
+        status: 'deleted',
+        metadata: note.metadata || {},
+        created_at: note.created_at,
+        deleted_at: new Date().toISOString(),
+      };
+      
+      const insertResponse = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/notes_deleted`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': env.SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify(deletedNote),
+        }
+      );
+      
+      if (!insertResponse.ok) {
+        results.failed.push({ id: noteId, error: 'Failed to archive note' });
+        continue;
+      }
+      
+      // Step 3: Delete from notes table
+      const deleteResponse = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/notes?id=eq.${noteId}&user_id=eq.${userId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': env.SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+          },
+        }
+      );
+      
+      if (!deleteResponse.ok) {
+        results.failed.push({ id: noteId, error: 'Failed to delete from database' });
+        continue;
+      }
+      
+      // Step 4: Delete vectors from Vectorize
+      const vectorIds = [noteId];
+      for (let i = 0; i < chunkCount; i++) {
+        vectorIds.push(`${noteId}_chunk_${i}`);
+      }
+      
+      try {
+        await env.VECTORIZE.deleteByIds(vectorIds);
+      } catch (vecErr) {
+        // Log but don't fail - note is already deleted from DB
+        console.error(`[BulkDelete] Vectorize deletion failed for ${noteId} (non-fatal): ${vecErr}`);
+      }
+      
+      results.success.push(noteId);
+      
+    } catch (error) {
+      console.error(`[BulkDelete] Error deleting note ${noteId}: ${error}`);
+      results.failed.push({ id: noteId, error: 'Internal error' });
+    }
+  }
+  
+  // Invalidate tags cache once at the end
+  try {
+    if ('TAGS_CACHE' in env) {
+      await (env as any).TAGS_CACHE.delete(`tags_${userId}`);
+      console.log(`[BulkDelete] Invalidated tags cache`);
+    }
+  } catch (cacheErr) {
+    console.error(`[BulkDelete] Cache invalidation failed (non-fatal): ${cacheErr}`);
+  }
+  
+  console.log(`[BulkDelete] Completed: ${results.success.length} deleted, ${results.failed.length} failed`);
+  
+  return new Response(
+    JSON.stringify({
+      success: true,
+      deleted: results.success,
+      failed: results.failed,
+      total_deleted: results.success.length,
+      total_failed: results.failed.length,
+    }),
+    { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+  );
 }
