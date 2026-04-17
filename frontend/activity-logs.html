@@ -961,22 +961,32 @@
             const summary = document.getElementById('activitySummary');
             const trace = currentActivity.traceLogs;
             
-            // Show server duration, and if available, client total with overhead
-            let durationDisplay = `${currentActivity.duration_ms || trace?.duration_ms || 0}ms`;
-            if (currentActivity.client_total_ms) {
-                durationDisplay = `${currentActivity.duration_ms || 0}ms server`;
-            }
+            // Simplified summary - use client total if available (extension timing), otherwise server
+            const items = [];
             
-            const items = [
-                { label: 'Server Time', value: `${currentActivity.duration_ms || trace?.duration_ms || 0}ms` },
-            ];
-            
-            // Add client timing if available
+            // Main timing - prefer extension end-to-end time if available
             if (currentActivity.client_total_ms) {
-                items.push({ label: 'Client Total', value: `${currentActivity.client_total_ms}ms` });
-                if (currentActivity.client_overhead_ms) {
-                    items.push({ label: 'Network Overhead', value: `${currentActivity.client_overhead_ms}ms` });
+                // Extension search: show total user wait time
+                items.push({ label: 'Total Wait', value: `${currentActivity.client_total_ms}ms`, color: '#f9826c' });
+                
+                // Show breakdown: Worker | Network | Google
+                const workerMs = trace?.timing_total_ms || 0;
+                const backendMs = trace?.extension_backend_search_ms || 0;
+                const googleMs = trace?.extension_page_load_ms || 0;
+                const networkMs = Math.max(0, backendMs - workerMs);
+                
+                if (workerMs > 0) {
+                    items.push({ label: 'Worker', value: `${workerMs}ms`, color: '#3fb950' });
                 }
+                if (networkMs > 0) {
+                    items.push({ label: 'Network', value: `${networkMs}ms`, color: '#f0883e' });
+                }
+                if (googleMs > 0) {
+                    items.push({ label: 'Google', value: `${googleMs}ms`, color: '#8b949e' });
+                }
+            } else {
+                // Direct API call: show server time only
+                items.push({ label: 'Server Time', value: `${currentActivity.duration_ms || trace?.duration_ms || 0}ms`, color: '#3fb950' });
             }
             
             items.push({ label: 'Log Lines', value: trace?.total_lines || 0 });
@@ -993,7 +1003,7 @@
             
             summary.innerHTML = items.map(item => `
                 <div class="summary-item">
-                    <div class="value">${item.value}</div>
+                    <div class="value" ${item.color ? `style="color: ${item.color}"` : ''}>${item.value}</div>
                     <div class="label">${item.label}</div>
                 </div>
             `).join('');
@@ -2484,26 +2494,43 @@
         function renderMetadata(container) {
             const activity = currentActivity;
             const metadata = activity.metadata || {};
+            const trace = activity.traceLogs;
             
             // Build a human-readable view
             let html = '<div class="detail-cards">';
             
-            // Activity Overview Card - with separate server and client timing
-            let timingHtml = `
+            // Activity Overview Card - clear timing breakdown
+            let timingHtml = '';
+            
+            // For extension searches, show clear breakdown
+            if (activity.client_total_ms && trace) {
+                const workerMs = trace.timing_total_ms || 0;
+                const backendMs = trace.extension_backend_search_ms || 0;
+                const googleMs = trace.extension_page_load_ms || 0;
+                const networkMs = Math.max(0, backendMs - workerMs);
+                
+                timingHtml = `
+                    <div class="detail-row">
+                        <span class="detail-label">Total User Wait</span>
+                        <span class="detail-value" style="color: #f9826c; font-weight: 600;">${activity.client_total_ms} ms</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">→ Google Page Load</span>
+                        <span class="detail-value" style="color: #8b949e;">${googleMs} ms</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">→ Worker Processing</span>
+                        <span class="detail-value" style="color: #3fb950;">${workerMs} ms</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">→ Network RTT</span>
+                        <span class="detail-value" style="color: #f0883e;">${networkMs} ms</span>
+                    </div>`;
+            } else {
+                timingHtml = `
                     <div class="detail-row">
                         <span class="detail-label">Server Duration</span>
                         <span class="detail-value">${activity.duration_ms || 0} ms</span>
-                    </div>`;
-            
-            if (activity.client_total_ms) {
-                timingHtml += `
-                    <div class="detail-row">
-                        <span class="detail-label">Client Total</span>
-                        <span class="detail-value">${activity.client_total_ms} ms</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Network Overhead</span>
-                        <span class="detail-value" style="color: ${activity.client_overhead_ms > 3000 ? '#f85149' : activity.client_overhead_ms > 1000 ? '#f0883e' : '#3fb950'}">${activity.client_overhead_ms || 0} ms</span>
                     </div>`;
             }
             
