@@ -51,6 +51,8 @@ let notesPage = 1;
 let notesHasMore = false;
 let notesPageSize = 200;
 let isLoadingMoreNotes = false;
+let pendingTagNotes = [];  // Notes from a tag that might not be complete yet (for tags view)
+let tagsViewOffset = 0;     // Actual offset for tags view pagination
 
 // Collapsed groups state (tracks which groups are collapsed)
 let collapsedGroups = {};
@@ -556,7 +558,7 @@ async function loadNotes(page = 1) {
         return;
     }
     
-    console.log('[loadNotes] Starting load, page:', page);
+    console.log('[loadNotes] Starting load, page:', page, 'viewMode:', notesViewMode);
     
     // Show loading spinner for first page
     if (page === 1) {
@@ -570,27 +572,13 @@ async function loadNotes(page = 1) {
     }
     
     try {
-        const offset = (page - 1) * notesPageSize;
-        // Sort by tag alphabetically when in tags view, by date otherwise
-        const sortParam = notesViewMode === 'tags' ? '&sort=tag' : '&sort=date';
-        const response = await fetch(`${API_BASE}/notes/?limit=${notesPageSize}&offset=${offset}${sortParam}`, {
-            headers: getAuthHeaders()
-        });
-        
-        if (!response.ok) throw new Error('Failed to load notes');
-        
-        const data = await response.json();
-        const newNotes = data.notes || data || [];
-        
-        if (page === 1) {
-            notes = newNotes;
+        // In tags view, load complete tags only (no partial tags split across pages)
+        // In date view, use standard pagination
+        if (notesViewMode === 'tags') {
+            await loadNotesWithCompleteTags(page);
         } else {
-            notes = [...notes, ...newNotes];
+            await loadNotesWithPagination(page);
         }
-        
-        notesPage = page;
-        notesHasMore = newNotes.length >= notesPageSize;
-        isLoadingMoreNotes = false;
         
         renderNotes();
     } catch (err) {
@@ -605,6 +593,110 @@ async function loadNotes(page = 1) {
             `;
         }
     }
+}
+
+// Load notes ensuring complete tags only (no tag split across pages)
+// If a tag would be incomplete, hold it for the next "Load More"
+async function loadNotesWithCompleteTags(page) {
+    // Reset state on first page
+    if (page === 1) {
+        notes = [];
+        pendingTagNotes = [];
+        tagsViewOffset = 0;
+    }
+    
+    console.log(`[loadNotesWithCompleteTags] page=${page}, offset=${tagsViewOffset}, pending=${pendingTagNotes.length}`);
+    
+    const response = await fetch(`${API_BASE}/notes/?limit=${notesPageSize}&offset=${tagsViewOffset}&sort=tag`, {
+        headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) throw new Error('Failed to load notes');
+    
+    const data = await response.json();
+    const fetchedNotes = data.notes || data || [];
+    
+    console.log(`[loadNotesWithCompleteTags] Fetched ${fetchedNotes.length} notes`);
+    
+    // If no more notes from server
+    if (fetchedNotes.length === 0) {
+        // Flush any pending notes (they're complete since we reached the end)
+        if (pendingTagNotes.length > 0) {
+            notes = [...notes, ...pendingTagNotes];
+            pendingTagNotes = [];
+        }
+        notesHasMore = false;
+        isLoadingMoreNotes = false;
+        notesPage = page;
+        return;
+    }
+    
+    // Combine pending notes from previous load with newly fetched
+    const allNewNotes = [...pendingTagNotes, ...fetchedNotes];
+    pendingTagNotes = [];
+    
+    const gotFullBatch = fetchedNotes.length >= notesPageSize;
+    
+    if (!gotFullBatch) {
+        // Last page - all tags are complete
+        notes = [...notes, ...allNewNotes];
+        notesHasMore = false;
+        console.log(`[loadNotesWithCompleteTags] Last page, added all ${allNewNotes.length} notes`);
+    } else {
+        // Got full batch - the last tag might be incomplete (split across pages)
+        // Find the last tag in the fetched batch
+        const lastTag = fetchedNotes[fetchedNotes.length - 1]?.tag || 'Other';
+        
+        // Separate complete tags from the potentially incomplete last tag
+        const completeNotes = [];
+        const lastTagNotes = [];
+        
+        for (const note of allNewNotes) {
+            const noteTag = note.tag || 'Other';
+            if (noteTag === lastTag) {
+                lastTagNotes.push(note);
+            } else {
+                completeNotes.push(note);
+            }
+        }
+        
+        // Add complete tags to our notes
+        notes = [...notes, ...completeNotes];
+        
+        // Hold back the last tag (might have more notes on next page)
+        pendingTagNotes = lastTagNotes;
+        
+        notesHasMore = true;
+        console.log(`[loadNotesWithCompleteTags] Added ${completeNotes.length} notes, holding ${lastTagNotes.length} notes from tag "${lastTag}"`);
+    }
+    
+    // Update offset for next fetch
+    tagsViewOffset += fetchedNotes.length;
+    notesPage = page;
+    isLoadingMoreNotes = false;
+}
+
+// Load notes with pagination (for date view)
+async function loadNotesWithPagination(page) {
+    const offset = (page - 1) * notesPageSize;
+    const response = await fetch(`${API_BASE}/notes/?limit=${notesPageSize}&offset=${offset}&sort=date`, {
+        headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) throw new Error('Failed to load notes');
+    
+    const data = await response.json();
+    const newNotes = data.notes || data || [];
+    
+    if (page === 1) {
+        notes = newNotes;
+    } else {
+        notes = [...notes, ...newNotes];
+    }
+    
+    notesPage = page;
+    notesHasMore = newNotes.length >= notesPageSize;
+    isLoadingMoreNotes = false;
 }
 
 function loadMoreNotes() {
@@ -904,7 +996,7 @@ function createNoteCard(note) {
     card.dataset.noteId = note.id;
     
     const title = note.title || note.file_name || 'Untitled Note';
-    const rawPreview = note.content_markdown || note.content || note.snippet || 'No preview available';
+    const rawPreview = note.description || note.content_markdown || note.content || note.snippet || '';
     const preview = stripHtmlAndMarkdown(rawPreview);
     const tag = note.tag || note.file_type || '';
     const date = formatDate(note.created_at || note.uploaded_at);
@@ -951,8 +1043,11 @@ function createNoteCard(note) {
     const escapedPreview = preview.replace(/'/g, "\\'").replace(/\n/g, ' ').replace(/\r/g, '');
     const escapedTitle = escapeHtml(title).replace(/'/g, "\\'");
     
+    // Ensure note.id is always treated as string for consistent Set operations
+    const noteIdStr = String(note.id);
+    
     // Check if selected
-    const isSelected = selectedNoteIds.has(note.id);
+    const isSelected = selectedNoteIds.has(noteIdStr);
     if (isSelected) {
         card.classList.add('selected');
     }
@@ -960,15 +1055,15 @@ function createNoteCard(note) {
     card.innerHTML = `
         <div class="note-card-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; position: relative;">
             <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-                <label class="note-checkbox ${isSelectionMode ? 'visible' : ''}" onclick="event.stopPropagation();">
-                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleNoteSelection('${note.id}', this.checked)">
+                <label class="note-checkbox visible" onclick="event.stopPropagation();">
+                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleNoteSelection('${noteIdStr}', this.checked)">
                     <span class="checkmark"></span>
                 </label>
-                <div class="note-icon ${isSelectionMode ? 'hidden' : ''}">${icon}</div>
+                <div class="note-icon">${icon}</div>
                 ${tag ? `<span class="note-tag">${tag}</span>` : ''}
             </div>
             <div style="display: flex; gap: 4px;" class="${isSelectionMode ? 'hidden' : ''}">
-                <button class="note-delete-btn" onclick="event.stopPropagation(); confirmDeleteNote('${note.id}', '${escapedTitle}')" title="Delete note">
+                <button class="note-delete-btn" onclick="event.stopPropagation(); confirmDeleteNote('${noteIdStr}', '${escapedTitle}')" title="Delete note">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -978,7 +1073,7 @@ function createNoteCard(note) {
                 </button>
             </div>
         </div>
-        <div class="note-card-content" onclick="handleNoteCardClick('${note.id}')">
+        <div class="note-card-content" onclick="handleNoteCardClick('${noteIdStr}')">
             <div class="note-title">${escapeHtml(title)}</div>
             <div class="note-preview">${escapeHtml(preview.substring(0, 120))}${preview.length > 120 ? '...' : ''}</div>
             <div class="note-footer">
@@ -1002,6 +1097,9 @@ function handleNoteCardClick(noteId) {
 
 // Toggle selection of a note
 function toggleNoteSelection(noteId, checked) {
+    // Ensure noteId is a string for consistent Set operations
+    noteId = String(noteId);
+    
     if (checked === undefined) {
         // Toggle
         if (selectedNoteIds.has(noteId)) {
@@ -1062,8 +1160,8 @@ function exitSelectionMode() {
     selectedNoteIds.clear();
     document.body.classList.remove('selection-mode');
     
-    // Hide checkboxes on all cards
-    document.querySelectorAll('.note-checkbox').forEach(cb => cb.classList.remove('visible'));
+    // Uncheck all checkboxes and remove visual selection
+    document.querySelectorAll('.note-checkbox input').forEach(cb => cb.checked = false);
     document.querySelectorAll('.note-icon').forEach(icon => icon.classList.remove('hidden'));
     document.querySelectorAll('.note-delete-btn').forEach(btn => btn.parentElement.classList.remove('hidden'));
     
@@ -1089,7 +1187,6 @@ function showSelectionToolbar() {
                 </svg>
             </button>
             <span class="selection-count">0 selected</span>
-            <button class="btn-select-all" onclick="selectAllNotes()">Select All</button>
             <button class="btn-delete-selected" onclick="confirmBulkDelete()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -1181,6 +1278,8 @@ function closeBulkDeleteModal() {
     if (modal) {
         modal.classList.remove('show');
     }
+    // Exit selection mode and clear selections when user cancels
+    exitSelectionMode();
 }
 
 // Perform bulk delete API call
@@ -1739,7 +1838,11 @@ async function loadMoreResults() {
             body: JSON.stringify(requestBody)
         });
         
-        if (!response.ok) throw new Error('Search deeper failed');
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            console.error('[SearchDeeper] Server error:', response.status, errorText);
+            throw new Error(`Server error ${response.status}`);
+        }
         
         const data = await response.json();
         const newSources = data.results || [];
@@ -1759,10 +1862,23 @@ async function loadMoreResults() {
         }
     } catch (err) {
         console.error('Search deeper failed:', err);
-        // Re-enable button on error
+        // Show error message to user and restore button
         if (btn) {
-            btn.innerHTML = `<span class="search-deeper-icon">🔎</span> <span>Retry</span>`;
+            btn.innerHTML = `<span class="search-deeper-icon">🔎</span> <span>Search Deeper</span>`;
             btn.disabled = false;
+            btn.title = 'Previous attempt failed - click to try again';
+        }
+        // Show a toast notification for the error (but keep button functional)
+        const errorMsg = err.message || 'Network error';
+        console.error('[SearchDeeper] Error details:', errorMsg);
+        // Add a subtle error message below the button
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'font-size: 11px; color: #f85149; margin-top: 4px;';
+        errorDiv.textContent = `⚠️ Search failed: ${errorMsg}. Please try again.`;
+        if (btn && btn.parentNode) {
+            btn.parentNode.appendChild(errorDiv);
+            // Remove error message after 5 seconds
+            setTimeout(() => errorDiv.remove(), 5000);
         }
     }
     
@@ -1919,6 +2035,8 @@ function setupEventListeners() {
             notesPage = 1;
             notes = [];
             notesHasMore = false;
+            pendingTagNotes = [];  // Reset tags view state
+            tagsViewOffset = 0;
             collapsedGroups = {};
             defaultCollapsed = false;
             loadNotes(1);

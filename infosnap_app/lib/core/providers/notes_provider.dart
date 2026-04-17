@@ -76,6 +76,10 @@ class NotesNotifier extends StateNotifier<NotesState> {
   }
 
   final ApiService _api = ApiService();
+  
+  // State for tags view - holds notes from potentially incomplete tag
+  List<Note> _pendingTagNotes = [];
+  int _tagsViewOffset = 0;
 
   /// Get sort parameter based on view mode
   String? get _sortParam => state.viewMode == 'tags' ? 'tag' : 'date';
@@ -87,22 +91,121 @@ class NotesNotifier extends StateNotifier<NotesState> {
     }
 
     try {
-      print('[NotesProvider] Loading notes with sort=${_sortParam}...');
-      final notes = await _api.fetchNotesPaginated(
-        limit: notesPageSize, 
-        offset: 0, 
-        sort: _sortParam,
-      );
-      print('[NotesProvider] Loaded ${notes.length} notes');
-      state = state.copyWith(
-        notes: notes,
-        isLoading: false,
-        hasMore: notes.length >= notesPageSize,
-      );
+      // In tags view, load complete tags only (no partial tags split across pages)
+      // In date view, use standard pagination
+      if (state.viewMode == 'tags') {
+        _pendingTagNotes = [];
+        _tagsViewOffset = 0;
+        await _loadNotesWithCompleteTags(isFirstPage: true);
+      } else {
+        await _loadNotesWithPagination();
+      }
     } catch (e) {
       print('[NotesProvider] Error: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  /// Load notes ensuring complete tags only (no tag split across pages)
+  /// If a tag would be incomplete, hold it for the next "Load More"
+  Future<void> _loadNotesWithCompleteTags({bool isFirstPage = false}) async {
+    print('[NotesProvider] Loading complete tags, offset=$_tagsViewOffset, pending=${_pendingTagNotes.length}');
+    
+    final fetchedNotes = await _api.fetchNotesPaginated(
+      limit: notesPageSize,
+      offset: _tagsViewOffset,
+      sort: 'tag',
+    );
+    
+    print('[NotesProvider] Fetched ${fetchedNotes.length} notes');
+    
+    // If no more notes from server
+    if (fetchedNotes.isEmpty) {
+      // Flush any pending notes (they're complete since we reached the end)
+      if (_pendingTagNotes.isNotEmpty) {
+        final allNotes = isFirstPage ? _pendingTagNotes : [...state.notes, ..._pendingTagNotes];
+        state = state.copyWith(
+          notes: allNotes,
+          isLoading: false,
+          isLoadingMore: false,
+          hasMore: false,
+        );
+        _pendingTagNotes = [];
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          isLoadingMore: false,
+          hasMore: false,
+        );
+      }
+      return;
+    }
+    
+    // Combine pending notes from previous load with newly fetched
+    final allNewNotes = [..._pendingTagNotes, ...fetchedNotes];
+    _pendingTagNotes = [];
+    
+    final gotFullBatch = fetchedNotes.length >= notesPageSize;
+    
+    List<Note> notesToAdd;
+    bool hasMore;
+    
+    if (!gotFullBatch) {
+      // Last page - all tags are complete
+      notesToAdd = allNewNotes;
+      hasMore = false;
+      print('[NotesProvider] Last page, added all ${allNewNotes.length} notes');
+    } else {
+      // Got full batch - the last tag might be incomplete (split across pages)
+      // Find the last tag in the fetched batch
+      final lastTag = fetchedNotes.last.tag ?? 'Other';
+      
+      // Separate complete tags from the potentially incomplete last tag
+      final completeNotes = <Note>[];
+      final lastTagNotes = <Note>[];
+      
+      for (final note in allNewNotes) {
+        final noteTag = note.tag ?? 'Other';
+        if (noteTag == lastTag) {
+          lastTagNotes.add(note);
+        } else {
+          completeNotes.add(note);
+        }
+      }
+      
+      notesToAdd = completeNotes;
+      _pendingTagNotes = lastTagNotes;  // Hold back for next load
+      hasMore = true;
+      
+      print('[NotesProvider] Added ${completeNotes.length} notes, holding ${lastTagNotes.length} from tag "$lastTag"');
+    }
+    
+    // Update offset for next fetch
+    _tagsViewOffset += fetchedNotes.length;
+    
+    final finalNotes = isFirstPage ? notesToAdd : [...state.notes, ...notesToAdd];
+    state = state.copyWith(
+      notes: finalNotes,
+      isLoading: false,
+      isLoadingMore: false,
+      hasMore: hasMore,
+    );
+  }
+
+  /// Load notes with pagination (for date view)
+  Future<void> _loadNotesWithPagination() async {
+    print('[NotesProvider] Loading notes with pagination, sort=$_sortParam...');
+    final notes = await _api.fetchNotesPaginated(
+      limit: notesPageSize,
+      offset: 0,
+      sort: _sortParam,
+    );
+    print('[NotesProvider] Loaded ${notes.length} notes');
+    state = state.copyWith(
+      notes: notes,
+      isLoading: false,
+      hasMore: notes.length >= notesPageSize,
+    );
   }
 
   /// Load more notes (next page)
@@ -112,17 +215,23 @@ class NotesNotifier extends StateNotifier<NotesState> {
     state = state.copyWith(isLoadingMore: true);
 
     try {
-      final offset = state.notes.length;
-      final newNotes = await _api.fetchNotesPaginated(
-        limit: notesPageSize, 
-        offset: offset,
-        sort: _sortParam,
-      );
-      state = state.copyWith(
-        notes: [...state.notes, ...newNotes],
-        isLoadingMore: false,
-        hasMore: newNotes.length >= notesPageSize,
-      );
+      if (state.viewMode == 'tags') {
+        // Tags view - continue loading complete tags
+        await _loadNotesWithCompleteTags(isFirstPage: false);
+      } else {
+        // Date view - standard pagination
+        final offset = state.notes.length;
+        final newNotes = await _api.fetchNotesPaginated(
+          limit: notesPageSize, 
+          offset: offset,
+          sort: _sortParam,
+        );
+        state = state.copyWith(
+          notes: [...state.notes, ...newNotes],
+          isLoadingMore: false,
+          hasMore: newNotes.length >= notesPageSize,
+        );
+      }
     } catch (e) {
       state = state.copyWith(isLoadingMore: false, error: e.toString());
     }
@@ -131,6 +240,8 @@ class NotesNotifier extends StateNotifier<NotesState> {
   /// Change view mode and reload notes
   Future<void> setViewMode(String mode) async {
     if (state.viewMode == mode) return;
+    _pendingTagNotes = [];
+    _tagsViewOffset = 0;
     state = state.copyWith(viewMode: mode, notes: [], hasMore: true);
     await loadNotes();
   }
