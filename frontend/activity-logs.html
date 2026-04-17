@@ -961,11 +961,26 @@
             const summary = document.getElementById('activitySummary');
             const trace = currentActivity.traceLogs;
             
+            // Show server duration, and if available, client total with overhead
+            let durationDisplay = `${currentActivity.duration_ms || trace?.duration_ms || 0}ms`;
+            if (currentActivity.client_total_ms) {
+                durationDisplay = `${currentActivity.duration_ms || 0}ms server`;
+            }
+            
             const items = [
-                { label: 'Duration', value: `${currentActivity.duration_ms || trace?.duration_ms || 0}ms` },
-                { label: 'Log Lines', value: trace?.total_lines || 0 },
-                { label: 'Status', value: currentActivity.status },
+                { label: 'Server Time', value: `${currentActivity.duration_ms || trace?.duration_ms || 0}ms` },
             ];
+            
+            // Add client timing if available
+            if (currentActivity.client_total_ms) {
+                items.push({ label: 'Client Total', value: `${currentActivity.client_total_ms}ms` });
+                if (currentActivity.client_overhead_ms) {
+                    items.push({ label: 'Network Overhead', value: `${currentActivity.client_overhead_ms}ms` });
+                }
+            }
+            
+            items.push({ label: 'Log Lines', value: trace?.total_lines || 0 });
+            items.push({ label: 'Status', value: currentActivity.status });
             
             if (trace?.levels_summary) {
                 if (trace.levels_summary.ERROR) {
@@ -1493,7 +1508,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                         <div>
                             <div class="big-number">${extensionTotalMs || workerTotalMs}ms</div>
-                            <div class="label">${extensionTotalMs ? 'Total End-to-End (Extension → Worker → Response)' : 'Worker Processing Time'}</div>
+                            <div class="label">${extensionTotalMs ? 'Total User Wait Time (Enter → Notification)' : 'Worker Processing Time'}</div>
                         </div>
                         <div style="display: flex; gap: 24px; align-items: center;">
                             ${intentBadge}
@@ -1502,12 +1517,16 @@
                             </div>
                             ${extensionTotalMs ? `
                             <div style="text-align: center;">
-                                <div style="font-size: 24px; font-weight: 600; color: #fff;">${workerTotalMs}ms</div>
+                                <div style="font-size: 24px; font-weight: 600; color: #3fb950;">${workerTotalMs}ms</div>
                                 <div style="color: rgba(255,255,255,0.7); font-size: 11px;">Worker</div>
                             </div>
                             <div style="text-align: center;">
-                                <div style="font-size: 24px; font-weight: 600; color: ${(extensionTotalMs - workerTotalMs) > 500 ? '#f85149' : '#fff'};">${extensionTotalMs - workerTotalMs}ms</div>
+                                <div style="font-size: 24px; font-weight: 600; color: #f0883e;">${Math.max(0, (trace.extension_backend_search_ms || 0) - workerTotalMs)}ms</div>
                                 <div style="color: rgba(255,255,255,0.7); font-size: 11px;">Network</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 600; color: #8b949e;">${trace.extension_page_load_ms || 0}ms</div>
+                                <div style="color: rgba(255,255,255,0.7); font-size: 11px;">Google</div>
                             </div>
                             ` : `
                             <div style="text-align: center;">
@@ -1550,62 +1569,121 @@
             // CHROME EXTENSION SECTION (if available)
             // ===============================================================
             if (trace.extension_total_flow_ms) {
-                // Calculate REAL network latency: Backend Search time (from extension) - Worker processing time
-                const networkLatencyMs = (trace.extension_backend_search_ms || 0) - workerTotalMs;
-                // Extension overhead: Total flow - Backend Search (settings + delay + notification)
-                const extensionOverhead = (trace.extension_total_flow_ms || 0) - (trace.extension_backend_search_ms || 0);
+                // All extension timing fields
+                const pageLoadMs = trace.extension_page_load_ms || 0;
+                const settingsMs = trace.extension_settings_check_ms || 0;
+                const backendCallMs = trace.extension_backend_search_ms || 0;
+                const delayMs = trace.extension_delay_ms || 0;
+                const notificationMs = trace.extension_notification_ms || 0;
+                const totalMs = trace.extension_total_flow_ms;
                 
-                html += `<h2 style="color: #f9826c; margin-bottom: 16px; font-size: 16px;">🧩 Chrome Extension Timing</h2>`;
+                // Network latency = Backend call time - Worker processing time
+                const networkLatencyMs = Math.max(0, backendCallMs - workerTotalMs);
+                
+                // Create waterfall data
+                const waterfall = [
+                    { label: '🌐 Google Page Load', ms: pageLoadMs, color: '#8b949e', desc: 'Time for Google search results to load' },
+                    { label: '⚙️ Settings Check', ms: settingsMs, color: '#a371f7', desc: 'Check user preferences' },
+                    { label: '📡 Backend Call', ms: backendCallMs, color: '#58a6ff', desc: 'Network + Worker processing' },
+                    { label: '⏳ Injection Delay', ms: delayMs, color: '#6e7681', desc: 'Wait for page to be ready' },
+                    { label: '🔔 Show Notification', ms: notificationMs, color: '#3fb950', desc: 'Display results overlay' },
+                ];
+                
+                // Find the bottleneck (longest component)
+                const bottleneck = waterfall.reduce((max, item) => item.ms > max.ms ? item : max, { ms: 0 });
+                
+                // Sum should approximately equal totalMs
+                const sumMs = pageLoadMs + settingsMs + backendCallMs + delayMs + notificationMs;
+                const unmeasuredMs = Math.max(0, totalMs - sumMs);
+                
+                html += `<h2 style="color: #f9826c; margin-bottom: 16px; font-size: 16px;">🧩 Chrome Extension Timing — User Experience</h2>`;
                 
                 html += `
                     <div class="trace-section" style="border-left: 3px solid #f9826c;">
-                        <h3>⏱️ Extension Flow Breakdown</h3>
-                        <div class="timing-grid">
-                            <div class="timing-item">
-                                <div class="timing-value" style="color: #f9826c;">${trace.extension_total_flow_ms}</div>
-                                <div class="timing-label">Total Flow (ms)</div>
-                            </div>
-                            <div class="timing-item">
-                                <div class="timing-value">${trace.extension_settings_check_ms || 0}</div>
-                                <div class="timing-label">Settings Check</div>
-                            </div>
-                            <div class="timing-item">
-                                <div class="timing-value">${trace.extension_backend_search_ms || 0}</div>
-                                <div class="timing-label">Backend Call (incl. network)</div>
-                            </div>
-                            <div class="timing-item">
-                                <div class="timing-value">${trace.extension_delay_ms || 0}</div>
-                                <div class="timing-label">Injection Delay</div>
-                            </div>
-                            <div class="timing-item">
-                                <div class="timing-value">${trace.extension_notification_ms || 0}</div>
-                                <div class="timing-label">Notification Show</div>
-                            </div>
-                        </div>
+                        <h3>⏱️ End-to-End Flow (From Pressing Enter to Seeing Results)</h3>
                         
-                        <!-- Network vs Worker breakdown -->
-                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #30363d;">
-                            <h4 style="color: #8b949e; font-size: 12px; margin-bottom: 12px;">📡 Backend Call Breakdown (${trace.extension_backend_search_ms || 0}ms)</h4>
-                            <div class="timing-grid">
-                                <div class="timing-item">
-                                    <div class="timing-value" style="color: #3fb950;">${workerTotalMs}</div>
-                                    <div class="timing-label">Worker Processing</div>
-                                </div>
-                                <div class="timing-item" style="background: ${networkLatencyMs > 1000 ? '#3d1f1f' : '#21262d'};">
-                                    <div class="timing-value" style="color: ${networkLatencyMs > 1000 ? '#f85149' : networkLatencyMs > 500 ? '#d29922' : '#58a6ff'};">${networkLatencyMs}</div>
-                                    <div class="timing-label">Network Latency</div>
+                        <!-- Big number with consistent breakdown -->
+                        <div style="display: flex; gap: 32px; margin-bottom: 20px; flex-wrap: wrap;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 36px; font-weight: 700; color: #f9826c;">${totalMs}ms</div>
+                                <div style="color: #8b949e; font-size: 12px;">Total User Wait Time</div>
+                            </div>
+                            <div style="border-left: 1px solid #30363d; padding-left: 32px;">
+                                <div style="display: grid; grid-template-columns: auto auto; gap: 4px 16px; font-size: 13px;">
+                                    <span style="color: #8b949e;">Google Page Load:</span>
+                                    <span style="color: #fff; font-weight: 500;">${pageLoadMs}ms</span>
+                                    <span style="color: #8b949e;">Extension Processing:</span>
+                                    <span style="color: #fff; font-weight: 500;">${totalMs - pageLoadMs}ms</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div style="margin-top: 12px; font-size: 12px; color: #8b949e;">
-                            <strong>📊 Analysis:</strong> 
-                            ${networkLatencyMs > 1500 ? '🔴 High network latency! Check internet connection or try different region.' : 
-                              networkLatencyMs > 800 ? '🟡 Moderate network latency. Consider if user is far from Cloudflare edge.' : 
-                              '🟢 Good network performance.'}
-                            ${extensionOverhead > 200 ? ` Extension overhead (${extensionOverhead}ms) is slightly high.` : ''}
+                        <!-- WATERFALL VISUALIZATION -->
+                        <div style="margin-bottom: 20px;">
+                            <h4 style="color: #8b949e; font-size: 12px; margin-bottom: 12px;">📊 Timing Waterfall (where time is spent)</h4>
+                            ${waterfall.map(item => {
+                                const pct = totalMs > 0 ? (item.ms / totalMs * 100) : 0;
+                                const isBottleneck = item.ms === bottleneck.ms && item.ms > 0;
+                                return `
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                    <div style="width: 160px; font-size: 12px; color: ${isBottleneck ? '#f85149' : '#c9d1d9'}; font-weight: ${isBottleneck ? '600' : '400'};">
+                                        ${item.label}${isBottleneck ? ' ⚠️' : ''}
+                                    </div>
+                                    <div style="flex: 1; height: 24px; background: #21262d; border-radius: 4px; overflow: hidden; position: relative;">
+                                        <div style="height: 100%; width: ${pct}%; background: ${isBottleneck ? '#f85149' : item.color}; transition: width 0.3s;"></div>
+                                        <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #fff; font-weight: 600;">${item.ms}ms</span>
+                                    </div>
+                                    <div style="width: 50px; text-align: right; font-size: 11px; color: #8b949e;">${pct.toFixed(0)}%</div>
+                                </div>
+                                `;
+                            }).join('')}
+                            ${unmeasuredMs > 10 ? `
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                <div style="width: 160px; font-size: 12px; color: #6e7681;">⏸️ Other/Unmeasured</div>
+                                <div style="flex: 1; height: 24px; background: #21262d; border-radius: 4px; overflow: hidden; position: relative;">
+                                    <div style="height: 100%; width: ${(unmeasuredMs/totalMs*100)}%; background: #30363d;"></div>
+                                    <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; color: #8b949e;">${unmeasuredMs}ms</span>
+                                </div>
+                                <div style="width: 50px; text-align: right; font-size: 11px; color: #8b949e;">${(unmeasuredMs/totalMs*100).toFixed(0)}%</div>
+                            </div>
+                            ` : ''}
                         </div>
-                        <p style="color: #6e7681; font-size: 11px; margin-top: 8px;">
+                        
+                        <!-- BACKEND CALL DRILL-DOWN -->
+                        ${backendCallMs > 0 ? `
+                        <div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <h4 style="color: #58a6ff; font-size: 13px; margin-bottom: 12px;">📡 Backend Call Breakdown (${backendCallMs}ms)</h4>
+                            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="display: flex; height: 32px; border-radius: 4px; overflow: hidden;">
+                                        <div style="width: ${(workerTotalMs/backendCallMs*100)}%; background: #3fb950; display: flex; align-items: center; justify-content: center;">
+                                            <span style="font-size: 11px; color: #fff; font-weight: 600;">${workerTotalMs}ms</span>
+                                        </div>
+                                        <div style="width: ${(networkLatencyMs/backendCallMs*100)}%; background: #f0883e; display: flex; align-items: center; justify-content: center;">
+                                            <span style="font-size: 11px; color: #fff; font-weight: 600;">${networkLatencyMs}ms</span>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px;">
+                                        <span style="color: #3fb950;">🟩 Worker Processing</span>
+                                        <span style="color: #f0883e;">🟧 Network Round-Trip</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- BOTTLENECK ANALYSIS -->
+                        <div style="background: ${bottleneck.ms > totalMs * 0.5 ? '#3d1f1f' : '#21262d'}; border-radius: 8px; padding: 12px 16px;">
+                            <strong style="color: ${bottleneck.ms > totalMs * 0.5 ? '#f85149' : '#e6edf3'};">🎯 Bottleneck Analysis:</strong>
+                            <span style="color: #c9d1d9; margin-left: 8px;">
+                                ${bottleneck.label} takes ${((bottleneck.ms / totalMs) * 100).toFixed(0)}% of total time (${bottleneck.ms}ms).
+                                ${bottleneck.label.includes('Page Load') ? 'This is Google\'s response time - outside our control.' :
+                                  bottleneck.label.includes('Backend') ? (networkLatencyMs > workerTotalMs ? 'Network latency is the main factor.' : 'Worker processing is the main factor.') :
+                                  'Consider optimizing this step.'}
+                            </span>
+                        </div>
+                        
+                        <p style="color: #6e7681; font-size: 11px; margin-top: 12px;">
                             💡 Source: ${trace.extension_source || 'chrome-extension'}
                         </p>
                     </div>
@@ -2159,6 +2237,7 @@
                         <span style="color: #6e7681;">+</span>
                         <span style="background: #21262d; padding: 6px 12px; border-radius: 4px;">
                             Keyword: <strong>${trace.keyword_count || 0}</strong>
+                            ${trace.keyword_only_injected ? `<small style="color:#f0883e;"> (${trace.keyword_only_injected} keyword-only)</small>` : ''}
                         </span>
                         <span style="color: #6e7681;">→</span>
                         <span style="background: #21262d; padding: 6px 12px; border-radius: 4px;" title="${chunkGroupingInfo || 'Top 3 chunks per document'}">
@@ -2184,6 +2263,19 @@
                         📊 Chunk Selection: ${chunkGroupingInfo}
                     </div>
                     ` : ''}
+                    ${(trace.title_match_count || trace.description_match_count || trace.title_only_injected || trace.desc_only_injected || trace.title_with_content_injected || trace.desc_with_content_injected) ? `
+                    <div style="margin-top: 12px; padding: 10px; background: #21262d; border-radius: 6px; font-size: 12px;">
+                        <div style="margin-bottom: 6px; color: #58a6ff; font-weight: 500;">📝 Title/Description Matches</div>
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            ${trace.title_match_count ? `<span>Title Matches: <strong style="color:#7ee787;">${trace.title_match_count}</strong></span>` : ''}
+                            ${trace.description_match_count ? `<span>Desc Matches: <strong style="color:#7ee787;">${trace.description_match_count}</strong></span>` : ''}
+                            ${trace.title_only_injected ? `<span style="color:#f0883e;">Title-Only Injected: <strong>${trace.title_only_injected}</strong></span>` : ''}
+                            ${trace.desc_only_injected ? `<span style="color:#f0883e;">Desc-Only Injected: <strong>${trace.desc_only_injected}</strong></span>` : ''}
+                            ${trace.title_with_content_injected ? `<span style="color:#79c0ff;">Title+Content: <strong>${trace.title_with_content_injected}</strong></span>` : ''}
+                            ${trace.desc_with_content_injected ? `<span style="color:#79c0ff;">Desc+Content: <strong>${trace.desc_with_content_injected}</strong></span>` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
             
@@ -2199,8 +2291,9 @@
             // Keyword Candidates - same timestamp as vector (parallel)
             if (trace.keyword_candidates?.length) {
                 html += renderCandidatesTable('🔤 Keyword Search Candidates', trace.keyword_candidates, [
-                    { key: 'note_id', label: 'Note ID' },
-                    { key: 'keyword_score', label: 'Keyword Score', isScore: true }
+                    { key: 'title', label: 'Title' },
+                    { key: 'keyword_score', label: 'Keyword Score', isScore: true },
+                    { key: 'source', label: 'Source' }
                 ], 'worker-section', trace.search_started_at);
             }
             
@@ -2395,7 +2488,53 @@
             // Build a human-readable view
             let html = '<div class="detail-cards">';
             
-            // Activity Overview Card
+            // Activity Overview Card - with separate server and client timing
+            let timingHtml = `
+                    <div class="detail-row">
+                        <span class="detail-label">Server Duration</span>
+                        <span class="detail-value">${activity.duration_ms || 0} ms</span>
+                    </div>`;
+            
+            if (activity.client_total_ms) {
+                timingHtml += `
+                    <div class="detail-row">
+                        <span class="detail-label">Client Total</span>
+                        <span class="detail-value">${activity.client_total_ms} ms</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Network Overhead</span>
+                        <span class="detail-value" style="color: ${activity.client_overhead_ms > 3000 ? '#f85149' : activity.client_overhead_ms > 1000 ? '#f0883e' : '#3fb950'}">${activity.client_overhead_ms || 0} ms</span>
+                    </div>`;
+            }
+            
+            // Show extension breakdown if available
+            if (metadata.extension_total_flow_ms) {
+                timingHtml += `
+                    <div class="detail-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #30363d;">
+                        <span class="detail-label" style="font-weight: 600;">Chrome Extension Breakdown</span>
+                        <span class="detail-value"></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Total Flow</span>
+                        <span class="detail-value">${metadata.extension_total_flow_ms} ms</span>
+                    </div>
+                    ${metadata.extension_settings_check_ms ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Settings Check</span>
+                        <span class="detail-value">${metadata.extension_settings_check_ms} ms</span>
+                    </div>` : ''}
+                    ${metadata.extension_backend_search_ms ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Backend Search (client view)</span>
+                        <span class="detail-value">${metadata.extension_backend_search_ms} ms</span>
+                    </div>` : ''}
+                    ${metadata.extension_notification_ms ? `
+                    <div class="detail-row">
+                        <span class="detail-label">Notification Show</span>
+                        <span class="detail-value">${metadata.extension_notification_ms} ms</span>
+                    </div>` : ''}`;
+            }
+            
             html += `
                 <div class="detail-card">
                     <h3>📋 Activity Overview</h3>
@@ -2407,10 +2546,7 @@
                         <span class="detail-label">Status</span>
                         <span class="detail-value status-${activity.status}">${activity.status}</span>
                     </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Duration</span>
-                        <span class="detail-value">${activity.duration_ms || 0} ms</span>
-                    </div>
+                    ${timingHtml}
                     <div class="detail-row">
                         <span class="detail-label">Time</span>
                         <span class="detail-value">${new Date(activity.created_at).toLocaleString()}</span>
