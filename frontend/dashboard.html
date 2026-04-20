@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Deploy: 2026-04-01-v4-fixes -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,9 +9,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="dashboard-loveable.css?v=16">
+    <link rel="stylesheet" href="dashboard-loveable.css?v=20260409190000">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
+    <script>
+        // Early auth check — redirect to login immediately if no token (prevents flash)
+        if (!localStorage.getItem('access_token') && !localStorage.getItem('api_key')) {
+            window.location.href = 'index.html';
+        }
+    </script>
 </head>
 <body class="dashboard-body">
     <div class="dashboard-layout">
@@ -74,35 +81,31 @@
                 <div id="chat-messages" class="chat-messages">
                     <!-- Welcome State -->
                     <div class="chat-welcome">
-                        <div class="welcome-logo">
-                            <svg class="logo-icon-svg" width="38" height="38" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <defs>
-                                    <linearGradient id="logo-g1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="hsl(155, 70%, 50%)" />
-                                        <stop offset="100%" stop-color="hsl(165, 55%, 35%)" />
-                                    </linearGradient>
-                                    <linearGradient id="logo-g2" x1="0%" y1="100%" x2="100%" y2="0%">
-                                        <stop offset="0%" stop-color="hsl(155, 65%, 42%)" stop-opacity="0.4" />
-                                        <stop offset="100%" stop-color="hsl(160, 60%, 40%)" stop-opacity="0.8" />
-                                    </linearGradient>
-                                </defs>
-                                <rect x="10" y="10" width="28" height="28" rx="6" fill="url(#logo-g1)" />
-                                <rect x="18" y="18" width="28" height="28" rx="6" fill="url(#logo-g2)" />
-                            </svg>
-                        </div>
-                        <h2 class="welcome-brand"><span class="bi-main">Welcome to </span><span class="bi-accent">info</span><span class="bi-green">Snap</span><span class="bi-suffix">.ai</span></h2>
-                        <p>Your intelligent document assistant. Ask questions about your saved notes.</p>
+                        <h2 class="welcome-brand"><span id="user-greeting">Hey, what's on your mind today?</span></h2>
+                        <script>
+                            // Set greeting immediately from localStorage to avoid delay
+                            (function() {
+                                var name = localStorage.getItem('user_first_name');
+                                var el = document.getElementById('user-greeting');
+                                if (el && name && name.trim()) {
+                                    el.textContent = 'Hey ' + name.trim() + ", what's on your mind today?";
+                                }
+                            })();
+                        </script>
+                        <p class="welcome-tagline">Ask SnapBot.. Your personal AI assistant that finds what you saved, instantly</p>
                         <div class="welcome-suggestions" id="welcome-suggestions"></div>
                     </div>
                 </div>
                 
+                <!-- Chat Tag Filter -->
+                <div id="chat-tag-filter" class="chat-tag-filter" style="display: none;"></div>
+                
                 <!-- Chat Input -->
                 <div class="chat-input-area">
                     <div class="chat-input-wrapper">
-                        <button class="btn-attach" title="Upload document">📎</button>
                         <textarea 
                             id="chat-input" 
-                            placeholder="Ask a question about your documents..." 
+                            placeholder="Ask SnapBot.. your personal AI assistant" 
                             rows="1"
                         ></textarea>
                         <button type="button" class="btn-send" onclick="sendMessage()">➤</button>
@@ -122,7 +125,7 @@
                 <div class="notes-toolbar">
                     <div class="search-box">
                         <span class="search-icon">🔍</span>
-                        <input type="text" id="notes-search" placeholder="Search notes...">
+                        <input type="text" id="notes-search" placeholder="Search snaps...">
                     </div>
                     <div class="view-toggle">
                         <button class="toggle-btn active" data-view="date">📅 Date</button>
@@ -196,7 +199,6 @@
                     <div class="card">
                         <div class="card-header">
                             <h3>🔑 API Keys</h3>
-                            <button class="btn btn-primary btn-sm" onclick="showCreateKeyModal()">+ Create Key</button>
                         </div>
                         <p class="card-description">API keys allow the Chrome Extension and other tools to access your notes securely.</p>
                         <div id="api-keys-list" class="api-keys-list">
@@ -206,24 +208,6 @@
                 </div>
             </div>
         </main>
-    </div>
-    
-    <!-- Create API Key Modal -->
-    <div id="modal-create-key" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('modal-create-key')">&times;</button>
-            <h2>Create API Key</h2>
-            <p class="modal-subtitle">Give your key a name to identify it later.</p>
-            
-            <div class="form-group">
-                <label for="key-name-input">Key Name</label>
-                <input type="text" id="key-name-input" placeholder="e.g., Chrome Extension">
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-outline" onclick="closeModal('modal-create-key')">Cancel</button>
-                <button class="btn btn-primary" onclick="handleCreateKey()">Create Key</button>
-            </div>
-        </div>
     </div>
     
     <!-- API Key Created Modal -->
@@ -268,7 +252,7 @@
         </div>
     </div>
 
-    <script src="auth.js?v=13"></script>
-    <script src="dashboard-chat-new.js?v=13"></script>
+    <script src="auth.js?v=20260409190000"></script>
+    <script src="dashboard-chat-new.js?v=20260409190000"></script>
 </body>
 </html>

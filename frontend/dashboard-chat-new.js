@@ -2171,6 +2171,10 @@ function capitalizeFirst(str) {
 function formatMarkdown(text) {
     if (!text) return '';
 
+    // SECURITY: Escape HTML first to prevent XSS attacks
+    // This converts <script>, <img onerror=...>, etc. to safe text
+    text = escapeHtml(text);
+
     // Split into lines and process
     const lines = text.split('\n');
     let html = '';
