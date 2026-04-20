@@ -194,35 +194,9 @@
                             <div class="stat-label">💬 Dashboard Searches</div>
                         </div>
                     </div>
-                    
-                    <!-- API Keys Section -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>🔑 API Keys</h3>
-                        </div>
-                        <p class="card-description">API keys allow the Chrome Extension and other tools to access your notes securely.</p>
-                        <div id="api-keys-list" class="api-keys-list">
-                            <div class="loading">Loading API keys...</div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
-    </div>
-    
-    <!-- API Key Created Modal -->
-    <div id="modal-key-created" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('modal-key-created')">&times;</button>
-            <div class="success-icon">✅</div>
-            <h2>API Key Created!</h2>
-            <p class="modal-subtitle">Copy this key now. For security, it won't be shown again.</p>
-            <div class="api-key-display">
-                <code></code>
-                <button class="btn-copy" onclick="copyApiKey()">Copy</button>
-            </div>
-            <button class="btn btn-primary btn-block" onclick="closeModal('modal-key-created')">Done</button>
-        </div>
     </div>
 
     <!-- Confirm Dialog Modal -->
