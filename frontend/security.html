@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security — infoSnap.ai</title>
+    <meta name="description" content="How infoSnap.ai protects your data: TLS 1.3, AES-256 at rest, Google sign-in, row-level isolation, and a roadmap to per-vault encryption.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .font-heading { font-family: 'Fraunces', serif; }
+        .font-body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body class="bg-[#FDFCF8] text-[#1a202c] font-body">
+
+    <!-- Header -->
+    <header class="absolute top-0 left-0 w-full z-50 px-6 md:px-12 py-10 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-3">
+            <div class="relative w-10 h-10">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="6 6 44 44" class="w-full h-full drop-shadow-sm">
+                    <defs>
+                        <linearGradient id="header_g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="hsl(155, 70%, 50%)"/><stop offset="100%" stop-color="hsl(165, 55%, 35%)"/></linearGradient>
+                        <linearGradient id="header_g2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="hsl(155, 65%, 42%)" stop-opacity="0.4"/><stop offset="100%" stop-color="hsl(160, 60%, 40%)" stop-opacity="0.8"/></linearGradient>
+                    </defs>
+                    <rect x="10" y="10" width="28" height="28" rx="6" fill="url(#header_g1)"/><rect x="18" y="18" width="28" height="28" rx="6" fill="url(#header_g2)"/>
+                </svg>
+            </div>
+            <span class="font-heading font-bold text-2xl tracking-tight">infoSnap.ai</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-8 text-sm font-bold text-gray-500 uppercase tracking-widest">
+            <a href="/#pricing" class="hover:text-[#10b981] transition-colors">Pricing</a>
+            <a href="/privacy" class="hover:text-[#10b981] transition-colors">Privacy</a>
+            <a href="/#onboarding" class="bg-[#1a202c] text-white px-7 py-3 rounded-full hover:bg-black transition-all shadow-lg">Get Started</a>
+        </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="pt-44 pb-16 px-6 md:px-12 lg:px-24">
+        <div class="max-w-4xl mx-auto">
+            <span class="text-[#10b981] font-bold tracking-[0.3em] uppercase text-sm font-body">Security</span>
+            <h1 class="font-heading text-5xl md:text-7xl mt-6 leading-[1.05]">Your second brain, locked tight.</h1>
+            <p class="text-xl md:text-2xl text-gray-500 mt-8 leading-relaxed max-w-3xl">
+                Trust isn't a marketing line — it's an architecture. Here's exactly how we protect your snaps, what we encrypt, and what's on the roadmap.
+            </p>
+            <p class="text-sm text-gray-400 mt-6 font-medium">Last updated: June 10, 2026</p>
+        </div>
+    </section>
+
+    <!-- Pillars -->
+    <section class="px-6 md:px-12 lg:px-24 pb-24">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-[#10b981] mb-6"><i class="fas fa-lock text-xl"></i></div>
+                <h3 class="font-heading text-2xl font-bold mb-3">Encrypted everywhere</h3>
+                <p class="text-gray-500 leading-relaxed text-sm">TLS 1.3 from your device to our servers. AES-256 at rest in Supabase and Azure Blob Storage. Short-lived signed URLs (≤15 min) for every file you preview.</p>
+            </div>
+            <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-[#10b981] mb-6"><i class="fas fa-user-shield text-xl"></i></div>
+                <h3 class="font-heading text-2xl font-bold mb-3">Row-level isolation</h3>
+                <p class="text-gray-500 leading-relaxed text-sm">Every Supabase table enforces row-level security so a query for "your snaps" can only ever return your snaps — at the database layer, not just the app layer.</p>
+            </div>
+            <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-[#10b981] mb-6"><i class="fab fa-google text-xl"></i></div>
+                <h3 class="font-heading text-2xl font-bold mb-3">No passwords</h3>
+                <p class="text-gray-500 leading-relaxed text-sm">Sign in with Google OAuth only. We never store, see, or transmit a password — so we can never leak one.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- The boring details -->
+    <section class="bg-[#2c3e50] text-white py-24 px-6 md:px-12 lg:px-24">
+        <div class="max-w-4xl mx-auto">
+            <span class="text-[#10b981] font-bold tracking-[0.3em] uppercase text-sm font-body">The boring details</span>
+            <h2 class="font-heading text-4xl md:text-6xl mt-6 mb-16">How it actually works.</h2>
+
+            <div class="space-y-14">
+                <div>
+                    <h3 class="font-heading text-2xl md:text-3xl text-white mb-4">Transport security</h3>
+                    <p class="text-gray-300 leading-relaxed">All client traffic — browser, mobile app, Chrome extension — is HTTPS-only over TLS 1.3. HSTS preload, modern ciphers, no fallback. Our origin endpoints terminate at Cloudflare's edge with automatic certificate rotation.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-heading text-2xl md:text-3xl text-white mb-4">Encryption at rest</h3>
+                    <p class="text-gray-300 leading-relaxed">Database (Supabase Postgres on AWS): AES-256 disk encryption. Object storage (Azure Blob): server-side AES-256 with Microsoft-managed keys. Backups and replicas inherit the same encryption.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-heading text-2xl md:text-3xl text-white mb-4">Access boundaries</h3>
+                    <p class="text-gray-300 leading-relaxed">Every Postgres table that holds user data has Row Level Security enabled with owner-policies — meaning a query authenticated as you can only read or write rows where <code class="text-emerald-300">user_id = auth.uid()</code>. Our backend uses a privileged service key today, so RLS acts as a defense-in-depth net. Phase 2 (below) flips this so RLS becomes the primary boundary.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-heading text-2xl md:text-3xl text-white mb-4">File access</h3>
+                    <p class="text-gray-300 leading-relaxed">Original files (images, PDFs, audio) never get a public URL. When you open a snap, we mint a short-lived SAS URL — typically 15 minutes — scoped to that single blob. The URL expires on its own; we cache nothing client-side.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-heading text-2xl md:text-3xl text-white mb-4">Secret management</h3>
+                    <p class="text-gray-300 leading-relaxed">All third-party API keys (LLM, embeddings, blob storage, Supabase service key) live in Cloudflare Worker Secrets — never in client code, never in git. Rotations are one-command. We periodically audit our git history for accidentally committed secrets.</p>
+                </div>
+
+                <div>
+                    <h3 class="font-heading text-2xl md:text-3xl text-white mb-4">Identity &amp; sessions</h3>
+                    <p class="text-gray-300 leading-relaxed">Sign-in is Google OAuth via Supabase Auth. Sessions are short-lived JWTs (≤1h) with refresh tokens rotated on use. We do not operate a username/password system; there is no password database for an attacker to dump.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="py-24 px-6 md:px-12 lg:px-24 bg-[#FDFCF8]">
+        <div class="max-w-5xl mx-auto">
+            <span class="text-[#10b981] font-bold tracking-[0.3em] uppercase text-sm font-body">Roadmap</span>
+            <h2 class="font-heading text-4xl md:text-6xl mt-6 mb-4">Where we're going.</h2>
+            <p class="text-lg text-gray-500 mb-16 max-w-2xl leading-relaxed">We ship security work in phases so you see real improvements every few weeks instead of waiting for one giant rewrite.</p>
+
+            <div class="space-y-6">
+                <div class="bg-white rounded-[2rem] p-8 border border-emerald-100 shadow-sm">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-[#10b981] bg-emerald-50 px-3 py-1.5 rounded-full">Phase 1 · Shipped</span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-400">Stop the obvious leaks</span>
+                    </div>
+                    <h3 class="font-heading text-2xl font-bold mb-3">Foundation</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Row-level security enabled across every user-data table with owner-policies as a defense-in-depth net. Master key audit. Short-lived signed URLs verified. Public security &amp; privacy disclosures.</p>
+                </div>
+                <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full">Phase 2 · Next</span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-400">Defense in depth</span>
+                    </div>
+                    <h3 class="font-heading text-2xl font-bold mb-3">Least privilege + audit</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Move read-only endpoints off the master key onto user JWTs (RLS becomes the real boundary). CI check that fails the build if a new table ships without RLS. Append-only audit log. Data export &amp; account deletion in Settings. Per-user rate limits + WAF.</p>
+                </div>
+                <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full">Phase 3 · Premium</span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-400">Per-vault encryption</span>
+                    </div>
+                    <h3 class="font-heading text-2xl font-bold mb-3">Your own encryption key</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Every Premium user gets a unique encryption key stored in a master key-management service. Each snap is locked with your key before it touches the database. Even a full database compromise can't reveal anyone's snaps. Search, SnapBot, and Recap still work — the Worker briefly unlocks just-in-time.</p>
+                </div>
+                <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full">Phase 4 · Pro</span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-400">Private Mode</span>
+                    </div>
+                    <h3 class="font-heading text-2xl font-bold mb-3">Zero-knowledge snaps</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Mark a snap as Private and it's encrypted on your device with a passphrase only you know — we receive only ciphertext. True zero-knowledge: subpoena-proof. AI features are local-only on Private snaps; the rest of your vault behaves normally.</p>
+                </div>
+                <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm">
+                    <div class="flex items-center gap-4 mb-3">
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full">Phase 5 · Later</span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-gray-400">Compliance</span>
+                    </div>
+                    <h3 class="font-heading text-2xl font-bold mb-3">Third-party assurance</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">SOC 2 Type II audit, annual third-party penetration test, public status page at status.infosnap.ai, and a bug-bounty program. Unlocked when paying B2B customers ask for it.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Responsible disclosure -->
+    <section class="py-24 px-6 md:px-12 lg:px-24 bg-white border-t border-gray-100">
+        <div class="max-w-4xl mx-auto">
+            <span class="text-[#10b981] font-bold tracking-[0.3em] uppercase text-sm font-body">Found a bug?</span>
+            <h2 class="font-heading text-4xl md:text-5xl mt-6 mb-8">Responsible disclosure.</h2>
+            <p class="text-lg text-gray-500 leading-relaxed mb-6">If you've discovered a vulnerability, please email us at <a href="mailto:security@infosnap.ai" class="text-[#10b981] font-bold hover:underline">security@infosnap.ai</a> instead of disclosing it publicly. Include reproduction steps and the impact you observed.</p>
+            <p class="text-lg text-gray-500 leading-relaxed mb-6">We will:</p>
+            <ul class="list-disc pl-8 space-y-3 text-gray-500 leading-relaxed mb-10">
+                <li>Acknowledge your report within 3 business days.</li>
+                <li>Investigate and let you know our planned fix timeline.</li>
+                <li>Credit you on this page after the fix ships, if you'd like.</li>
+                <li>Never pursue legal action against good-faith research that doesn't degrade service, access other users' data, or violate privacy.</li>
+            </ul>
+            <p class="text-sm text-gray-400">A machine-readable disclosure record is published at <a href="/.well-known/security.txt" class="text-[#10b981] hover:underline">/.well-known/security.txt</a>.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#FDFCF8] py-16 px-6 md:px-12 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <p class="text-[11px] text-gray-400 font-bold uppercase tracking-[0.2em]">2026 infosnap.ai — All rights reserved</p>
+            <div class="flex gap-8 text-xs font-bold uppercase tracking-widest text-gray-500">
+                <a href="/" class="hover:text-black transition-colors">Home</a>
+                <a href="/security" class="hover:text-black transition-colors">Security</a>
+                <a href="/privacy" class="hover:text-black transition-colors">Privacy</a>
+                <a href="mailto:contact@infosnap.ai" class="hover:text-black transition-colors">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

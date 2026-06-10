@@ -1,0 +1,6 @@
+Contact: mailto:security@infosnap.ai
+Contact: mailto:contact@infosnap.ai
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://infosnap.ai/.well-known/security.txt
+Policy: https://infosnap.ai/security
