@@ -3217,7 +3217,7 @@ export default {
     if (path === "/api/v1/groups") {
       const authResult = await validateAuth(request, env as AuthEnv);
       if (request.method === "GET") return handleListGroups(authResult, env as GroupsEnv);
-      if (request.method === "POST") return handleCreateGroup(request, authResult, env as GroupsEnv);
+      if (request.method === "POST") return handleCreateGroup(request, authResult, env as GroupsEnv, ctx);
       return new Response("Method not allowed", { status: 405, headers: corsHeaders });
     }
 
@@ -3261,7 +3261,7 @@ export default {
 
       if (!action && request.method === "GET") return handleGetGroup(groupId, authResult, env as GroupsEnv);
       if (action === "invite" && request.method === "POST") return handleInviteToGroup(groupId, request, authResult, env as GroupsEnv);
-      if (action === "accept" && request.method === "POST") return handleAcceptGroupInvite(groupId, authResult, env as GroupsEnv);
+      if (action === "accept" && request.method === "POST") return handleAcceptGroupInvite(groupId, authResult, env as GroupsEnv, ctx, request);
       if (action === "decline" && request.method === "POST") return handleDeclineGroupInvite(groupId, authResult, env as GroupsEnv);
       if (action === "join" && request.method === "POST") return handleRequestToJoinGroup(groupId, authResult, env as GroupsEnv);
       if (action === "admin" && request.method === "POST") return handleTransferGroupAdmin(groupId, request, authResult, env as GroupsEnv);
@@ -3278,7 +3278,7 @@ export default {
         return handleListApiKeys(authResult, env as ApiEnv);
       }
       if (request.method === "POST") {
-        return handleCreateApiKey(request, authResult, env as ApiEnv);
+        return handleCreateApiKey(request, authResult, env as ApiEnv, ctx);
       }
       return new Response("Method not allowed", { status: 405, headers: corsHeaders });
     }
@@ -3287,7 +3287,7 @@ export default {
     const apiKeyDeleteMatch = path.match(/^\/api\/v1\/auth\/api-keys\/([a-f0-9-]+)$/);
     if (apiKeyDeleteMatch && request.method === "DELETE") {
       const authResult = await validateAuth(request, env as AuthEnv);
-      return handleDeleteApiKey(apiKeyDeleteMatch[1], authResult, env as ApiEnv);
+      return handleDeleteApiKey(apiKeyDeleteMatch[1], authResult, env as ApiEnv, ctx, request);
     }
     
     // POST /api/v1/auth/revoke-all-sessions - Sign out from all devices
@@ -3296,7 +3296,7 @@ export default {
         return new Response("Method not allowed", { status: 405, headers: corsHeaders });
       }
       const authResult = await validateAuth(request, env as AuthEnv);
-      return handleRevokeAllSessions(authResult, env as ApiEnv);
+      return handleRevokeAllSessions(authResult, env as ApiEnv, ctx, request);
     }
     
     // Notes endpoints
@@ -3382,14 +3382,14 @@ export default {
     // DELETE /api/v1/notes/bulk - Delete multiple notes at once
     if (path === "/api/v1/notes/bulk" && request.method === "DELETE") {
       const authResult = await validateAuth(request, env as AuthEnv);
-      return handleBulkDeleteNotes(request, authResult, env as ApiEnvWithVectorize);
+      return handleBulkDeleteNotes(request, authResult, env as ApiEnvWithVectorize, ctx);
     }
     
     // DELETE /api/v1/notes/:id - Delete a note (soft delete)
     const deleteNoteMatch = path.match(/^\/api\/v1\/notes\/([a-f0-9-]+)$/);
     if (deleteNoteMatch && request.method === "DELETE") {
       const authResult = await validateAuth(request, env as AuthEnv);
-      return handleDeleteNote(deleteNoteMatch[1], authResult, env as ApiEnvWithVectorize);
+      return handleDeleteNote(deleteNoteMatch[1], authResult, env as ApiEnvWithVectorize, ctx, request);
     }
     
     // GET /api/v1/notes/ or /api/v1/notes (list notes)
@@ -3491,7 +3491,7 @@ export default {
         return new Response("Method not allowed", { status: 405, headers: corsHeaders });
       }
       const authResult = await validateAuth(request, env as AuthEnv);
-      return handleBillingUpgradeDev(authResult, env as unknown as BillingEnv);
+      return handleBillingUpgradeDev(authResult, env as unknown as BillingEnv, ctx, request);
     }
 
     if (path === "/api/v1/billing/cancel") {
