@@ -17,6 +17,7 @@
 import { handleRagSearch, handleRagSearchContinue, RagSearchEnv } from './rag-search';
 import { handleMCP, MCPEnv } from './mcp-server';
 import { validateAuth, AuthResult, AuthEnv } from './auth';
+import { redact, maskEmail } from './log-redact';
 import {
   handleAuthMe,
   handleListApiKeys,
@@ -27,8 +28,11 @@ import {
   handleNotesStats,
   handleListTags,
   handleGetViewToken,
+  handleNoteHighlights,
+  handleRefreshInstagramPreview,
   handleDeleteNote,
   handleBulkDeleteNotes,
+  handleNewspaperEdition,
   ApiEnv,
   ApiEnvWithVectorize,
 } from './api-endpoints';
@@ -57,12 +61,60 @@ import {
   handleUploadScreenshotWithDO,
   handleUploadQuickNoteWithDO,
   handleUploadWebpageWithDO,
+  handleUploadSharedUrlWithDO,
   handleUploadStatus,
   handleUploadQuota,
   handleCancelUpload,
   handleTestTensorLake,
+  handleEditQuickNoteWithDO,
   UploadEnv,
 } from './upload-routes';
+import {
+  handleRecapGet,
+  handleRecapSave,
+  handleRecapListSaved,
+  handleRecapGetSaved,
+  handleRecapDeleteSaved,
+  generateRecapForUser,
+  listActiveUserIds,
+  RecapEnv,
+} from './recap';
+import {
+  consumeQuota,
+  quotaExceededResponse,
+  handleBillingStatus,
+  handleBillingUpgradeDev,
+  handleBillingCancel,
+  handleBillingReactivate,
+  handleBillingHistory,
+  refundQuota,
+  type BillingEnv,
+} from './billing';
+import {
+  ensureUserProfileAndAcceptInvites,
+  handleAcceptGroupInvite,
+  handleApproveJoinRequest,
+  handleCreateGroup,
+  handleDeclineGroupInvite,
+  handleDenyJoinRequest,
+  handleDiscoverGroups,
+  handleGetGroup,
+  handleInviteToGroup,
+  handleLeaveGroup,
+  handleListGroups,
+  handleListNotifications,
+  handleMarkGroupSeen,
+  handleReactToGroupSnap,
+  handleRequestToJoinGroup,
+  handleSearchUsers,
+  handleShareSnapToGroup,
+  handleTransferGroupAdmin,
+  handleUploadGroupAvatar,
+  handleUploadUserAvatar,
+  type GroupsEnv,
+} from './groups';
+import { handleRegisterDeviceToken, type PushEnv } from './push-notifications';
+import { handleAppBootstrap } from './bootstrap';
 
 // Export Durable Object class for Cloudflare runtime
 export { UploadProcessor } from './upload-processor';
@@ -85,9 +137,37 @@ export interface Env {
   SUPABASE_JWT_SECRET: string;  // Supabase JWT secret for validating user tokens
   AZURE_STORAGE_CONNECTION_STRING?: string;  // For generating Azure blob SAS URLs
   AZURE_STORAGE_CONTAINER?: string;  // Azure blob container name
+  AZURE_THUMBNAILS_CONTAINER?: string;  // Public thumbnail blob container name
   TENSORLAKE_API_KEY?: string;  // TensorLake document conversion API key
+  SENDGRID_API_KEY?: string;  // SendGrid API key for group email invites
+  SENDGRID_FROM_EMAIL?: string;  // Verified SendGrid sender email
+  FIREBASE_PROJECT_ID?: string;  // Firebase project id for FCM pushes
+  FIREBASE_CLIENT_EMAIL?: string;  // Firebase service account client email
+  FIREBASE_PRIVATE_KEY?: string;  // Firebase service account private key
+  YOUTUBE_API_KEY?: string;  // Official YouTube Data API key for compliant enrichment
+  INSTAGRAM_OEMBED_ACCESS_TOKEN?: string;  // Official Meta token for Instagram oEmbed previews
   UPLOAD_PROCESSOR: DurableObjectNamespace;  // Durable Object for long-running uploads
   CHAT_SESSIONS: KVNamespace;  // KV namespace for chat conversation memory
+  THUMBNAIL_FOLDERS?: KVNamespace;  // user_id -> opaque public thumbnail folder id
+
+  // Cloudflare Rate Limiting bindings (Workers built-in, not WAF).
+  // Limits are per-key, sliding-window. Cheap to invoke (single edge call).
+  // Tuned to be permissive for normal humans, hostile to scripted abuse.
+  //   UPLOAD_RATELIMIT — 30 requests / minute per user_id, applied to
+  //                      every /api/v1/upload/* endpoint.
+  //   SEARCH_RATELIMIT — 120 requests / minute per user_id, applied to
+  //                      /rag-search-auth + /rag-search.
+  // Both are optional so local `wrangler dev` and any environment that
+  // hasn't been redeployed yet still works.
+  UPLOAD_RATELIMIT?: RateLimit;
+  SEARCH_RATELIMIT?: RateLimit;
+}
+
+// Cloudflare's built-in rate-limit binding shape (workers ratelimit API).
+// Minimal interface; full type ships with `@cloudflare/workers-types`
+// but is not yet stable across all versions, so we declare just what we use.
+interface RateLimit {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
 }
 
 interface SearchRequest {
@@ -257,7 +337,10 @@ async function sendLogToBackend(entry: WorkerLogEntry, env: Env, ctx: ExecutionC
           body: JSON.stringify({
             request_id: entry.request_id,
             user_id: entry.user_id,
-            query: entry.query,
+            // PII scrub: queries are free-form user input and may contain
+            // emails / tokens copy-pasted by accident. Always redact before
+            // persisting.
+            query: entry.query ? redact(entry.query) : entry.query,
             endpoint: entry.endpoint,
             method: entry.method,
             status_code: entry.status_code,
@@ -296,8 +379,10 @@ async function sendSearchTraceToBackend(trace: SearchTraceEntry, env: Env, ctx: 
           body: JSON.stringify({
             correlation_id: trace.correlation_id,
             user_id: trace.user_id,
-            query: trace.query,
-            query_corrected: trace.query_corrected,
+            // PII scrub: redact the user-typed query + any spellchecked variant
+            // before they hit the search_traces table.
+            query: trace.query ? redact(trace.query) : trace.query,
+            query_corrected: trace.query_corrected ? redact(trace.query_corrected) : trace.query_corrected,
             // Timestamps for each phase
             request_received_at: trace.request_received_at,
             auth_started_at: trace.auth_started_at,
@@ -315,7 +400,10 @@ async function sendSearchTraceToBackend(trace: SearchTraceEntry, env: Env, ctx: 
             timing_rerank_ms: trace.timing_rerank_ms,
             // Auth details
             auth_method: trace.auth_method,
-            auth_user_email: trace.auth_user_email,
+            // Mask email to first-char + domain so support can still correlate
+            // a trace to a user without storing the full address in the trace
+            // table that loads in the admin dashboard.
+            auth_user_email: trace.auth_user_email ? maskEmail(trace.auth_user_email) : trace.auth_user_email,
             // Cache and counts
             embedding_cached: trace.embedding_cached,
             vector_count: trace.vector_count,
@@ -358,7 +446,14 @@ async function validateUserApiKey(apiKey: string, env: Env): Promise<{ valid: bo
   }
   
   try {
-    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/api_keys?key_value=eq.${apiKey}&select=user_id,is_active`, {
+    // Hash the API key using SHA-256 (keys are stored hashed in the database)
+    const encoder = new TextEncoder();
+    const data = encoder.encode(apiKey);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashedKey = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    const response = await fetch(`${env.SUPABASE_URL}/rest/v1/user_api_keys?api_key=eq.${hashedKey}&select=user_id,is_active`, {
       headers: {
         'apikey': env.SUPABASE_SERVICE_KEY,
         'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
@@ -387,7 +482,9 @@ async function validateUserApiKey(apiKey: string, env: Env): Promise<{ valid: bo
 interface ExtensionTimingRequest {
   correlation_id: string;
   query?: string;
-  timing_total_flow_ms: number;
+  timing_total_flow_ms: number;      // TRUE total from navigation start
+  timing_page_load_ms?: number;       // Time for Google page to load
+  timing_extension_only_ms?: number;  // Time in extension after page load
   timing_settings_check_ms?: number;
   timing_backend_search_ms?: number;
   timing_notification_ms?: number;
@@ -398,33 +495,17 @@ interface ExtensionTimingRequest {
 }
 
 async function handleExtensionTiming(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-  // Validate API key (user API key na_* or worker API key)
-  const apiKey = request.headers.get("X-API-Key");
-  
-  if (!apiKey) {
-    return new Response(
-      JSON.stringify({ success: false, error: "API key required" }),
-      { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  }
-  
-  // Check if it's a user API key (na_* or ina_*) or worker API key
-  let isAuthorized = false;
-  if (apiKey.startsWith('na_') || apiKey.startsWith('ina_')) {
-    const validation = await validateUserApiKey(apiKey, env);
-    isAuthorized = validation.valid;
-  } else {
-    isAuthorized = apiKey === env.WORKER_API_KEY;
-  }
-  
-  if (!isAuthorized) {
-    return new Response(
-      JSON.stringify({ success: false, error: "Invalid API key" }),
-      { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  }
-  
   try {
+    // Validate auth - uses the shared validateAuth function (supports JWT, API key, worker key)
+    const authResult = await validateAuth(request, env as AuthEnv);
+    
+    if (!authResult.authenticated) {
+      return new Response(
+        JSON.stringify({ success: false, error: authResult.error || "Authentication required" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
     const timing = await request.json() as ExtensionTimingRequest;
     
     if (!timing.correlation_id) {
@@ -435,14 +516,19 @@ async function handleExtensionTiming(request: Request, env: Env, ctx: ExecutionC
     }
     
     // Update the existing search trace with extension timing data
-    const updateData = {
-      extension_total_flow_ms: timing.timing_total_flow_ms,
+    const updateData: Record<string, any> = {
+      extension_total_flow_ms: timing.timing_total_flow_ms,  // TRUE total from nav start
       extension_settings_check_ms: timing.timing_settings_check_ms,
       extension_backend_search_ms: timing.timing_backend_search_ms,
       extension_notification_ms: timing.timing_notification_ms,
       extension_delay_ms: timing.timing_delay_ms,
       extension_source: timing.source || 'chrome-extension',
     };
+    
+    // Add page load time if available (new field)
+    if (timing.timing_page_load_ms !== undefined) {
+      updateData.extension_page_load_ms = timing.timing_page_load_ms;
+    }
     
     // Fire and forget - update search_traces in background
     ctx.waitUntil(
@@ -473,18 +559,19 @@ async function handleExtensionTiming(request: Request, env: Env, ctx: ExecutionC
       })()
     );
     
-    // Calculate the overhead
-    const backendReported = timing.timing_backend_reported_ms || 0;
+    // Log detailed timing breakdown
+    const pageLoad = timing.timing_page_load_ms || 0;
+    const backendSearch = timing.timing_backend_search_ms || 0;
     const totalFlow = timing.timing_total_flow_ms;
-    const overhead = totalFlow - backendReported > 0 ? totalFlow - backendReported : 0;
     
-    console.log(`[Extension Timing] ${timing.correlation_id}: Total=${totalFlow}ms, Backend=${backendReported}ms, Overhead=${overhead}ms`);
+    console.log(`[Extension Timing] ${timing.correlation_id}: Total=${totalFlow}ms (PageLoad=${pageLoad}ms + BackendCall=${backendSearch}ms + Other)`);
     
     return new Response(
       JSON.stringify({
         success: true,
         correlation_id: timing.correlation_id,
-        timing_overhead_ms: overhead,
+        timing_total_ms: totalFlow,
+        timing_page_load_ms: pageLoad,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
@@ -805,6 +892,7 @@ interface SupabaseChunkKeywordResult {
   chunk_content: string;
   text_rank: number;
   match_source: 'chunk' | 'title' | 'description';  // Where the match was found
+  normalized_query?: string;  // tsquery text generated by Postgres for this request
 }
 
 // Title/description match with content for injection
@@ -821,7 +909,53 @@ interface KeywordSearchResults {
   // title/description matches WITH CONTENT for injection into results
   titleMatches: Map<string, TitleDescMatch>;       // note_id -> {score, content}
   descriptionMatches: Map<string, TitleDescMatch>; // note_id -> {score, content}
+  normalized_query?: string;
   time_ms: number;
+}
+
+async function fetchNormalizedKeywordQuery(
+  query: string,
+  env: Env
+): Promise<string | undefined> {
+  try {
+    const response = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/rpc/normalize_keyword_query`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": env.SUPABASE_SERVICE_KEY,
+          "Authorization": `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        },
+        body: JSON.stringify({ query_text: query }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.warn(`normalize_keyword_query RPC failed: ${response.status} - ${error}`);
+      return undefined;
+    }
+
+    const payload = await response.json() as unknown;
+    if (typeof payload === 'string') {
+      return payload || undefined;
+    }
+
+    if (Array.isArray(payload) && payload.length > 0) {
+      const first = payload[0] as { normalize_keyword_query?: string; normalized_query?: string };
+      return first?.normalize_keyword_query || first?.normalized_query;
+    }
+
+    if (payload && typeof payload === 'object') {
+      const obj = payload as { normalize_keyword_query?: string; normalized_query?: string };
+      return obj.normalize_keyword_query || obj.normalized_query;
+    }
+  } catch (error) {
+    console.warn("Failed to fetch normalized keyword query:", error);
+  }
+
+  return undefined;
 }
 
 // Call Supabase RPC for chunk-level full-text keyword search
@@ -838,6 +972,7 @@ async function keywordSearch(
     chunks: new Map(), 
     titleMatches: new Map(),
     descriptionMatches: new Map(),
+    normalized_query: undefined,
     time_ms: 0 
   };
   
@@ -881,12 +1016,17 @@ async function keywordSearch(
     // Track title and description matches WITH CONTENT for injection
     const titleMatches = new Map<string, TitleDescMatch>();
     const descriptionMatches = new Map<string, TitleDescMatch>();
+    let normalizedQuery: string | undefined;
     
     let titleMatchCount = 0;
     let descMatchCount = 0;
     let chunkMatchCount = 0;
     
     for (const row of data) {
+      if (!normalizedQuery && row.normalized_query) {
+        normalizedQuery = row.normalized_query;
+      }
+
       // Note-level: keep max score (from any source)
       const existing = results.get(row.note_id);
       if (!existing || row.text_rank > existing) {
@@ -918,9 +1058,14 @@ async function keywordSearch(
         chunkMatchCount++;
       }
     }
+
+    // If there were no keyword matches, fetch normalization directly from Postgres RPC.
+    if (!normalizedQuery) {
+      normalizedQuery = await fetchNormalizedKeywordQuery(query, env);
+    }
     
     console.log(`Chunk keyword search: ${results.size} notes (${titleMatchCount} title, ${descMatchCount} desc, ${chunkMatchCount} chunk matches) in ${time_ms}ms`);
-    return { results, chunks, titleMatches, descriptionMatches, time_ms };
+    return { results, chunks, titleMatches, descriptionMatches, normalized_query: normalizedQuery, time_ms };
     
   } catch (error) {
     console.error("Keyword search error:", error);
@@ -1540,7 +1685,8 @@ async function handleNoteView(noteId: string, token: string | null, env: Env): P
   
   console.log(`[VIEW] Token verified! user_id: ${userId.slice(0, 8)}...`);
   
-  // Get note from Supabase
+  // Get note from Supabase. Owners can view directly; active group members can
+  // view notes that were shared into a group they belong to.
   const noteUrl = new URL(`${env.SUPABASE_URL}/rest/v1/notes`);
   noteUrl.searchParams.set('select', 'id,title,blob_url,metadata,user_id,file_type,content_markdown');
   noteUrl.searchParams.set('id', `eq.${noteId}`);
@@ -1561,7 +1707,7 @@ async function handleNoteView(noteId: string, token: string | null, env: Env): P
     );
   }
   
-  const notes = await noteResponse.json() as Array<{
+  let notes = await noteResponse.json() as Array<{
     id: string;
     title: string;
     blob_url?: string;
@@ -1570,6 +1716,45 @@ async function handleNoteView(noteId: string, token: string | null, env: Env): P
     file_type?: string;
     content_markdown?: string;
   }>;
+
+  if (notes.length === 0) {
+    const accessResp = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/group_snaps?note_id=eq.${noteId}&select=group_id`,
+      {
+        headers: {
+          'apikey': env.SUPABASE_SERVICE_KEY,
+          'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        },
+      },
+    );
+    const groupSnaps = accessResp.ok ? await accessResp.json() as Array<{ group_id: string }> : [];
+    if (groupSnaps.length > 0) {
+      const groupIds = groupSnaps.map(g => `"${g.group_id}"`).join(',');
+      const memberResp = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/group_members?group_id=in.(${groupIds})&user_id=eq.${userId}&status=eq.active&select=id&limit=1`,
+        {
+          headers: {
+            'apikey': env.SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+          },
+        },
+      );
+      const memberRows = memberResp.ok ? await memberResp.json() as unknown[] : [];
+      if (memberRows.length > 0) {
+        const sharedNoteUrl = new URL(`${env.SUPABASE_URL}/rest/v1/notes`);
+        sharedNoteUrl.searchParams.set('select', 'id,title,blob_url,metadata,user_id,file_type,content_markdown');
+        sharedNoteUrl.searchParams.set('id', `eq.${noteId}`);
+        sharedNoteUrl.searchParams.set('status', 'eq.active');
+        const sharedNoteResponse = await fetch(sharedNoteUrl.toString(), {
+          headers: {
+            'apikey': env.SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+          },
+        });
+        notes = sharedNoteResponse.ok ? await sharedNoteResponse.json() as typeof notes : [];
+      }
+    }
+  }
   
   if (notes.length === 0) {
     return new Response(
@@ -1694,6 +1879,80 @@ async function handleHealth(env: Env): Promise<Response> {
   }
 }
 
+// Handle Pro Waitlist submissions (no auth required)
+async function handleProWaitlist(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as { email?: string };
+    const email = body.email?.trim()?.toLowerCase();
+    
+    if (!email) {
+      return new Response(
+        JSON.stringify({ error: "Email is required" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
+    // Get user agent and IP for analytics
+    const userAgent = request.headers.get('user-agent') || '';
+    const ipAddress = request.headers.get('cf-connecting-ip') || 
+                      request.headers.get('x-forwarded-for') || '';
+    
+    // Insert into pro_waitlist table
+    const supabaseUrl = `${env.SUPABASE_URL}/rest/v1/pro_waitlist`;
+    const response = await fetch(supabaseUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+        'apikey': env.SUPABASE_SERVICE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        email,
+        source: 'landing_page',
+        ip_address: ipAddress,
+        user_agent: userAgent
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      // Check if it's a duplicate email error
+      if (errorText.includes('duplicate') || errorText.includes('unique')) {
+        return new Response(
+          JSON.stringify({ success: true, message: "You're already on the list!" }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      console.error(`[ProWaitlist] Supabase error: ${errorText}`);
+      throw new Error('Failed to save email');
+    }
+    
+    console.log(`[ProWaitlist] New signup: ${email}`);
+    
+    return new Response(
+      JSON.stringify({ success: true, message: "Thanks! We'll notify you when Pro launches." }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+    
+  } catch (error) {
+    console.error(`[ProWaitlist] Error: ${error}`);
+    return new Response(
+      JSON.stringify({ error: "Something went wrong. Please try again." }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+}
+
 // Handle cache invalidation requests
 interface CacheInvalidateRequest {
   user_id: string;
@@ -1777,12 +2036,18 @@ interface HybridSearchResult {
   };
   embedding_cached: boolean;
   total_candidates?: number;  // Total candidates before reranking (for progressive search)
+  // Unique note_ids surfaced by vector + keyword search BEFORE the reranker
+  // filtered them. Used by Search Deeper so the next round excludes any note
+  // already considered (and rejected) by the reranker, not just the ones
+  // that survived the threshold.
+  candidate_note_ids?: string[];
   // Candidate data for trace logging
   trace_data?: {
     vector_candidates: Array<Record<string, any>>;
     keyword_candidates: Array<Record<string, any>>;
     combined_candidates: Array<Record<string, any>>;
     reranked_candidates: Array<Record<string, any>>;
+    reranker_input_preview: Array<Record<string, any>>;
     chunks_before_grouping?: number;
     unique_documents?: number;
   };
@@ -1804,13 +2069,18 @@ async function performHybridSearch(
   const trace_data: {
     vector_candidates: Array<Record<string, any>>;
     keyword_candidates: Array<Record<string, any>>;
+    keyword_query?: string;  // The query used for keyword search
+    keyword_query_normalized?: string;  // tsquery text generated by Postgres
+    keyword_match_count?: number;  // Total keyword matches found
     combined_candidates: Array<Record<string, any>>;
     reranked_candidates: Array<Record<string, any>>;
+    reranker_input_preview: Array<Record<string, any>>;
   } = {
     vector_candidates: [],
     keyword_candidates: [],
     combined_candidates: [],
     reranked_candidates: [],
+    reranker_input_preview: [],
   };
 
   // STEP 1: Generate embedding (with cache)
@@ -1836,19 +2106,30 @@ async function performHybridSearch(
     vectorFilter["tag"] = { $eq: params.tag };
   }
   // Exclude already-seen documents for "search deeper" iterations
+  // IMPORTANT: Vectorize $nin filter has a limit (~100 values), so we only use it for first 50
+  // and do server-side filtering for the rest
+  const MAX_VECTORIZE_NIN = 50;
   if (params.exclude_note_ids && params.exclude_note_ids.length > 0) {
-    vectorFilter["note_id"] = { $nin: params.exclude_note_ids };
-    console.log(`[performHybridSearch] Excluding ${params.exclude_note_ids.length} note_ids via $nin`);
+    const vectorNinIds = params.exclude_note_ids.slice(0, MAX_VECTORIZE_NIN);
+    vectorFilter["note_id"] = { $nin: vectorNinIds };
+    console.log(`[performHybridSearch] Excluding ${vectorNinIds.length} note_ids via $nin (${params.exclude_note_ids.length} total, rest filtered server-side)`);
   }
 
   const parallelStart = Date.now();
   
   // Single vector search query
-  const queryResult = await env.VECTORIZE.query(queryVector, {
-    topK: VECTORIZE_TOP_K,
-    returnMetadata: "all",
-    filter: Object.keys(vectorFilter).length > 0 ? vectorFilter : undefined,
-  });
+  let queryResult;
+  try {
+    queryResult = await env.VECTORIZE.query(queryVector, {
+      topK: VECTORIZE_TOP_K,
+      returnMetadata: "all",
+      filter: Object.keys(vectorFilter).length > 0 ? vectorFilter : undefined,
+    });
+  } catch (vectorizeError) {
+    console.error(`[performHybridSearch] Vectorize query failed:`, vectorizeError);
+    // Return empty result if Vectorize fails
+    queryResult = { matches: [] };
+  }
   
   const allVectorMatches = queryResult.matches.filter(m => {
     if (m.score < MIN_VECTOR_SIMILARITY) return false;
@@ -1869,6 +2150,11 @@ async function performHybridSearch(
   const keywordResults: KeywordSearchResults = params.user_id
     ? await keywordSearch(params.query, params.user_id, env, params.tag, KEYWORD_SEARCH_LIMIT)
     : { results: new Map<string, number>(), chunks: new Map<string, SupabaseChunkKeywordResult[]>(), titleMatches: new Map<string, TitleDescMatch>(), descriptionMatches: new Map<string, TitleDescMatch>(), time_ms: 0 };
+
+  // Store keyword query in trace for observability
+  trace_data.keyword_query = params.query;
+  trace_data.keyword_query_normalized = keywordResults.normalized_query;
+  trace_data.keyword_match_count = keywordResults.results.size;
 
   // If query was rewritten, also run keyword search with original query and merge results
   if (params.originalQuery && params.originalQuery.toLowerCase() !== params.query.toLowerCase() && params.user_id) {
@@ -1933,14 +2219,22 @@ async function performHybridSearch(
   timing.keyword_ms = keywordResults.time_ms;
 
   // Capture vector candidates for trace
-  trace_data.vector_candidates = allVectorMatches.map((match) => ({
-    chunk_id: match.id,
-    note_id: String(match.metadata?.note_id || ""),
-    title: String(match.metadata?.title || ""),
-    tag: match.metadata?.tag as string | undefined,
-    vector_score: match.score,
-    content: String(match.metadata?.chunk_text || "").substring(0, 300),
-  }));
+  trace_data.vector_candidates = allVectorMatches.map((match) => {
+    const isDoc = match.metadata?.chunk_type === 'document';
+    const previewText = isDoc
+      ? String(match.metadata?.content_preview || match.metadata?.chunk_text || "").substring(0, 300)
+      : String(match.metadata?.chunk_text || "").substring(0, 300);
+    return {
+      chunk_id: match.id,
+      note_id: String(match.metadata?.note_id || ""),
+      title: String(match.metadata?.title || ""),
+      tag: match.metadata?.tag as string | undefined,
+      vector_score: match.score,
+      content: previewText,
+      chunk_type: isDoc ? 'document' : String(match.metadata?.chunk_type || 'chunk'),
+      source_text: isDoc ? 'doc_preview' : 'chunk_text',
+    };
+  });
 
   // Capture keyword candidates for trace (with chunk info)
   keywordResults.results.forEach((score, noteId) => {
@@ -1951,6 +2245,20 @@ async function performHybridSearch(
       matched_chunks: noteChunks.map(c => c.chunk_index),
     });
   });
+
+  // Snapshot of every unique note_id surfaced by vector OR keyword search at
+  // this point — i.e. before the reranker filters anything out. Search Deeper
+  // uses this to exclude all candidates the system already considered, so the
+  // next round draws from genuinely fresh notes.
+  const candidateNoteIdSet = new Set<string>();
+  for (const m of allVectorMatches) {
+    const id = String(m.metadata?.note_id || "");
+    if (id) candidateNoteIdSet.add(id);
+  }
+  for (const id of keywordResults.results.keys()) if (id) candidateNoteIdSet.add(id);
+  for (const id of keywordResults.titleMatches.keys()) if (id) candidateNoteIdSet.add(id);
+  for (const id of keywordResults.descriptionMatches.keys()) if (id) candidateNoteIdSet.add(id);
+  const candidateNoteIds = Array.from(candidateNoteIdSet);
 
   // Transform and combine results
   // Track which (note_id, chunk_index) pairs are already from vector search
@@ -1970,6 +2278,7 @@ async function performHybridSearch(
       const combinedScore = keywordScore > 0
         ? (match.score * 0.7) + (keywordScore * 0.3) + titleBoost + descBoost
         : match.score;
+      const isDocVec = match.metadata?.chunk_type === 'document';
       return {
         chunk_id: match.id,
         similarity: match.score,
@@ -1978,6 +2287,16 @@ async function performHybridSearch(
         has_title_match: hasTitle,
         has_description_match: hasDesc,
         ...match.metadata,
+        // For doc vectors, populate content from description + content_preview so downstream
+        // reranker/verification always receives meaningful text (not empty)
+        content: isDocVec
+          ? (() => {
+              const desc = String(match.metadata?.description || "").trim();
+              const preview = String(match.metadata?.content_preview || match.metadata?.chunk_text || "").trim();
+              return desc && preview ? `Description: ${desc}\n\nContent: ${preview}` : (desc || preview);
+            })()
+          : String(match.metadata?.chunk_text || ""),
+        source_text: isDocVec ? 'doc_preview' : 'chunk_text',
       };
     });
 
@@ -2196,6 +2515,8 @@ async function performHybridSearch(
     ...kc,
     title: chunkTitleMap.get(kc.note_id) || undefined,
     source: keywordOnlyNoteIds.includes(kc.note_id) ? "keyword_only" : "keyword+vector",
+    chunk_type: keywordOnlyNoteIds.includes(kc.note_id) ? 'keyword_only' : 'keyword_chunk',
+    source_text: keywordOnlyNoteIds.includes(kc.note_id) ? 'keyword_only' : 'keyword_chunk',
     has_title_match: keywordResults.titleMatches.has(kc.note_id),
     has_description_match: keywordResults.descriptionMatches.has(kc.note_id),
   }));
@@ -2237,14 +2558,29 @@ async function performHybridSearch(
     keyword_score: m.keyword_score || 0,
     combined_score: m.combined_score,
     content: String(m.content || "").substring(0, 300),
+    chunk_type: String(m.chunk_type || 'chunk'),
+    source_text: m.source_text || m.source || 'chunk_text',
   }));
 
   // STEP 3: Rerank if enabled
-  const MIN_RERANK_SCORE = 0.5;
+  const MIN_RERANK_SCORE = 0.4;
   if (params.rerank && matches.length > 0) {
     const documents = matches.map(m =>
-      String(m.content || m.title || "")
+      String(m.content || m.content_preview || m.title || "")
     ).filter(d => d.length > 0);
+
+    trace_data.reranker_input_preview = matches.map((m, i) => {
+      const documentText = String(m.content || m.content_preview || m.title || "");
+      return {
+        candidate_index: i,
+        note_id: String(m.note_id || ""),
+        title: String(m.title || ""),
+        chunk_type: String(m.chunk_type || 'chunk'),
+        source_text: String(m.source_text || m.source || 'chunk_text'),
+        reranker_input_preview: documentText.substring(0, 300),
+        reranker_input_length: documentText.length,
+      };
+    });
 
     if (documents.length > 0) {
       try {
@@ -2267,6 +2603,8 @@ async function performHybridSearch(
           rerank_score: r.score,
           passed_rerank_threshold: r.score >= MIN_RERANK_SCORE,
           content: String(matches[r.index]?.content || "").substring(0, 300),
+          chunk_type: String(matches[r.index]?.chunk_type || 'chunk'),
+          source_text: matches[r.index]?.source_text || matches[r.index]?.source || 'chunk_text',
         }));
 
         // Reorder and filter by threshold
@@ -2298,11 +2636,57 @@ async function performHybridSearch(
   // Track total candidates before any batching/pagination
   const totalCandidatesBeforeRerank = (trace_data as any).chunks_after_grouping || matches.length;
 
+  // ───────────────────────────────────────────────────────────────────────
+  // Title backfill: notes.title is the source of truth (NOT vector metadata).
+  // Vector chunk metadata `title` may be empty/stale (e.g. when title is set
+  // by a backfill job after chunks were embedded). Join live titles from the
+  // `notes` table for the result note_ids and overwrite each match's title.
+  // ───────────────────────────────────────────────────────────────────────
+  try {
+    const uniqueNoteIds = Array.from(new Set(
+      matches.map(m => String(m.note_id || "")).filter(Boolean)
+    ));
+    if (uniqueNoteIds.length > 0) {
+      const titleFetchStart = Date.now();
+      const inList = uniqueNoteIds.map(id => `"${id}"`).join(',');
+      const titleResp = await fetch(
+        `${env.SUPABASE_URL}/rest/v1/notes?id=in.(${inList})&user_id=eq.${params.user_id}&select=id,title`,
+        {
+          headers: {
+            'apikey': env.SUPABASE_SERVICE_KEY,
+            'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+          },
+        }
+      );
+      if (titleResp.ok) {
+        const rows = await titleResp.json() as Array<{ id: string; title: string | null }>;
+        const titleMap = new Map<string, string>();
+        for (const row of rows) {
+          if (row.id && row.title) titleMap.set(row.id, row.title);
+        }
+        for (const m of matches) {
+          const nid = String(m.note_id || "");
+          const liveTitle = titleMap.get(nid);
+          if (liveTitle) {
+            m.title = liveTitle;
+          }
+        }
+        (trace_data as any).title_backfill_ms = Date.now() - titleFetchStart;
+        (trace_data as any).title_backfill_count = titleMap.size;
+      } else {
+        console.warn(`[performHybridSearch] Title backfill failed: ${titleResp.status} — falling back to vector metadata titles`);
+      }
+    }
+  } catch (err) {
+    console.warn(`[performHybridSearch] Title backfill error (non-fatal):`, err);
+  }
+
   return {
     matches,
     timing,
     embedding_cached: cached,
     total_candidates: totalCandidatesBeforeRerank,
+    candidate_note_ids: candidateNoteIds,
     trace_data,
   };
 }
@@ -2451,6 +2835,108 @@ async function handleMigrateChunkIds(request: Request, env: Env): Promise<Respon
   });
 }
 
+// ============================================================================
+// Sweeper: clean up upload pipelines that got stuck (Suggestion 3)
+// ----------------------------------------------------------------------------
+// Find upload_traces rows that have been in 'accepted' or 'processing' for
+// longer than `thresholdMinutes`, mark them failed, delete the placeholder
+// note (status='incomplete' guard), and refund the user's monthly quota.
+// Called from the scheduled() handler on every cron tick.
+// ============================================================================
+async function sweepStuckUploads(env: Env, thresholdMinutes: number): Promise<void> {
+  const cutoffIso = new Date(Date.now() - thresholdMinutes * 60_000).toISOString();
+  const listUrl =
+    `${env.SUPABASE_URL}/rest/v1/upload_traces` +
+    `?status=in.(accepted,processing)` +
+    `&created_at=lt.${encodeURIComponent(cutoffIso)}` +
+    `&select=trace_id,user_id,note_id,created_at,status` +
+    `&order=created_at.asc` +
+    `&limit=100`;
+
+  let stuck: Array<{ trace_id: string; user_id: string; note_id: string | null; created_at: string; status: string }> = [];
+  try {
+    const resp = await fetch(listUrl, {
+      headers: {
+        apikey: env.SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+      },
+    });
+    if (!resp.ok) {
+      console.log(`[sweepStuckUploads] list query HTTP ${resp.status}`);
+      return;
+    }
+    stuck = await resp.json() as typeof stuck;
+  } catch (e) {
+    console.log('[sweepStuckUploads] list query threw', String(e));
+    return;
+  }
+
+  if (stuck.length === 0) return;
+  console.log(`[sweepStuckUploads] found ${stuck.length} stuck upload(s) older than ${thresholdMinutes}m`);
+
+  const errMsg = `Stuck upload swept after ${thresholdMinutes}m without progress`;
+  const billingEnv = env as unknown as BillingEnv;
+
+  for (const row of stuck) {
+    // 1. Mark the trace as failed.
+    try {
+      await fetch(
+        `${env.SUPABASE_URL}/rest/v1/upload_traces?trace_id=eq.${encodeURIComponent(row.trace_id)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: env.SUPABASE_SERVICE_KEY,
+            Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            status: 'failed',
+            error_message: errMsg,
+            completed_at: new Date().toISOString(),
+          }),
+        }
+      );
+    } catch (e) {
+      console.log(`[sweepStuckUploads] trace patch failed for ${row.trace_id}: ${String(e)}`);
+    }
+
+    // 2. Delete the placeholder note (only if still incomplete \u2014 never clobber
+    //    a row that some other flow finalised to 'active').
+    if (row.note_id) {
+      try {
+        await fetch(
+          `${env.SUPABASE_URL}/rest/v1/notes?id=eq.${encodeURIComponent(row.note_id)}&user_id=eq.${encodeURIComponent(row.user_id)}&status=in.(incomplete,deleted)`,
+          {
+            method: 'DELETE',
+            headers: {
+              apikey: env.SUPABASE_SERVICE_KEY,
+              Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}`,
+              Prefer: 'return=minimal',
+            },
+          }
+        );
+      } catch (e) {
+        console.log(`[sweepStuckUploads] note delete failed for ${row.note_id}: ${String(e)}`);
+      }
+
+      // Bump search-cache version so the client refresh removes it.
+      try {
+        await env.SEARCH_CACHE.put(`version_${row.user_id}`, Date.now().toString());
+      } catch {
+        /* non-fatal */
+      }
+    }
+
+    // 3. Refund the upload quota credit (idempotent; trace_id is the key).
+    try {
+      await refundQuota(billingEnv, row.user_id, 'upload', row.trace_id);
+    } catch (e) {
+      console.log(`[sweepStuckUploads] refund failed for ${row.trace_id}: ${String(e)}`);
+    }
+  }
+}
+
 // Main request handler
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -2467,10 +2953,73 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
+
+    // =========================================================================
+    // Rate limiting (Cloudflare Workers built-in, NOT WAF).
+    // Keyed by CF-Connecting-IP. We rate limit on IP rather than user_id
+    // because validating auth costs ~50ms and runs against Supabase — we'd
+    // rather reject script floods before paying that cost. Trade-off: NAT/
+    // corporate proxies share an IP, but the limits are generous enough
+    // (30 uploads/min, 120 searches/min) that even shared offices won't
+    // hit them with normal use.
+    //
+    // Bindings are optional so local `wrangler dev` and any deploy that
+    // hasn't picked up the new wrangler.toml still works (just no limits).
+    // =========================================================================
+    if (request.method === "POST") {
+      const clientIp = request.headers.get("CF-Connecting-IP") || "unknown";
+      let limiter: RateLimit | undefined;
+      let limiterName = "";
+      if (path.startsWith("/api/v1/upload/") && env.UPLOAD_RATELIMIT) {
+        limiter = env.UPLOAD_RATELIMIT;
+        limiterName = "upload";
+      } else if ((path === "/rag-search-auth" || path === "/rag-search") && env.SEARCH_RATELIMIT) {
+        limiter = env.SEARCH_RATELIMIT;
+        limiterName = "search";
+      }
+      if (limiter) {
+        try {
+          const { success } = await limiter.limit({ key: clientIp });
+          if (!success) {
+            console.log(`[${requestId}] Rate limited (${limiterName}) ip=${clientIp}`);
+            return new Response(
+              JSON.stringify({
+                error: "Rate limit exceeded",
+                detail: `Too many ${limiterName} requests from this source. Please slow down.`,
+                retry_after_seconds: 60,
+              }),
+              {
+                status: 429,
+                headers: {
+                  "Content-Type": "application/json",
+                  "Retry-After": "60",
+                  ...corsHeaders,
+                },
+              }
+            );
+          }
+        } catch (rateLimitErr) {
+          // Never fail-closed on a rate-limit infrastructure error — log and
+          // continue so a CF outage doesn't take the app down.
+          console.error(`[${requestId}] Rate-limit binding error:`, redact(rateLimitErr));
+        }
+      }
+    }
     
     // Health check (no auth required)
     if (path === "/health" || path === "/") {
       return handleHealth(env);
+    }
+    
+    // =========================================================================
+    // Pro Waitlist - Collect emails for Pro plan interest (no auth required)
+    // POST /api/pro-waitlist
+    // =========================================================================
+    if (path === "/api/pro-waitlist") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      return handleProWaitlist(request, env);
     }
     
     // =========================================================================
@@ -2637,12 +3186,90 @@ export default {
     // =========================================================================
     
     // Auth endpoints
+    if (path === "/api/v1/app/bootstrap") {
+      if (request.method !== "GET") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleAppBootstrap(request, authResult, env as unknown as ApiEnv & BillingEnv & GroupsEnv & AuthEnv);
+    }
+
     if (path === "/api/v1/auth/me") {
       if (request.method !== "GET") {
         return new Response("Method not allowed", { status: 405, headers: corsHeaders });
       }
       const authResult = await validateAuth(request, env as AuthEnv);
+      ctx.waitUntil(ensureUserProfileAndAcceptInvites(authResult, env as GroupsEnv));
       return handleAuthMe(authResult, env as ApiEnv);
+    }
+
+    // Groups collaboration endpoints
+    if (path === "/api/v1/users/search" && request.method === "GET") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleSearchUsers(request, authResult, env as GroupsEnv);
+    }
+
+    if (path === "/api/v1/users/me/avatar" && request.method === "POST") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleUploadUserAvatar(request, authResult, env as GroupsEnv);
+    }
+
+    if (path === "/api/v1/groups") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      if (request.method === "GET") return handleListGroups(authResult, env as GroupsEnv);
+      if (request.method === "POST") return handleCreateGroup(request, authResult, env as GroupsEnv);
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    }
+
+    if (path === "/api/v1/groups/discover" && request.method === "GET") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleDiscoverGroups(request, authResult, env as GroupsEnv);
+    }
+
+    if (path === "/api/v1/notifications" && request.method === "GET") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleListNotifications(authResult, env as GroupsEnv);
+    }
+
+    if (path === "/api/v1/device-tokens" && request.method === "POST") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleRegisterDeviceToken(request, authResult, env as PushEnv);
+    }
+
+    const groupReactionMatch = path.match(/^\/api\/v1\/groups\/([a-f0-9-]+)\/snaps\/([a-f0-9-]+)\/reaction$/);
+    if (groupReactionMatch && request.method === "POST") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleReactToGroupSnap(groupReactionMatch[1], groupReactionMatch[2], request, authResult, env as GroupsEnv);
+    }
+
+    const groupRequestActionMatch = path.match(/^\/api\/v1\/groups\/([a-f0-9-]+)\/requests\/([a-f0-9-]+)\/(approve|deny)$/);
+    if (groupRequestActionMatch && request.method === "POST") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      const groupId = groupRequestActionMatch[1];
+      const requestId = groupRequestActionMatch[2];
+      const action = groupRequestActionMatch[3];
+      if (action === 'approve') return handleApproveJoinRequest(groupId, requestId, authResult, env as GroupsEnv);
+      if (action === 'deny') return handleDenyJoinRequest(groupId, requestId, authResult, env as GroupsEnv);
+    }
+
+    const groupActionMatch = path.match(/^\/api\/v1\/groups\/([a-f0-9-]+)(?:\/([^/]+))?(?:\/([^/]+))?$/);
+    if (groupActionMatch) {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      const groupId = groupActionMatch[1];
+      const action = groupActionMatch[2];
+      const subAction = groupActionMatch[3];
+
+      if (!action && request.method === "GET") return handleGetGroup(groupId, authResult, env as GroupsEnv);
+      if (action === "invite" && request.method === "POST") return handleInviteToGroup(groupId, request, authResult, env as GroupsEnv);
+      if (action === "accept" && request.method === "POST") return handleAcceptGroupInvite(groupId, authResult, env as GroupsEnv);
+      if (action === "decline" && request.method === "POST") return handleDeclineGroupInvite(groupId, authResult, env as GroupsEnv);
+      if (action === "join" && request.method === "POST") return handleRequestToJoinGroup(groupId, authResult, env as GroupsEnv);
+      if (action === "admin" && request.method === "POST") return handleTransferGroupAdmin(groupId, request, authResult, env as GroupsEnv);
+      if (action === "avatar" && request.method === "POST") return handleUploadGroupAvatar(groupId, request, authResult, env as GroupsEnv);
+      if (action === "snaps" && request.method === "POST") return handleShareSnapToGroup(groupId, request, authResult, env as GroupsEnv);
+      if (action === "seen" && request.method === "POST") return handleMarkGroupSeen(groupId, authResult, env as GroupsEnv);
+      if (action === "leave" && request.method === "POST") return handleLeaveGroup(groupId, request, authResult, env as GroupsEnv);
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
     }
     
     if (path === "/api/v1/auth/api-keys") {
@@ -2689,11 +3316,67 @@ export default {
       return handleListTags(authResult, env as ApiEnv);
     }
     
+    // GET /api/v1/notes/:id/highlights
+    const highlightsMatch = path.match(/^\/api\/v1\/notes\/([a-f0-9-]+)\/highlights$/);
+    if (highlightsMatch && request.method === 'GET') {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleNoteHighlights(highlightsMatch[1], authResult, env as ApiEnv);
+    }
+
+    // POST /api/v1/notes/:id/instagram-preview/refresh
+    const instagramPreviewRefreshMatch = path.match(/^\/api\/v1\/notes\/([a-f0-9-]+)\/instagram-preview\/refresh$/);
+    if (instagramPreviewRefreshMatch && request.method === 'POST') {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleRefreshInstagramPreview(instagramPreviewRefreshMatch[1], authResult, env as ApiEnv);
+    }
+
+    // GET /api/v1/newspaper - generate daily newspaper edition
+    if (path === "/api/v1/newspaper" && request.method === "GET") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleNewspaperEdition(request, authResult, env as ApiEnv);
+    }
+
+    // ───── Recap (daily / weekly / monthly slideshow) ─────
+    // GET /api/v1/recap?period=day|week|month[&date=YYYY-MM-DD][&refresh=1]
+    if (path === "/api/v1/recap" && request.method === "GET") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleRecapGet(request, authResult, env as RecapEnv);
+    }
+    // POST /api/v1/recap/save
+    if (path === "/api/v1/recap/save" && request.method === "POST") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleRecapSave(request, authResult, env as RecapEnv);
+    }
+    // GET /api/v1/recap/saved
+    if (path === "/api/v1/recap/saved" && request.method === "GET") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleRecapListSaved(request, authResult, env as RecapEnv);
+    }
+    // GET /api/v1/recap/saved/:id  or  DELETE /api/v1/recap/saved/:id
+    const savedRecapMatch = path.match(/^\/api\/v1\/recap\/saved\/([a-f0-9-]+)$/);
+    if (savedRecapMatch) {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      if (request.method === "GET") {
+        return handleRecapGetSaved(savedRecapMatch[1], authResult, env as RecapEnv);
+      }
+      if (request.method === "DELETE") {
+        return handleRecapDeleteSaved(savedRecapMatch[1], authResult, env as RecapEnv);
+      }
+      return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    }
+
     // GET /api/v1/notes/:id/view-token
     const viewTokenMatch = path.match(/^\/api\/v1\/notes\/([a-f0-9-]+)\/view-token$/);
     if (viewTokenMatch && request.method === "GET") {
       const authResult = await validateAuth(request, env as AuthEnv);
       return handleGetViewToken(viewTokenMatch[1], authResult, env as ApiEnv);
+    }
+
+    // POST /api/v1/notes/:id/recreate - quick-note edit via DO async pipeline
+    const recreateNoteMatch = path.match(/^\/api\/v1\/notes\/([a-f0-9-]+)\/recreate$/);
+    if (recreateNoteMatch && request.method === "POST") {
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleEditQuickNoteWithDO(request, recreateNoteMatch[1], authResult, env as UploadEnv);
     }
     
     // DELETE /api/v1/notes/bulk - Delete multiple notes at once
@@ -2758,6 +3441,19 @@ export default {
       const authResult = await validateAuth(request, env as AuthEnv);
       return handleUploadWebpageWithDO(request, authResult, env as unknown as UploadEnv);
     }
+
+    // Share-intent path: native social apps share their URL here. The handler
+    // detects the platform (YouTube, …) and runs a platform-specific enricher
+    // (e.g. transcript fetch). Unknown URLs transparently fall back to the
+    // webpage scrape path above.
+    if (path === "/api/v1/upload/shared-url") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleUploadSharedUrlWithDO(request, authResult, env as unknown as UploadEnv);
+    }
+
     
     // POST /api/v1/upload/cancel/:trace_id - Cancel an upload
     const uploadCancelMatch = path.match(/^\/api\/v1\/upload\/cancel\/(.+)$/);
@@ -2776,12 +3472,61 @@ export default {
       const authResult = await validateAuth(request, env as AuthEnv);
       return handleUploadQuota(authResult, env as unknown as UploadEnv);
     }
+
+    // =========================================================================
+    // Billing / plan placeholders. Payment gateway webhooks can replace the
+    // manual upgrade endpoint later; quota enforcement already reads the same
+    // user_plans and monthly usage tables.
+    // =========================================================================
+    if (path === "/api/v1/billing/status") {
+      if (request.method !== "GET") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleBillingStatus(authResult, env as unknown as BillingEnv);
+    }
+
+    if (path === "/api/v1/billing/upgrade-dev") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleBillingUpgradeDev(authResult, env as unknown as BillingEnv);
+    }
+
+    if (path === "/api/v1/billing/cancel") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleBillingCancel(authResult, env as unknown as BillingEnv);
+    }
+
+    if (path === "/api/v1/billing/reactivate") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleBillingReactivate(authResult, env as unknown as BillingEnv);
+    }
+
+    if (path === "/api/v1/billing/history") {
+      if (request.method !== "GET") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+      const authResult = await validateAuth(request, env as AuthEnv);
+      return handleBillingHistory(authResult, env as unknown as BillingEnv);
+    }
     
     // Debug: Test TensorLake directly
     if (path === "/api/v1/upload/test-tensorlake") {
       return handleTestTensorLake(request, env as unknown as UploadEnv);
     }
-    
+
+    // (Removed) IG enrichment queue admin endpoints — Apify-based IG
+    // enrichment was retired. The queue table, RPCs, and ig-enrich-queue.ts
+    // module were dropped along with the every-minute cron drainer.
+
     // GET /api/v1/upload/status/:trace_id
     const uploadStatusMatch = path.match(/^\/api\/v1\/upload\/status\/(.+)$/);
     if (uploadStatusMatch) {
@@ -2849,7 +3594,7 @@ export default {
       }
       
       // Clone request to read body (can only read once)
-      const body = await request.json() as { query?: string; user_id?: string; max_results?: number; debug?: boolean; client_source?: string; tag_filter?: string | string[]; new_session?: boolean; exclude_note_ids?: string[] };
+      const body = await request.json() as { query?: string; user_id?: string; max_results?: number; debug?: boolean; client_source?: string; tag_filter?: string | string[]; new_session?: boolean; exclude_note_ids?: string[]; note_id?: string };
       
       // Get user_id from auth or body
       let userId = authResult.user_id;
@@ -2872,6 +3617,23 @@ export default {
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
+
+      const isGoogleSearch = body.client_source === 'google-search';
+      const quotaMetric = isGoogleSearch ? 'google_search' : 'snapbot_search';
+      const quotaDecision = await consumeQuota(
+        env as unknown as BillingEnv,
+        userId,
+        quotaMetric,
+        requestId,
+        {
+          query: body.query.slice(0, 500),
+          client_source: body.client_source || null,
+          search_deeper: Array.isArray(body.exclude_note_ids) && body.exclude_note_ids.length > 0,
+        },
+      );
+      if (!quotaDecision.allowed) {
+        return quotaExceededResponse(quotaDecision);
+      }
       
       console.log(`[${requestId}] RAG auth: method=${authResult.auth_method}, user=${userId.slice(0, 8)}, auth_ms=${authDurationMs}, source=${body.client_source || 'unknown'}`);
       
@@ -2888,13 +3650,14 @@ export default {
           tag_filter: body.tag_filter,  // Forward explicit tag filter
           new_session: body.new_session,  // Forward new session flag to clear stale KV
           exclude_note_ids: body.exclude_note_ids,  // Forward for "search deeper"
+          note_id: body.note_id,  // Forward anchored note constraint
           // Pass auth timing data to handleRagSearch
           _auth_timing: {
             auth_started_at: authStartedAt,
             auth_completed_at: authCompletedAt,
             timing_auth_ms: authDurationMs,
             auth_method: authResult.auth_method,
-            auth_user_email: authResult.user_email,
+            auth_user_email: (authResult as any).user_email,
           }
         }),
       });
@@ -2905,6 +3668,245 @@ export default {
         ctx,
         requestId,
         performHybridSearch
+      );
+    }
+
+    // =========================================================================
+    // Agent search endpoint (Phase 0/1) — additive, isolated from /rag-search.
+    // If the agent claims the query (currently: counting/group queries) it
+    // returns an answer directly. Otherwise it forwards to handleRagSearch
+    // unchanged so behaviour is identical to /rag-search-auth.
+    // =========================================================================
+    if (path === "/agent-search-auth") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+
+      const authStartTime = Date.now();
+      const authStartedAt = new Date().toISOString();
+      const authResult = await validateAuth(request, env as AuthEnv);
+      const authCompletedAt = new Date().toISOString();
+      const authDurationMs = Date.now() - authStartTime;
+
+      if (!authResult.authenticated) {
+        return new Response(
+          JSON.stringify({ error: authResult.error || "Unauthorized" }),
+          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const body = await request.json() as { query?: string; user_id?: string; max_results?: number; debug?: boolean; client_source?: string; tag_filter?: string | string[]; new_session?: boolean; exclude_note_ids?: string[]; note_id?: string };
+
+      let userId = authResult.user_id;
+      if (authResult.auth_method === 'worker_key') {
+        userId = body.user_id;
+      }
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: "user_id required" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      if (!body.query) {
+        return new Response(
+          JSON.stringify({ error: "query is required" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const isGoogleSearch = body.client_source === 'google-search';
+      const quotaMetric = isGoogleSearch ? 'google_search' : 'snapbot_search';
+      const quotaDecision = await consumeQuota(
+        env as unknown as BillingEnv,
+        userId,
+        quotaMetric,
+        requestId,
+        {
+          query: body.query.slice(0, 500),
+          client_source: body.client_source || null,
+          search_deeper: Array.isArray(body.exclude_note_ids) && body.exclude_note_ids.length > 0,
+          agent: true,
+        },
+      );
+      if (!quotaDecision.allowed) {
+        return quotaExceededResponse(quotaDecision);
+      }
+
+      // -----------------------------------------------------------------
+      // MIGRATED 2025-01: This endpoint URL is preserved for Flutter/extension
+      // callers, but now routes through the v2 planner-loop handler. The old
+      // regex router (./agent/handler.ts and ./agent/understand.ts) is
+      // commented out for rollback — see those files' headers for context.
+      // -----------------------------------------------------------------
+      const { handleAgentV2Search } = await import('./agent_v2/handler');
+      const { performLeanVectorSearch } = await import('./agent_v2/lean_search');
+
+      // Closure that builds the modified request and invokes classic search.
+      // The agent handler calls this when it can't claim the query, then
+      // post-processes the response through the Phase 3 controller.
+      const forwardToClassic = async (): Promise<Response> => {
+        const modifiedRequest = new Request(request.url, {
+          method: "POST",
+          headers: request.headers,
+          body: JSON.stringify({
+            query: body.query,
+            user_id: userId,
+            max_results: body.max_results,
+            debug: body.debug,
+            client_source: body.client_source,
+            tag_filter: body.tag_filter,
+            new_session: body.new_session,
+            exclude_note_ids: body.exclude_note_ids,
+            note_id: body.note_id,
+            _auth_timing: {
+              auth_started_at: authStartedAt,
+              auth_completed_at: authCompletedAt,
+              timing_auth_ms: authDurationMs,
+              auth_method: authResult.auth_method,
+              auth_user_email: (authResult as any).user_email,
+            },
+          }),
+        });
+        return handleRagSearch(
+          modifiedRequest,
+          env as unknown as RagSearchEnv,
+          ctx,
+          requestId,
+          performHybridSearch,
+        );
+      };
+
+      return handleAgentV2Search(
+        { ...body, query: body.query, user_id: userId },
+        env as unknown as RagSearchEnv,
+        ctx,
+        requestId,
+        forwardToClassic,
+        // Lean retrieval closure — binds env/ctx/userId; the planner's
+        // vector_search tool calls this directly, skipping rag-search.ts's
+        // LLM gates (spell-check, plan-gate, intent, rewriter, synthesis).
+        (q, k, exclude, tag) => performLeanVectorSearch(
+          { query: q, user_id: userId!, k, exclude_note_ids: exclude, tag },
+          performHybridSearch,
+          env as any,
+          ctx,
+        ),
+      );
+    }
+
+    // =========================================================================
+    // Agent V2 search endpoint — function-calling planner agent.
+    //
+    // This is the Step-1 build of the simplified architecture: a single Groq
+    // tool-use loop replaces the regex router and 5-lane dispatch in
+    // /agent-search-auth. Both endpoints run in parallel during validation.
+    // Once parity is proven, /agent-search-auth's regex router will be
+    // commented out and traffic migrated to /agent-v2-search-auth.
+    // =========================================================================
+    if (path === "/agent-v2-search-auth") {
+      if (request.method !== "POST") {
+        return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+      }
+
+      const authStartTime = Date.now();
+      const authStartedAt = new Date().toISOString();
+      const authResult = await validateAuth(request, env as AuthEnv);
+      const authCompletedAt = new Date().toISOString();
+      const authDurationMs = Date.now() - authStartTime;
+
+      if (!authResult.authenticated) {
+        return new Response(
+          JSON.stringify({ error: authResult.error || "Unauthorized" }),
+          { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const body = await request.json() as { query?: string; user_id?: string; max_results?: number; debug?: boolean; client_source?: string; tag_filter?: string | string[]; new_session?: boolean; exclude_note_ids?: string[]; note_id?: string };
+
+      let userId = authResult.user_id;
+      if (authResult.auth_method === 'worker_key') {
+        userId = body.user_id;
+      }
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: "user_id required" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      if (!body.query) {
+        return new Response(
+          JSON.stringify({ error: "query is required" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      const isGoogleSearch = body.client_source === 'google-search';
+      const quotaMetric = isGoogleSearch ? 'google_search' : 'snapbot_search';
+      const quotaDecision = await consumeQuota(
+        env as unknown as BillingEnv,
+        userId,
+        quotaMetric,
+        requestId,
+        {
+          query: body.query.slice(0, 500),
+          client_source: body.client_source || null,
+          search_deeper: Array.isArray(body.exclude_note_ids) && body.exclude_note_ids.length > 0,
+          agent_v2: true,
+        },
+      );
+      if (!quotaDecision.allowed) {
+        return quotaExceededResponse(quotaDecision);
+      }
+
+      const { handleAgentV2Search } = await import('./agent_v2/handler');
+      const { performLeanVectorSearch } = await import('./agent_v2/lean_search');
+
+      // Forward closure used by the vector_search tool — invokes the existing
+      // /rag-search-auth pipeline as a sub-tool. Same shape as agent v1.
+      const forwardToClassic = async (): Promise<Response> => {
+        const modifiedRequest = new Request(request.url, {
+          method: "POST",
+          headers: request.headers,
+          body: JSON.stringify({
+            query: body.query,
+            user_id: userId,
+            max_results: body.max_results,
+            debug: body.debug,
+            client_source: body.client_source,
+            tag_filter: body.tag_filter,
+            new_session: body.new_session,
+            exclude_note_ids: body.exclude_note_ids,
+            note_id: body.note_id,
+            _auth_timing: {
+              auth_started_at: authStartedAt,
+              auth_completed_at: authCompletedAt,
+              timing_auth_ms: authDurationMs,
+              auth_method: authResult.auth_method,
+              auth_user_email: (authResult as any).user_email,
+            },
+          }),
+        });
+        return handleRagSearch(
+          modifiedRequest,
+          env as unknown as RagSearchEnv,
+          ctx,
+          requestId,
+          performHybridSearch,
+        );
+      };
+
+      return handleAgentV2Search(
+        { ...body, query: body.query, user_id: userId },
+        env as unknown as RagSearchEnv,
+        ctx,
+        requestId,
+        forwardToClassic,
+        (q, k, exclude, tag) => performLeanVectorSearch(
+          { query: q, user_id: userId!, k, exclude_note_ids: exclude, tag },
+          performHybridSearch,
+          env as any,
+          ctx,
+        ),
       );
     }
 
@@ -3049,5 +4051,63 @@ export default {
           { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
     }
+  },
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Cron scheduler — pre-warms weekly recap caches every Sunday 09:00 UTC
+  // and daily recap caches every morning 08:00 UTC.
+  // Configured in wrangler.toml [triggers] crons.
+  // ───────────────────────────────────────────────────────────────────────────
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const cron = event.cron;
+
+    // Stuck-upload sweeper (Suggestion 3) — runs on every cron tick.
+    // If a Durable Object dies in a weird way (or its failure-cleanup
+    // itself crashes), an upload_traces row can sit in 'accepted' or
+    // 'processing' forever and the user sees a permanent "Saving…"
+    // placeholder. This sweeper marks anything older than 15 minutes
+    // as failed, deletes the placeholder note, and refunds the quota.
+    try {
+      await sweepStuckUploads(env, 15);
+    } catch (e) {
+      console.log('[cron] sweepStuckUploads failed', String(e));
+    }
+
+    // Cron `*/15 * * * *` is dedicated to the stuck-upload sweeper —
+    // skip the recap fan-out branch for it so we don't burn subrequests.
+    if (cron === '*/15 * * * *') {
+      return;
+    }
+
+    let period: 'day' | 'week' | 'month';
+    if (cron === '0 9 * * 0') period = 'week';
+    else if (cron === '0 9 1 * *') period = 'month';
+    else period = 'day';
+
+    console.log(`[cron] recap fan-out start cron="${cron}" period=${period}`);
+    const t0 = Date.now();
+
+    const recapEnv = env as unknown as RecapEnv;
+    let userIds: string[] = [];
+    try {
+      userIds = await listActiveUserIds(recapEnv, period === 'month' ? 45 : 14);
+    } catch (e) {
+      console.log('[cron] listActiveUserIds failed', String(e));
+      return;
+    }
+
+    console.log(`[cron] fan-out across ${userIds.length} active users`);
+    const BATCH = 5;
+    let ok = 0, fail = 0;
+    for (let i = 0; i < userIds.length; i += BATCH) {
+      const batch = userIds.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batch.map(uid => generateRecapForUser(recapEnv, uid, period))
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled') ok++; else { fail++; console.log('[cron] recap fail', String(r.reason)); }
+      }
+    }
+    console.log(`[cron] done ok=${ok} fail=${fail} elapsed=${Date.now() - t0}ms`);
   },
 };

@@ -3,6 +3,14 @@ main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
+# Workers Paid plan: raise CPU time limit above the 30s default.
+# Max allowed: 300000ms (5 minutes). Heavy uploads (carousel image
+# processing, multi-clip Whisper transcription, large HTML cleanup) can
+# burn through 30s; 5 min gives generous headroom. Only billed for actual
+# CPU time consumed, not wall clock.
+[limits]
+cpu_ms = 300000
+
 # Enable Logpush for workers_trace_events dataset
 # This is REQUIRED for trace events to be sent to Logpush destinations
 logpush = true
@@ -60,9 +68,62 @@ id = "a3bd6fc0c12c43f7b5490a893001167a"
 binding = "SYNTHESIS_CACHE"
 id = "64f5b64187e64348a985faefff69ba32"
 
+[[kv_namespaces]]
+binding = "CHAT_SESSIONS"
+id = "240f3e155b994e1ba2589079716e3a2e"
+
+[[kv_namespaces]]
+binding = "THUMBNAIL_FOLDERS"
+id = "2a674b420c744b52889c1dbb9b01ec6b"
+
 # Workers AI binding - for generating embeddings at the edge
 [ai]
 binding = "AI"
+
+# ---------------------------------------------------------------------------
+# Cloudflare Workers Rate Limiting (built-in, NOT WAF).
+# Sliding-window, per-key, cheap. Tuned to be permissive for humans and
+# hostile to scripted abuse. Limits are applied in src/index.ts before any
+# heavy processing (auth + DO dispatch + embeddings + Vectorize).
+#
+# UPLOAD_RATELIMIT:
+#   Applied to every /api/v1/upload/* POST. Key = user_id (or IP for
+#   unauthenticated requests). 30 req / 60s is well above normal use
+#   (the Flutter app uploads at most ~3/s during a screenshot batch and
+#   the extension uploads at human speed).
+#
+# SEARCH_RATELIMIT:
+#   Applied to /rag-search-auth (the path that costs us money on every
+#   call: Voyage rerank + Groq synthesis). 120 req / 60s = 2/s average,
+#   still well above any human user but blocks runaway scripts.
+#
+# namespace_id values are arbitrary integers (as strings) — they only
+# need to be unique per-worker. Period MUST be 10 or 60.
+# ---------------------------------------------------------------------------
+[[unsafe.bindings]]
+name = "UPLOAD_RATELIMIT"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }
+
+[[unsafe.bindings]]
+name = "SEARCH_RATELIMIT"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 120, period = 60 }
+
+# Cron triggers
+# - stuck-upload sweeper:          every 15 minutes (cleans up uploads
+#                                  that died mid-pipeline + refunds quota)
+# - daily recap pre-warm:          08:00 UTC every day
+# - weekly recap pre-warm:         09:00 UTC every Sunday
+# - monthly recap pre-warm:        09:00 UTC on the 1st of each month
+#
+# (Removed) every-minute IG enrichment queue drain — the queue existed to
+# batch concurrent Instagram shares into a single Apify run. We no longer
+# use Apify for social enrichment, so the cron + queue are dead code.
+[triggers]
+crons = ["*/15 * * * *", "0 8 * * *", "0 9 * * SUN", "0 9 1 * *"]
 
 # Environment variables (set via wrangler secret)
 # WORKER_API_KEY - API key to authenticate requests from your FastAPI app
@@ -72,6 +133,7 @@ binding = "AI"
 EMBEDDING_MODEL = "@cf/baai/bge-base-en-v1.5"
 # Enable logging to Supabase - set to "true" to send logs
 LOG_ENABLED = "true"
+AZURE_THUMBNAILS_CONTAINER = "notes-thumbnails"
 # REMOVED: BACKEND_URL - no longer using Fly.io for logging
 # Logs go directly to Supabase search_traces table
 
@@ -85,3 +147,5 @@ LOG_ENABLED = "true"
 # wrangler secret put AZURE_STORAGE_CONNECTION_STRING
 # wrangler secret put AZURE_STORAGE_CONTAINER
 # wrangler secret put TENSORLAKE_API_KEY
+# wrangler secret put YOUTUBE_API_KEY
+# wrangler secret put INSTAGRAM_OEMBED_ACCESS_TOKEN

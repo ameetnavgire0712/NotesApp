@@ -1,0 +1,57 @@
+name: RLS Guard
+
+# Why: catches the "added a public table but forgot to ENABLE RLS / write a
+# policy" mistake at PR time. Background: migrations 029 + 030 made exactly
+# this mistake and we only noticed months later when writing the security
+# plan. This is a 5-second check that prevents the same class of bug.
+
+on:
+  pull_request:
+    paths:
+      - "migrations/**.sql"
+      - "scripts/rls_guard.py"
+      - ".github/workflows/rls-guard.yml"
+  push:
+    branches: [main, production]
+    paths:
+      - "migrations/**.sql"
+
+jobs:
+  rls-guard:
+    name: Check new tables have RLS + at least one policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Need merge-base to compute the diff for PRs.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Determine changed migration files
+        id: changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+            files=$(git diff --name-only --diff-filter=AMR "$base" "$head" -- 'migrations/*.sql' | tr '\n' ' ')
+          else
+            files=$(git diff --name-only --diff-filter=AMR HEAD~1 HEAD -- 'migrations/*.sql' | tr '\n' ' ')
+          fi
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+          echo "Changed SQL files: $files"
+
+      - name: Run RLS guard on changed files
+        if: steps.changed.outputs.files != ''
+        run: |
+          python scripts/rls_guard.py --files ${{ steps.changed.outputs.files }}
+
+      - name: Skip — no migration files changed
+        if: steps.changed.outputs.files == ''
+        run: echo "No migration files in this change; nothing to check."

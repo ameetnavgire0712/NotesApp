@@ -5,6 +5,8 @@
  * This enables frontend to call Worker directly, bypassing Fly.io for better performance.
  */
 
+import { maskEmail, maskId, redact } from './log-redact';
+
 export interface AuthEnv {
   SUPABASE_JWT_SECRET: string;
   SUPABASE_URL: string;
@@ -16,6 +18,7 @@ export interface AuthResult {
   authenticated: boolean;
   user_id?: string;
   email?: string;
+  name?: string;  // User's full name from Google OAuth
   auth_method?: 'jwt' | 'api_key' | 'worker_key';
   error?: string;
 }
@@ -35,8 +38,9 @@ export async function validateAuth(request: Request, env: AuthEnv): Promise<Auth
   const authHeader = request.headers.get('Authorization');
   const apiKey = request.headers.get('X-API-Key');
   
-  console.log('[Auth] Headers - Authorization:', authHeader ? `Bearer ${authHeader.slice(7, 20)}...` : 'none');
-  console.log('[Auth] Headers - X-API-Key:', apiKey ? `${apiKey.slice(0, 10)}...` : 'none');
+  // PII/secret hygiene: log only presence + auth scheme, never token bytes.
+  console.log('[Auth] Headers - Authorization:', authHeader ? 'Bearer <present>' : 'none');
+  console.log('[Auth] Headers - X-API-Key:', apiKey ? `<present:${apiKey.startsWith('na_') ? 'na' : apiKey.startsWith('ina_') ? 'ina' : 'other'}>` : 'none');
   
   // Priority 1: Check for Worker API key (server-to-server, requires user_id in body)
   if (apiKey === env.WORKER_API_KEY) {
@@ -53,7 +57,7 @@ export async function validateAuth(request: Request, env: AuthEnv): Promise<Auth
     const token = authHeader.slice(7);
     console.log('[Auth] Validating JWT token, length:', token.length);
     const jwtResult = await validateSupabaseJWT(token, env);
-    console.log('[Auth] JWT result:', jwtResult.authenticated ? 'SUCCESS' : `FAILED: ${jwtResult.error}`);
+    console.log('[Auth] JWT result:', jwtResult.authenticated ? 'SUCCESS' : `FAILED: ${redact(jwtResult.error || '')}`);
     if (jwtResult.authenticated) {
       return jwtResult;
     }
@@ -61,8 +65,8 @@ export async function validateAuth(request: Request, env: AuthEnv): Promise<Auth
     return jwtResult;
   }
   
-  // Priority 3: Check for user API key (na_ prefix)
-  if (apiKey && apiKey.startsWith('na_')) {
+  // Priority 3: Check for user API key (na_ or ina_ prefix)
+  if (apiKey && (apiKey.startsWith('na_') || apiKey.startsWith('ina_'))) {
     const apiKeyResult = await validateApiKey(apiKey, env);
     if (apiKeyResult.authenticated) {
       return apiKeyResult;
@@ -86,7 +90,9 @@ export async function validateAuth(request: Request, env: AuthEnv): Promise<Auth
 async function validateSupabaseJWT(token: string, env: AuthEnv): Promise<AuthResult> {
   try {
     console.log('[Auth] Calling Supabase URL:', env.SUPABASE_URL);
-    console.log('[Auth] Using service key prefix:', env.SUPABASE_SERVICE_KEY?.substring(0, 20));
+    // SECURITY: never log any prefix of the service key — it ends up in
+    // Logpush -> Azure blob storage. Logging only presence here.
+    console.log('[Auth] Service key configured:', Boolean(env.SUPABASE_SERVICE_KEY));
     
     // Call Supabase auth API to verify token and get user info
     const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
@@ -100,16 +106,24 @@ async function validateSupabaseJWT(token: string, env: AuthEnv): Promise<AuthRes
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('[Auth] Supabase API error response:', errorText);
+      // Error bodies from Supabase often echo back our Authorization header.
+      console.log('[Auth] Supabase API error response:', redact(errorText));
       // Session was likely revoked - return specific error for extension to handle
       if (response.status === 401 || response.status === 403) {
         return { authenticated: false, error: 'SESSION_REVOKED' };
       }
-      return { authenticated: false, error: `Invalid token: ${response.status} - ${errorText}` };
+      return { authenticated: false, error: `Invalid token: ${response.status} - ${redact(errorText)}` };
     }
     
-    const user = await response.json() as { id?: string; email?: string };
-    console.log('[Auth] Supabase API verified user:', user.id?.substring(0, 8), 'email:', user.email);
+    const user = await response.json() as { 
+      id?: string; 
+      email?: string;
+      user_metadata?: { full_name?: string; name?: string };
+    };
+    console.log('[Auth] Supabase API verified user:', maskId(user.id), 'email:', maskEmail(user.email));
+    
+    // Extract user's name from OAuth metadata
+    const userName = user.user_metadata?.full_name || user.user_metadata?.name;
     
     if (!user.id) {
       return { authenticated: false, error: 'Invalid token: no user ID' };
@@ -154,7 +168,7 @@ async function validateSupabaseJWT(token: string, env: AuthEnv): Promise<AuthRes
             }
           } else {
             const errorText = await sessionResponse.text();
-            console.log('[Auth] Session check RPC failed:', sessionResponse.status, errorText);
+            console.log('[Auth] Session check RPC failed:', sessionResponse.status, redact(errorText));
           }
         } else {
           console.log('[Auth] No session_id in JWT payload');
@@ -162,20 +176,21 @@ async function validateSupabaseJWT(token: string, env: AuthEnv): Promise<AuthRes
       }
     } catch (sessionCheckError) {
       // If session check fails, continue with auth (don't block valid users)
-      console.log('[Auth] Session check error:', sessionCheckError);
-      console.log('[Auth] Session check skipped:', sessionCheckError);
+      console.log('[Auth] Session check error:', redact(sessionCheckError));
+      console.log('[Auth] Session check skipped:', redact(sessionCheckError));
     }
     
     return {
       authenticated: true,
       user_id: user.id,
       email: user.email,
+      name: userName,
       auth_method: 'jwt'
     };
     
   } catch (error) {
-    console.error('[Auth] JWT validation error:', error);
-    return { authenticated: false, error: `JWT validation failed: ${error}` };
+    console.error('[Auth] JWT validation error:', redact(error));
+    return { authenticated: false, error: `JWT validation failed: ${redact(error)}` };
   }
 }
 
@@ -192,10 +207,13 @@ async function validateApiKey(apiKey: string, env: AuthEnv): Promise<AuthResult>
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const keyHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
+    console.log('[Auth] API key hash computed:', keyHash.slice(0, 16) + '...');
+    
     // Query Supabase for the API key
-    const response = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/user_api_keys?api_key=eq.${keyHash}&is_active=eq.true&select=user_id`,
-      {
+    const queryUrl = `${env.SUPABASE_URL}/rest/v1/user_api_keys?api_key=eq.${keyHash}&is_active=eq.true&select=user_id`;
+    console.log('[Auth] Querying:', queryUrl.replace(keyHash, keyHash.slice(0, 8) + '...'));
+    
+    const response = await fetch(queryUrl, {
         headers: {
           'apikey': env.SUPABASE_SERVICE_KEY,
           'Authorization': `Bearer ${env.SUPABASE_SERVICE_KEY}`,
@@ -203,13 +221,16 @@ async function validateApiKey(apiKey: string, env: AuthEnv): Promise<AuthResult>
       }
     );
     
+    console.log('[Auth] DB response status:', response.status);
+    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API key lookup failed:', response.status, errorText);
+      console.error('[Auth] API key lookup failed:', response.status, redact(errorText));
       return { authenticated: false, error: `API key validation failed: ${response.status}` };
     }
     
     const keys = await response.json() as Array<{ user_id: string }>;
+    console.log('[Auth] Keys found:', keys.length);
     
     if (!keys || keys.length === 0) {
       return { authenticated: false, error: 'Invalid or inactive API key' };
@@ -217,8 +238,9 @@ async function validateApiKey(apiKey: string, env: AuthEnv): Promise<AuthResult>
     
     const userId = keys[0].user_id;
     
-    // Fetch user email from Supabase Auth admin API
+    // Fetch user email and name from Supabase Auth admin API
     let userEmail: string | undefined;
+    let userName: string | undefined;
     try {
       const userResponse = await fetch(
         `${env.SUPABASE_URL}/auth/v1/admin/users/${userId}`,
@@ -230,26 +252,31 @@ async function validateApiKey(apiKey: string, env: AuthEnv): Promise<AuthResult>
         }
       );
       if (userResponse.ok) {
-        const userData = await userResponse.json() as { email?: string };
+        const userData = await userResponse.json() as { 
+          email?: string;
+          user_metadata?: { full_name?: string; name?: string };
+        };
         userEmail = userData.email;
-        console.log('[Auth] Fetched email for API key user:', userEmail);
+        userName = userData.user_metadata?.full_name || userData.user_metadata?.name;
+        console.log('[Auth] Fetched email for API key user:', maskEmail(userEmail), 'name:', userName ? '<present>' : '<none>');
       } else {
         console.log('[Auth] Could not fetch user email:', userResponse.status);
       }
     } catch (emailError) {
-      console.log('[Auth] Error fetching user email:', emailError);
+      console.log('[Auth] Error fetching user email:', redact(emailError));
     }
     
     return {
       authenticated: true,
       user_id: userId,
       email: userEmail,
+      name: userName,
       auth_method: 'api_key'
     };
     
   } catch (error) {
-    console.error('API key validation error:', error);
-    return { authenticated: false, error: `API key validation failed: ${error}` };
+    console.error('API key validation error:', redact(error));
+    return { authenticated: false, error: `API key validation failed: ${redact(error)}` };
   }
 }
 

@@ -1,0 +1,78 @@
+# Dependabot — keeps us current on security patches across every ecosystem.
+# Each entry tells Dependabot to watch a manifest and open small weekly PRs
+# for outdated or vulnerable packages. Reviews stay manageable because each
+# bump is its own PR with the changelog inline.
+#
+# Reference: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+version: 2
+updates:
+  # ---- Cloudflare Worker (npm) ----
+  - package-ecosystem: "npm"
+    directory: "/cloudflare-worker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "worker"
+    groups:
+      # Group non-major bumps together so one PR can carry several
+      # patch/minor updates and we don't drown in noise.
+      worker-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---- Python backend / scripts (pip) ----
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    groups:
+      python-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---- Flutter app (pub) ----
+  - package-ecosystem: "pub"
+    directory: "/infosnap_app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "flutter"
+    groups:
+      flutter-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---- GitHub Actions themselves ----
+  # Catches outdated action versions (actions/checkout@v3 → v4 etc.) which
+  # are a real supply-chain surface.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "07:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
