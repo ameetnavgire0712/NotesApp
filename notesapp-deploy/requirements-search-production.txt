@@ -38,7 +38,7 @@ langchain-groq>=0.1.0
 langgraph>=0.2.0
 
 # JWT/Auth
-python-jose[cryptography]>=3.3.0
+python-jose[cryptography]>=3.5.0
 
 # Basic data processing
 numpy>=1.24.0
