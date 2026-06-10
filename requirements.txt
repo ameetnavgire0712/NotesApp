@@ -19,7 +19,7 @@ sentence-transformers>=2.2.0
 
 # Semantic Chunking (Docling)
 docling>=2.0.0
-docling-core[chunking]>=2.0.0
+docling-core[chunking]>=2.81.0
 
 # RAG Evaluation
 ragas>=0.1.0
