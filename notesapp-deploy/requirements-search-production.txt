@@ -7,26 +7,26 @@
 # =============================================================================
 
 # FastAPI and serving
-fastapi==0.115.0
-uvicorn[standard]==0.30.0
-python-multipart==0.0.9
-pydantic-settings>=2.4.0
+fastapi==0.137.0
+uvicorn[standard]==0.49.0
+python-multipart==0.0.32
+pydantic-settings>=2.14.1
 pydantic>=2.0.0
 
 # HTTP client
-httpx>=0.27.0
+httpx>=0.28.1
 
 # Environment
-python-dotenv>=1.0.1
+python-dotenv>=1.2.2
 
 # OpenAI SDK (imported by embeddings.py even though we override it)
 openai>=1.45.0
 
 # Supabase (notes_db.py)
-supabase>=2.6.0
+supabase>=2.31.0
 
 # Azure Storage (blob_storage.py)
-azure-storage-blob>=12.22.0
+azure-storage-blob>=12.30.0
 
 # Groq (for chat endpoints)
 groq>=0.9.0
