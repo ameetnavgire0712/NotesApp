@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+    <!-- Brand logo: two overlapping rounded squares (matches the home header
+         logo). Android tray icons must be alpha-only / white-on-transparent,
+         so we vary alpha to suggest the two-tone green of the brand. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M3,3 L24,3 Q26,3 26,5 L26,26 Q26,28 24,28 L3,28 Q1,28 1,26 L1,5 Q1,3 3,3 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.72"
+        android:pathData="M12,10 L33,10 Q35,10 35,12 L35,33 Q35,35 33,35 L12,35 Q10,35 10,33 L10,12 Q10,10 12,10 Z" />
+</vector>

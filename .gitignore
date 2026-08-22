@@ -53,3 +53,15 @@ node_modules/
 # Build outputs
 dist/
 .wrangler/
+
+# Flutter app debris (screenshots / scratch, not source)
+infosnap_app/emulator_*.png
+infosnap_app/emulator_visuals/
+infosnap_app/*.log
+
+# Worker scratch / debug dumps (not source)
+cloudflare-worker/deploy_output.txt
+cloudflare-worker/kv_*.json
+cloudflare-worker/readability_*.txt
+cloudflare-worker/test_readability.mjs
+cloudflare-worker/extract_readability.mjs

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "11245836842",
+    "project_id": "infosnap-e4ab2",
+    "storage_bucket": "infosnap-e4ab2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:11245836842:android:800dd4264dd62e1d42c153",
+        "android_client_info": {
+          "package_name": "com.infosnap.infosnap_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBptngwR3WGIAvkMB3ZvLpUrI0sRYFHsQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
